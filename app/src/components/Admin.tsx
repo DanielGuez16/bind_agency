@@ -535,17 +535,28 @@ export function Chiffre({
   valeur,
   legende,
   dernier = false,
+  accessibilityLabel,
   testID,
 }: {
   valeur: string;
   legende: string;
   dernier?: boolean;
+  /**
+   * Ce que la voix dit, quand le chiffre seul ne suffit pas.
+   *
+   * Une médiane sans son effectif ne se lit pas de la même façon selon
+   * qu'elle vient de trois scores ou de cent : le porter à l'écran ferait un
+   * second chiffre dans un cartouche qui n'en dessine qu'un, mais le taire à
+   * l'oreille reviendrait à cacher ce que l'œil devine du contexte de la page.
+   */
+  accessibilityLabel?: string;
   testID?: string;
 }) {
   const c = useColors();
   return (
     <View
       testID={testID}
+      accessibilityLabel={accessibilityLabel}
       style={{
         flex: 1,
         // 18/20, relevés sur la planche : ni l'un ni l'autre n'a de jeton

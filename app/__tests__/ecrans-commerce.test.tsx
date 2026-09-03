@@ -425,12 +425,15 @@ const ECRANS = [
               },
             ],
             audience_totale: 12400,
+            reliability_score: '86.00',
+            tier: { tier_id: 'p1', platform: 'instagram', content_format: 'post' },
           },
         ],
         total: 1,
         arrivees_cette_semaine: 1,
         fiabilite_mediane: '86.00',
         createurs_avec_score: 1,
+        peut_reserver: 1,
       },
     },
     vide: {
@@ -440,6 +443,7 @@ const ECRANS = [
         arrivees_cette_semaine: 0,
         fiabilite_mediane: null,
         createurs_avec_score: 0,
+        peut_reserver: 0,
       },
     },
   },
@@ -2774,6 +2778,7 @@ describe('le score de fiabilité vit sur l’annuaire admin, et nulle part aille
           // et la compter comme zéro l'écraserait — c'est la règle du produit.
           fiabilite_mediane: '86.00',
           createurs_avec_score: 1,
+          peut_reserver: 0,
         },
       }),
       'admin',
@@ -2802,12 +2807,104 @@ describe('le score de fiabilité vit sur l’annuaire admin, et nulle part aille
           arrivees_cette_semaine: 0,
           fiabilite_mediane: '86.00',
           createurs_avec_score: 1,
+          peut_reserver: 0,
         },
       }),
       'admin',
     );
     await waitFor(() => expect(screen.getByTestId('fiabilite-vit-ici')).toBeTruthy());
     expect(screen.getByTestId('fiabilite-vit-ici')).toHaveTextContent(/never sees this number/);
+  });
+
+  it('rend le palier en badge, et « none yet » pour qui n’en ouvre aucun', async () => {
+    /**
+     * **Deux créatrices qui divergent sur le seul champ éprouvé, encore.**
+     *
+     * L'une ouvre un palier — `tier` non nul — l'autre aucun. Une
+     * implémentation qui écrirait toujours le badge, ou toujours « none yet »,
+     * rendrait le même verdict sur une seule créatrice ; il en faut deux qui
+     * divergent pour que l'assertion prouve quelque chose.
+     */
+    await monter(
+      <CreateursAdminScreen />,
+      clientDe({
+        '/admin/creators': {
+          items: [
+            {
+              creator_id: 'c1',
+              city: 'Miami',
+              reseaux: reseau('ouvre'),
+              audience_totale: 12_400,
+              reliability_score: '86.00',
+              tier: { tier_id: 't1', platform: 'instagram', content_format: 'reel' },
+            },
+            {
+              creator_id: 'c2',
+              city: 'Miami',
+              reseaux: reseau('ferme'),
+              audience_totale: 100,
+              reliability_score: null,
+              tier: null,
+            },
+          ],
+          total: 2,
+          arrivees_cette_semaine: 0,
+          fiabilite_mediane: '86.00',
+          createurs_avec_score: 1,
+          peut_reserver: 1,
+        },
+      }),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
+
+    expect(screen.getByTestId('tier-c1')).toHaveTextContent('REEL');
+    expect(screen.getByTestId('tier-c2')).toHaveTextContent(en.admin.createursSansPalier);
+    expect(screen.getByTestId('tier-c2')).not.toHaveTextContent('REEL');
+  });
+
+  it('écrit les cinq nombres de tête sur la population, pas sur la page', async () => {
+    /**
+     * **Le total dépasse ce que la liste rend, et c'est le décor qui compte.**
+     *
+     * Avec `total === items.length`, un écran qui lirait `items.length` et un
+     * écran qui lit `annuaire.total` rendraient le même chiffre. Il faut que
+     * la recherche ait trouvé plus que ce que le plafond laisse passer pour
+     * que les deux se séparent — c'est exactement l'arbitrage déjà rendu sur
+     * l'annuaire des salons, repris ici.
+     */
+    await monter(
+      <CreateursAdminScreen />,
+      clientDe({
+        '/admin/creators': {
+          items: [
+            {
+              creator_id: 'c1',
+              city: 'Miami',
+              reseaux: reseau('une_seule_ligne'),
+              audience_totale: 12_400,
+              reliability_score: '86.00',
+              tier: { tier_id: 't1', platform: 'instagram', content_format: 'post' },
+            },
+          ],
+          total: 128,
+          arrivees_cette_semaine: 3,
+          fiabilite_mediane: '86.00',
+          createurs_avec_score: 90,
+          peut_reserver: 41,
+        },
+      }),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('chiffres-createurs')).toBeTruthy());
+
+    expect(screen.getByTestId('chiffre-total')).toHaveTextContent(/128/);
+    expect(screen.getByTestId('chiffre-peut-reserver')).toHaveTextContent(/41/);
+    expect(screen.getByTestId('chiffre-arrivees')).toHaveTextContent(/3/);
+    expect(screen.getByTestId('chiffre-fiabilite-mediane')).toHaveTextContent(/86/);
+
+    // Le plafond a un remède, comme sur Salons : narrow, pas scroll.
+    expect(screen.getByTestId('plafond-createurs')).toHaveTextContent(/1/);
   });
 });
 

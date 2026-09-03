@@ -147,17 +147,6 @@ const NON_RENDUS: Record<string, string> = {
   // système de paliers : un gérant lisait « post » sur une fiche et comprenait
   // « son palier est post ». La carte dit maintenant ce qu'il peut en faire.
   // Le champ reste servi parce que le tri s'appuie dessus côté serveur.
-  // **Les trois chiffres de tête de l'annuaire admin, servis et pas encore
-  // lus.** La planche v15 les dessine — « 3 joined this week », « 86 median
-  // reliability » et son effectif — et c'est `bind-agency-aa` qui compose la
-  // tête. Servis d'abord parce que la tête ne peut pas se composer sans eux, et
-  // qu'un total dérivé de cent lignes plafonnées serait faux.
-  //
-  // `total` n'y est pas : l'écran le rend déjà, à la place de la longueur de la
-  // liste — c'était le manque qui a motivé l'enveloppe.
-  'AnnuaireAdmin.arrivees_cette_semaine': 'a-instruire',
-  'AnnuaireAdmin.fiabilite_mediane': 'a-instruire',
-  'AnnuaireAdmin.createurs_avec_score': 'a-instruire',
   'CreateurDeLAnnuaire.palier_accessible': 'contrat',
   'ReservationDuCreateur.business_category': 'contrat',
   'AudienceDuCompte.following_count': 'contrat',
