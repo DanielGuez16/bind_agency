@@ -16,39 +16,78 @@ worker — hors du chemin qu'un test d'API traverse.
 """
 
 import pytest
+import sqlalchemy as sa
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.enums import Locale
+from app.models import OutboundMessage
+from app.models.enums import CollaborationStatus, Locale, MessageChannel
+from app.services import collaboration as service
 from app.services import notifications
-from app.services.collaboration import NOTIFICATION_PAR_ISSUE
+from app.services.audit import Actor
+from tests.test_collaboration import contrepartie
+from tests.test_counterpart_queue import statut
 
-#: Ce que `_deposer_pour_le_createur` dépose, à la lettre. Recopié d'un seul
-#: endroit : le jour où il dépose un champ de plus, ce test le réclame.
-CHAMPS = {
-    "creator": "Rebecca",
-    "business": "Ocean Beauty Studio",
-    "item": "Gel manicure",
-    "format": "story",
-    "deadline": "12 September",
-    "requirements": "Mention @ocean.",
-    "reason": "The mention was missing.",
-}
+#: Les quatre issues, et l'état d'où le produit les atteint.
+ISSUES = [
+    (CollaborationStatus.APPROVED, CollaborationStatus.SUBMITTED),
+    (CollaborationStatus.RESUBMIT_REQUESTED, CollaborationStatus.SUBMITTED),
+    (CollaborationStatus.UNFULFILLED, CollaborationStatus.SUBMITTED),
+    (CollaborationStatus.CLOSED_NO_FAULT, CollaborationStatus.SUBMITTED),
+]
 
 
-@pytest.mark.parametrize("cle", sorted(set(NOTIFICATION_PAR_ISSUE.values())))
-@pytest.mark.parametrize("locale", [Locale.EN, Locale.ES])
-@pytest.mark.parametrize("partie", ["subject", "body"])
-def test_chaque_issue_rend_son_message(cle: str, locale: Locale, partie: str) -> None:
-    """Les quatre issues, les deux langues, le sujet et le corps.
+@pytest.mark.parametrize(("issue", "depuis"), ISSUES)
+async def test_chaque_issue_rend_son_message(
+    session: AsyncSession, issue: CollaborationStatus, depuis: CollaborationStatus
+) -> None:
+    """**Le message est rendu depuis ce que le produit a réellement déposé.**
 
-    On ne compare aucun texte : ce qui est éprouvé est que le rendu **aboutit**
-    et ne laisse aucune accolade derrière lui.
+    Une première version de ce test écrivait les champs à la main — `creator`,
+    `business`, `reason` — et passait donc quel que soit le nom que le code
+    dépose. Elle a survécu à sa propre mutation : remettre `motif=` à l'appel
+    ne la faisait pas tomber, parce qu'elle n'appelait jamais l'appelant.
+
+    Ici le dossier est mené à l'issue par le service, et le rendu part de
+    `ligne.values`, la colonne que le vidage relit. C'est le chemin de l'envoi.
     """
-    rendu = notifications.rendre(f"{cle}.{partie}", locale, **CHAMPS)
+    ligne, scene = await contrepartie(session)
+    await statut(session, ligne, depuis)
+    acteur = Actor.from_user(scene["caissier"])
+    if issue is CollaborationStatus.APPROVED:
+        await service.approuver(session, collaboration=ligne, actor=acteur)
+    elif issue is CollaborationStatus.RESUBMIT_REQUESTED:
+        await service.demander_une_nouvelle_soumission(
+            session, collaboration=ligne, actor=acteur, reason="missing_mention"
+        )
+    elif issue is CollaborationStatus.UNFULFILLED:
+        await service.constater_non_honoree(
+            session, collaboration=ligne, actor=acteur, reason="missing_mention"
+        )
+    else:
+        await service.fermer_sans_faute(
+            session, collaboration=ligne, actor=acteur, reason="missing_mention"
+        )
+    await session.flush()
 
-    assert rendu, f"{cle}.{partie} rend une chaîne vide"
-    # Une variable non substituée reste entre accolades : c'est la forme exacte
-    # qu'un gabarit prendrait s'il nommait un champ que le code ne dépose pas.
-    assert "{" not in rendu, f"{cle}.{partie} garde une variable : {rendu}"
-    # Et la clé elle-même ne doit pas ressortir — c'est ce que rend un
-    # catalogue qui ne la porte pas.
-    assert cle not in rendu, f"{cle}.{partie} rend sa clé au lieu de son texte"
+    lignes = list(
+        await session.scalars(
+            sa.select(OutboundMessage).where(
+                OutboundMessage.user_id == scene["createur"].id,
+                OutboundMessage.channel == MessageChannel.EMAIL,
+            )
+        )
+    )
+    assert lignes, f"aucun message déposé pour {issue.value}"
+    message = lignes[-1]
+
+    for locale in (Locale.EN, Locale.ES):
+        valeurs = notifications.valeurs_du_gabarit(locale, dict(message.values))
+        for partie in ("subject", "body"):
+            rendu = notifications.rendre(f"{message.template_key}.{partie}", locale, **valeurs)
+            assert rendu, f"{message.template_key}.{partie} rend une chaîne vide"
+            # Une variable non substituée reste entre accolades : c'est la forme
+            # exacte qu'un gabarit prend quand il nomme un champ que le code ne
+            # dépose pas — `{reason}` contre `motif=`.
+            assert "{" not in rendu, f"{message.template_key}.{partie} : {rendu}"
+            # Et la clé ressort telle quelle quand le catalogue ne la porte pas.
+            assert message.template_key not in rendu, f"{message.template_key}.{partie} rend sa clé"
