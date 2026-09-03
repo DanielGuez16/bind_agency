@@ -1032,3 +1032,47 @@ async def test_une_prestation_ouverte_a_deux_paliers_ne_compte_qu_une_fois(
     quartier = next((q for q in fil.quartiers if q.quartier == salon.neighborhood), None)
     if quartier is not None:
         assert quartier.prestations == 1
+
+
+# --------------------------------------------------------------------------
+# le fil sans position — trié par popularité
+# --------------------------------------------------------------------------
+
+
+async def test_le_fil_populaire_classe_par_consommations_et_ignore_la_distance(
+    session: AsyncSession,
+) -> None:
+    """**Le décor où les deux tris divergent.** Le salon le plus loin est celui
+    qui a servi une réservation ; s'il ressort en tête, le tri est bien la
+    popularité et non une distance qu'aucune position ne pourrait fournir.
+    """
+    proche = await commerce(session, longitude=-80.1301, latitude=25.7908)
+    loin = await commerce(session, longitude=-80.4000, latitude=26.1000)
+    await offre(session, proche)
+    await offre(session, loin)
+    await _consommer_une_reservation(session, loin)
+
+    user, _ = await createur(session, followers=60_000)
+    resultat = await service.fil_populaire_du_createur(session, creator_id=user.id)
+
+    assert [s.business_id for s in resultat.salons][:2] == [loin.id, proche.id]
+
+
+async def test_le_fil_populaire_respecte_les_paliers_comme_le_fil_geolocalise(
+    session: AsyncSession,
+) -> None:
+    """Le même tamis que `fil_du_createur` : sans compte social, aucun palier
+    n'est accessible, et le fil de secours ne doit pas en montrer plus que
+    celui qu'une position aurait rendu."""
+    b = await commerce(session, longitude=-80.1301, latitude=25.7908)
+    await offre(session, b)
+    user = await inscrire_verifie(
+        session,
+        email=f"{uuid.uuid4()}@example.com",
+        password="tourbillon-cactus-91-vermeil",
+        role=UserRole.CREATOR,
+    )
+
+    resultat = await service.fil_populaire_du_createur(session, creator_id=user.id)
+
+    assert resultat.salons == ()
