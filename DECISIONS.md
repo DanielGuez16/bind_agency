@@ -11197,3 +11197,54 @@ web resteront indisponibles tant que la clé VAPID n'est pas configurée. C'est
 un choix en attente de la décision Expo/EAS, pas un renoncement — le jour où
 la clé est posée dans `app.json`, `pushDisponible()` rend vrai sans qu'on
 touche à une ligne.
+## 2026-09-04 — `consumed` disait deux choses, et l'écran héritait des deux
+
+**Le défaut.** `BookingStatus.CONSUMED` n'avait aucun état de sortie —
+`frozenset()`, déclaré terminal. Une réservation servie gardait donc le même
+statut qu'elle ait été publiée et acceptée, refusée, ou jamais rendue. Deux
+écrans en héritaient : le compteur « à envoyer » de la créatrice grossissait
+sans jamais redescendre, et l'onglet des terminées ne recevait jamais une
+prestation honorée. Le badge « Honoured » que cet onglet sait dessiner était
+donc du code que rien ne pouvait atteindre.
+
+**Un seul état de sortie, et il ne dit pas l'issue.** `closed` répond à « reste-
+t-il quelque chose à faire », qui est la question des onglets. *Laquelle* des
+trois issues — approuvée, non honorée, fermée sans faute — reste portée par la
+contrepartie, seul objet à la connaître. Deux états de sortie auraient recopié
+sur la réservation un fait qui vit ailleurs, et deux sources du même fait
+finissent par diverger.
+
+**Ce qui a coûté le plus n'est pas l'état, c'est ce qui le lisait.** Huit
+requêtes écrivaient `status == CONSUMED` pour dire « le salon a donné cette
+prestation » — rapport, valeur offerte, popularité d'un quartier, occupation
+d'un créneau. Ajouter la sortie sans les toucher aurait fait **fondre le rapport
+du commerce au fur et à mesure que ses dossiers se ferment** : un chiffre juste
+hier, faux aujourd'hui, et rien pour le signaler. D'où `STATUTS_SERVIS`, qui
+nomme l'intention là où l'égalité la laissait deviner.
+
+**Et la mutation a dit que ce trou n'était pas gardé.** En retirant `closed` de
+`STATUTS_SERVIS`, les **soixante-douze** tests de rapport, de fil et de
+disponibilité restaient verts : aucun ne passait par une réservation close,
+parce qu'aucune n'existait avant ce jour. Le risque le plus cher du changement
+était donc le seul entièrement non protégé, et seule la mutation l'a montré —
+la relecture avait pourtant listé les huit sites un par un.
+
+**Un défaut trouvé en chemin, et il vivait derrière du code mort.** L'onglet des
+terminées écrivait « Accepted » sur une coche verte pour *toutes* ses lignes —
+annulation, absence et expiration comprises. `issueDe` existait depuis le début
+pour dire laquelle des quatre fins, et n'était appelée que par `LigneNue`, un
+composant que plus rien ne montait : la fonction *paraissait* branchée. Un test
+avait même figé le défaut, en affirmant qu'une réservation annulée affiche
+« Accepted » — le décor attendait la valeur que le défaut produit.
+
+La leçon n'est pas « supprimer le code mort », elle est plus précise : **une
+fonction encore appelée par un composant orphelin ne se distingue pas, à la
+relecture, d'une fonction branchée.** Le seul signal fiable était de partir du
+rendu et de remonter, jamais de partir de la fonction et de chercher ses
+appelants.
+
+**Une mutation a aussi condamné un de mes propres décors.** Trois tests
+vérifiaient que l'onglet des terminées montre la publication ; retirer `closed`
+de la liste de statuts de l'onglet les laissait tous verts, parce que le montage
+répond les mêmes lignes quelle que soit la requête. Il a fallu un test qui
+observe l'URL appelée — le seul endroit où cette liste est observable.

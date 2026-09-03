@@ -753,7 +753,7 @@ describe('l’onglet des terminées reçoit ce qui a été honoré', () => {
         } as Response;
       },
     });
-    render(
+    await render(
       <I18nProvider initialLocale="en">
         <ThemeProvider role="creator">
           <ApiProvider client={api}>
