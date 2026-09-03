@@ -728,6 +728,49 @@ describe('l’onglet des terminées reçoit ce qui a été honoré', () => {
     expect(within(carte).queryByTestId('publie-r-annul')).toBeNull();
   });
 
+  it('demande bien les réservations closes au serveur', async () => {
+    /**
+     * **Le décor de cette classe ne pouvait pas l'attraper, et c'est une
+     * mutation qui l'a dit.** `monter` répond les mêmes lignes quelle que soit
+     * la requête : retirer `closed` de l'onglet laissait donc les trois tests
+     * ci-dessus au vert, alors que l'onglet ne demandait plus au serveur la
+     * seule chose qu'on vient y chercher. C'est exactement le décor qu'une
+     * implémentation fausse satisfait.
+     *
+     * Celui-ci regarde ce qui part sur le réseau, seul endroit où la liste de
+     * statuts de l'onglet est observable.
+     */
+    const vues: string[] = [];
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: async (url: RequestInfo | URL) => {
+        vues.push(String(url));
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ items: [], compteurs: {}, a_envoyer: 0 }),
+        } as Response;
+      },
+    });
+    render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="creator">
+          <ApiProvider client={api}>
+            <HistoriqueScreen onOuvrir={() => {}} ongletDemande="terminees" />
+          </ApiProvider>
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+
+    await waitFor(() => expect(vues.length).toBeGreaterThan(0));
+    const appel = vues.find((u) => u.includes('/me/bookings')) ?? '';
+    expect(appel).toContain('status=closed');
+    // Et les trois fins malheureuses restent demandées : `closed` s'ajoute,
+    // il ne remplace pas.
+    expect(appel).toContain('status=cancelled');
+  });
+
   it('distingue un dossier fermé sans faute d’une annulation', async () => {
     // La prestation a bien été servie ; c'est la demande de publication qui
     // n'a pas été comprise. « Cancelled » dirait qu'elle a renoncé à un
