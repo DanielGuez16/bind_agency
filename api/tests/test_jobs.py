@@ -18,6 +18,7 @@ import httpx
 import pytest
 import sqlalchemy as sa
 from httpx import AsyncClient
+from pydantic import SecretStr
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.core.config import ConfigurationError, get_settings
@@ -822,8 +823,12 @@ async def test_get_sender_avec_resend_exige_un_client(
     with pytest.raises(ConfigurationError, match="client HTTP"):
         get_sender()
 
-    # Le pendant : avec un client, l'appel aboutit — c'est tout ce que
-    # `vider_la_boite_d_envoi` avait à faire, et ne faisait pas.
+    # Le pendant : avec un client **et** une clé, l'appel aboutit — c'est tout
+    # ce que `vider_la_boite_d_envoi` avait à faire, et ne faisait pas. La clé
+    # est nécessaire ici : sans elle, `ResendSender.__init__` lève sa propre
+    # erreur de configuration, distincte de celle qu'on éprouve.
+    monkeypatch.setattr(get_settings(), "email_api_key", SecretStr("test-key"))
+    monkeypatch.setattr(get_settings(), "email_from", "demo@bind.example")
     async with httpx.AsyncClient() as client:
         get_sender(client)
 
@@ -838,6 +843,7 @@ async def test_vider_la_boite_ne_leve_pas_avec_resend(
     que l'un des deux laisserait l'autre faux, sans qu'aucun test ne le dise.
     """
     monkeypatch.setattr(get_settings(), "email_provider", "resend")
+    monkeypatch.setattr(get_settings(), "email_api_key", SecretStr("test-key"))
     monkeypatch.setattr(get_settings(), "email_from", "demo@bind.example")
 
     issue = await handlers.vider_la_boite_d_envoi(session, account=None, provider=None)
