@@ -51,6 +51,11 @@ STATUTS_OCCUPANTS = (
     BookingStatus.AWAITING_BUSINESS,
     BookingStatus.CONFIRMED,
     BookingStatus.CONSUMED,
+    # **`closed` occupe autant que `consumed`.** La place a été tenue et servie ;
+    # que le dossier de publication se soit fermé depuis n'y change rien. L'en
+    # retirer rouvrirait à la réservation des créneaux déjà honorés, au fur et à
+    # mesure que les contreparties se tranchent.
+    BookingStatus.CLOSED,
 )
 
 

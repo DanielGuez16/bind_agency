@@ -33,6 +33,7 @@ import { formatDate } from '../format';
 import { useI18n } from '../i18n';
 import { radius, useColors } from '../theme';
 import { Ecran } from './Ecran';
+import { usePhotoDeLaPublication } from './publications/usePhotoDeLaPublication';
 import { useRequete } from './useRequete';
 
 /** Le côté de la vignette. */
@@ -65,58 +66,19 @@ export function publications(items: ReservationDuCreateur[]): ReservationDuCreat
  * publications, toutes au-delà de la deux-cent-vingtième ligne, donc invisibles
  * sur une page de cinquante **et** sur une page de deux cents.
  *
- * `consumed` est le plus petit ensemble qui contienne toutes les
- * publications : une contrepartie n'est approuvée qu'après le passage au
- * comptoir. Vérifié en base — aucune contrepartie approuvée ne porte un autre
- * statut de réservation.
- */
-const STATUTS: BookingStatus[] = ['consumed'];
-
-/**
- * L'image de la publication, quand elle est archivée.
+ * `consumed` **et `closed`** : c'est le plus petit ensemble qui contienne
+ * toutes les publications. Une contrepartie n'est approuvée qu'après le passage
+ * au comptoir, donc jamais avant `consumed` ; et elle en fait sortir la
+ * réservation dans la foulée, puisqu'une publication acceptée ferme l'échange.
  *
- * **Le droit de lecture se demande, il ne se déduit pas d'une clé.** Une preuve
- * n'est jamais servie par une adresse devinable : l'API délivre un droit court
- * et signé, et c'est lui qui ouvre l'objet. La créatrice y a droit sur **sa**
- * publication — le serveur le vérifie sur la réservation, pas sur ce que
- * l'écran demande.
- *
- * **Rien n'est tenté sans objet.** `post_a_une_image` faux veut dire qu'aucun
- * fichier n'a été archivé ; demander quand même rendrait un 404 qui s'afficherait
- * comme une panne du produit.
+ * **`consumed` seul était juste la veille, et faux le lendemain.** La note
+ * précédente disait « vérifié en base, aucune contrepartie approuvée ne porte
+ * un autre statut de réservation » — exact tant que `consumed` était terminal.
+ * Depuis que l'échange se ferme, une publication approuvée porte `closed`, et
+ * ce filtre à lui seul aurait vidé cet écran en entier : toutes les
+ * publications, tout le temps, sans erreur nulle part pour le dire.
  */
-function usePhotoDeLaPublication(
-  proofId: string | null,
-  aUneImage: boolean,
-): string | null {
-  const { api } = useApi();
-  const [url, setUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!proofId || !aUneImage) {
-      setUrl(null);
-      return;
-    }
-    let vivant = true;
-    void api
-      .droitDeLireLaPreuve(proofId)
-      .then((droit) => {
-        if (vivant) setUrl(droit.url);
-      })
-      // **Avalé ici, et c'est la seule fois.** Sur la file du commerce une
-      // image absente doit se dire : le salon approuve à l'aveugle sinon. Ici
-      // la ligne reste lisible sans elle — le nom, le salon et la date sont là
-      // — et un bandeau d'erreur par ligne ferait une page d'alertes.
-      .catch(() => {
-        if (vivant) setUrl(null);
-      });
-    return () => {
-      vivant = false;
-    };
-  }, [api, aUneImage, proofId]);
-
-  return url;
-}
+const STATUTS: BookingStatus[] = ['consumed', 'closed'];
 
 function Publication({ item }: { item: ReservationDuCreateur }) {
   const { api } = useApi();

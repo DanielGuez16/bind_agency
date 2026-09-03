@@ -603,7 +603,7 @@ function momentRelatif(
  * texte, même poids, même couleur. Un planning où le passé et le présent se
  * ressemblent oblige à lire chaque ligne pour savoir où l'on en est.
  */
-const TERMINES = new Set(['consumed', 'cancelled', 'no_show', 'expired']);
+const TERMINES = new Set(['consumed', 'closed', 'cancelled', 'no_show', 'expired']);
 
 /** Ce dont l'état mérite d'être teinté. Le reste reste neutre. */
 const TEINTE: Record<string, ColorName> = {

@@ -193,7 +193,26 @@ class BookingStatus(StrEnum):
     #: vendre deux fois pendant que le commerce regarde le profil.
     AWAITING_BUSINESS = "awaiting_business"
     CONFIRMED = "confirmed"
+    #: La prestation a été servie, **et l'échange n'est pas fini**.
+    #:
+    #: C'est le seul état qui ouvre une contrepartie, et il dure tant qu'elle
+    #: n'a pas d'issue. Il se lit donc « servi, publication encore due » et non
+    #: « terminé » : la réservation en sort par `closed` quand le dossier de
+    #: publication se ferme, quelle que soit la façon dont il se ferme.
     CONSUMED = "consumed"
+    #: L'échange est clos des deux côtés : la prestation servie, la contrepartie
+    #: tranchée — honorée, non honorée, ou fermée sans faute.
+    #:
+    #: **Il ne dit pas laquelle des trois**, et c'est délibéré. L'issue est
+    #: portée par la contrepartie, qui est le seul objet à la connaître ; la
+    #: recopier ici ferait deux sources pour un même fait, et deux sources
+    #: finissent par diverger. Ce statut ne répond qu'à « reste-t-il quelque
+    #: chose à faire », qui est la question des onglets et des compteurs.
+    #:
+    #: `consumed` restait terminal, faute de cette flèche : le compteur « à
+    #: envoyer » grossissait sans jamais redescendre, et une prestation publiée
+    #: et acceptée n'atteignait jamais l'onglet des terminées.
+    CLOSED = "closed"
     CANCELLED = "cancelled"
     NO_SHOW = "no_show"
     EXPIRED = "expired"

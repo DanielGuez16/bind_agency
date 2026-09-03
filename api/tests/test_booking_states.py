@@ -55,6 +55,12 @@ DIAGRAMME = {
     # d'appelant, pas de forme.
     ("confirmed", "cancelled"),
     ("confirmed", "no_show"),
+    # **La contrepartie ferme la réservation.** `consumed` disait « servie » et
+    # « terminée » à la fois ; il ne dit plus que la première, et l'échange sort
+    # par `closed` quand le dossier de publication est tranché — approuvé, non
+    # honoré, ou fermé sans faute. Une seule flèche, et surtout pas vers
+    # `no_show` : voir `TestUnDossierSousArbitrageEtUneAbsence`.
+    ("consumed", "closed"),
 }
 
 
@@ -578,16 +584,35 @@ async def test_une_reservation_expiree_ne_se_confirme_plus(session: AsyncSession
         await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
 
 
-async def test_une_reservation_consommee_est_terminale(session: AsyncSession) -> None:
+async def test_une_reservation_consommee_ne_sort_que_par_la_cloture(
+    session: AsyncSession,
+) -> None:
+    """Une seule porte depuis `consumed`, et toutes les autres restent fermées.
+
+    **Le test disait « terminale » et ne l'est plus** : c'est cette absence de
+    sortie qui laissait le compteur « à envoyer » grossir sans fin. Ce qu'il
+    protège vraiment n'a pas changé — aucune autre flèche, et surtout pas celle
+    de l'absence — donc il éprouve maintenant les six refus un par un plutôt que
+    les sept.
+    """
     ligne, decor = await reservation(session)
     await service.confirmer(session, booking=ligne, creator_id=decor["createur"].id)
     await service.consommer(session, booking=ligne, actor=acteur(decor))
 
     for vers in BookingStatus:
+        if vers is BookingStatus.CLOSED:
+            continue
         with pytest.raises(service.TransitionNotAllowed):
             await service.transitionner(
                 session, booking=ligne, vers=vers, actor=acteur(decor), reason="essai"
             )
+
+    # Et la seule porte s'ouvre réellement : un test qui n'éprouve que des refus
+    # passerait aussi sur une table où plus rien ne bouge.
+    await service.clore(
+        session, booking=ligne, actor=acteur(decor), reason="contrepartie approuvée"
+    )
+    assert ligne.status is BookingStatus.CLOSED
 
 
 # --------------------------------------------------------------------------
@@ -1015,8 +1040,20 @@ class TestUnDossierSousArbitrageEtUneAbsence:
         assert depuis == {BookingStatus.CONFIRMED}
 
     def test_une_place_consommee_ne_devient_jamais_une_absence(self) -> None:
-        """Le maillon qui compte : c'est `consumed` qui porte la contrepartie."""
-        assert service.TRANSITIONS[BookingStatus.CONSUMED] == frozenset()
+        """Le maillon qui compte : c'est `consumed` qui porte la contrepartie.
+
+        **Il affirmait l'ensemble vide, il affirme maintenant la propriété.**
+        L'ensemble vide était une façon indirecte de dire « pas de flèche vers
+        l'absence » — vraie tant que `consumed` était terminal, et devenue
+        fausse le jour où la clôture est arrivée, sans que ce qu'elle protège
+        ait bougé d'un pouce. Une garde écrite sur la forme tombe au premier
+        changement légitime ; celle-ci est écrite sur ce qu'elle interdit.
+
+        Et elle vaut sur les deux états servis : une place close ne doit pas
+        davantage pouvoir devenir une absence.
+        """
+        for etat in (BookingStatus.CONSUMED, BookingStatus.CLOSED):
+            assert BookingStatus.NO_SHOW not in service.TRANSITIONS[etat]
 
     async def test_une_contrepartie_ouverte_ferme_l_absence(self, session: AsyncSession) -> None:
         """Le même énoncé, éprouvé par le produit et non par sa table.

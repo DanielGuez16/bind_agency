@@ -50,6 +50,7 @@ from app.models import (
 from app.models.enums import BookingStatus, CollaborationStatus, ContentFormat, Platform
 from app.services import portee_locale as portee_locale_service
 from app.services import venue_report
+from app.services.booking_states import STATUTS_SERVIS
 
 #: Fenêtre par défaut. Trente jours : assez long pour qu'un commerce à faible
 #: volume voie quelque chose, assez court pour que le chiffre bouge quand il
@@ -208,7 +209,7 @@ async def pour_le_commerce(
         ).all()
     )
     total = sum(par_statut.values())
-    consommations = par_statut.get(BookingStatus.CONSUMED, 0)
+    consommations = sum(par_statut.get(statut, 0) for statut in STATUTS_SERVIS)
 
     # --- contreparties ---------------------------------------------------
     par_statut_contrepartie = dict(
@@ -236,7 +237,7 @@ async def pour_le_commerce(
     valeur = (
         await session.scalar(
             sa.select(sa.func.coalesce(sa.func.sum(Booking.value_cents_snapshot), 0)).where(
-                fenetre, Booking.status == BookingStatus.CONSUMED
+                fenetre, Booking.status.in_(STATUTS_SERVIS)
             )
         )
     ) or 0
@@ -361,7 +362,7 @@ async def _par_palier(session: AsyncSession, fenetre) -> tuple[LigneDePalier, ..
                 ),
                 sa.func.coalesce(
                     sa.func.sum(Booking.value_cents_snapshot).filter(
-                        Booking.status == BookingStatus.CONSUMED
+                        Booking.status.in_(STATUTS_SERVIS)
                     ),
                     0,
                 ),
@@ -400,13 +401,13 @@ async def _par_item(session: AsyncSession, fenetre) -> tuple[LigneDItem, ...]:
                 CatalogItem.id,
                 CatalogItem.name,
                 sa.func.count(Booking.id),
-                sa.func.count(Booking.id).filter(Booking.status == BookingStatus.CONSUMED),
+                sa.func.count(Booking.id).filter(Booking.status.in_(STATUTS_SERVIS)),
                 sa.func.count(Collaboration.id).filter(
                     Collaboration.status == CollaborationStatus.APPROVED
                 ),
                 sa.func.coalesce(
                     sa.func.sum(Booking.value_cents_snapshot).filter(
-                        Booking.status == BookingStatus.CONSUMED
+                        Booking.status.in_(STATUTS_SERVIS)
                     ),
                     0,
                 ),

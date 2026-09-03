@@ -15,7 +15,7 @@
  * rendez-vous à quiconque voyage.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Linking, Pressable, View } from 'react-native';
 
 import {
   useApi,
@@ -28,10 +28,13 @@ import {
   EmptyState,
   Button,
   Icone,
+  MediaFallback,
+  Photo,
   SegmentedTabs,
   SkeletonLignes,
   StatusMessage,
   Texte,
+  type NomIcone,
 } from '../components';
 import { elevationDeCarte, radius, useColors, type ColorName } from '../theme';
 import { useI18n, type SupportedLocale } from '../i18n';
@@ -40,6 +43,7 @@ import { glypheDePlateforme } from './obstacle';
 import { AnnulerLaReservation } from './reservations/AnnulerLaReservation';
 import { LesLiensDuSalon } from './fiche/LesLiensDuSalon';
 import { Ecran } from './Ecran';
+import { usePhotoDeLaPublication } from './publications/usePhotoDeLaPublication';
 import { useRequete } from './useRequete';
 
 /**
@@ -86,21 +90,40 @@ export function grouperParMois(
 }
 
 /**
- * Ce qu'il reste avant l'échéance, en heures ou en jours.
+ * Le seuil sous lequel une échéance devient pressante : une heure.
  *
- * **Nul quand l'échéance est passée.** Une contrepartie en retard est déjà
- * close par le balayage, et « −3 H » sur une ligne encore ouverte se lirait
- * comme une dette. Le cas se produit dans la seconde qui sépare l'échéance du
- * passage du balayage : rien à afficher vaut mieux qu'un nombre négatif.
- *
- * En heures sous deux jours, en jours au-delà. « 47 H » est exact et illisible
- * quand « 2 J » suffit à décider ; l'inverse est vrai à six heures près de la
- * fin, où le jour arrondi ferait manquer la soirée.
+ * **Une heure et non six.** C'est la durée sous laquelle on ne peut plus
+ * remettre à plus tard sans risquer de perdre le dossier — et sur une story,
+ * qui disparaît en vingt-quatre heures, c'est aussi la fenêtre où la
+ * publication qu'on doit prouver est encore en ligne.
  */
-export function tempsRestant(echeance: string, maintenant = Date.now()): string | null {
-  const heures = Math.floor((new Date(echeance).getTime() - maintenant) / 3_600_000);
-  if (heures < 0) return null;
-  return heures < 48 ? `${heures} h` : `${Math.floor(heures / 24)} j`;
+const URGENCE_MINUTES = 60;
+
+/**
+ * Ce qu'il reste, et **si c'est pressant**.
+ *
+ * **Les minutes existent enfin sous l'heure.** Le calcul arrondissait à l'heure
+ * pleine par le bas : à cinquante-cinq minutes de l'échéance il écrivait
+ * « 0 h », c'est-à-dire le chiffre qu'on lit comme « c'est fini » sur le seul
+ * écran où il reste justement le temps d'agir. La dernière heure — celle qui
+ * décide — était la seule que le produit ne savait pas dire.
+ *
+ * **L'urgence est rendue ici, pas devinée par l'appelant.** Deux écrans lisent
+ * cette échéance ; recalculer le seuil de chaque côté les ferait diverger au
+ * premier ajustement, et c'est le genre d'écart qu'on ne voit qu'en production.
+ */
+export function tempsRestant(
+  echeance: string,
+  maintenant = Date.now(),
+): { texte: string; urgent: boolean } | null {
+  const minutes = Math.floor((new Date(echeance).getTime() - maintenant) / 60_000);
+  if (minutes < 0) return null;
+
+  const urgent = minutes < URGENCE_MINUTES;
+  if (urgent) return { texte: `${minutes} min`, urgent };
+
+  const heures = Math.floor(minutes / 60);
+  return { texte: heures < 48 ? `${heures} h` : `${Math.floor(heures / 24)} j`, urgent };
 }
 
 /**
@@ -203,7 +226,14 @@ const ONGLETS: { cle: string; libelle: string; statuts: BookingStatus[] }[] = [
     // `expired`, `cancelled` et `no_show` sont des fins, pas des absences. Les
     // omettre ferait disparaître de l'écran des réservations dont quelqu'un se
     // souvient.
-    statuts: ['cancelled', 'no_show', 'expired'],
+    //
+    // **`closed` en tête, et c'est ce que l'onglet manquait.** Une prestation
+    // servie dont la publication a été acceptée est la seule chose qu'on vient
+    // vraiment chercher ici — et c'était précisément la seule qui n'y arrivait
+    // jamais, faute d'un état de sortie à `consumed`. L'onglet ne montrait donc
+    // que des fins malheureuses, et le badge « honorée » qu'il sait dessiner
+    // était du code que rien ne pouvait atteindre.
+    statuts: ['closed', 'cancelled', 'no_show', 'expired'],
   },
 ];
 
@@ -285,19 +315,23 @@ export function HistoriqueScreen({
     { estVide: (vue) => vue.items.length === 0, dependances: [index] },
   );
 
-  // Les compteurs sont ceux de la réponse, quel que soit l'onglet lu : ils
-  // portent sur tout l'historique.
+  // Le compteur est celui de la réponse, quel que soit l'onglet lu : il porte
+  // sur tout l'historique.
+  //
+  // **Servi, et non plus sommé depuis les statuts de l'onglet.** La somme
+  // répondait à « combien sont consommées », le badge demande « combien
+  // attendent quelque chose de moi » — et les deux divergent sur tout dossier
+  // soumis et en cours de contrôle, où la créatrice ne peut rien faire. Voir
+  // `a_envoyer`, qui est calculé sur l'état de la contrepartie.
   const compteurs = useMemo(() => {
     const source =
       requete.etat === 'pret'
-        ? requete.donnees.compteurs
+        ? requete.donnees
         : requete.etat === 'erreur' && requete.donnees
-          ? requete.donnees.compteurs
+          ? requete.donnees
           : null;
     return ONGLETS.map((onglet) =>
-      source === null || onglet.cle !== ONGLET_QUI_COMPTE
-        ? undefined
-        : onglet.statuts.reduce((total, statut) => total + (source[statut] ?? 0), 0),
+      source === null || onglet.cle !== ONGLET_QUI_COMPTE ? undefined : source.a_envoyer,
     );
   }, [requete]);
 
@@ -347,72 +381,18 @@ export function HistoriqueScreen({
 }
 
 /**
- * Une ligne nue : l'historique, qui ne demande rien.
+ * Ce qu'une réservation close a produit, du point de vue de la créatrice.
  *
- * Le quantième à gauche en mono, la prestation et son attribution au milieu, le
- * résultat en pastille à droite. Aucune ombre, aucun filet de carte : un seul
- * trait qui sépare des lignes, comme un relevé.
- *
- * **La pastille dit le résultat, jamais l'état technique.** « Honoured » et
- * « Not honoured » sont ce qui compte pour elle ; `no_show` et `expired` sont
- * des mots de machine, et la créatrice n'a pas à traduire.
+ * **Le glyphe fait partie de l'issue, il ne se choisit pas à côté.** La carte
+ * portait une coche verte en dur avec « Accepted », pour les quatre fins
+ * indifféremment ; laisser l'appelant apparier un glyphe à un libellé
+ * reproduirait exactement la faute, une refonte plus tard.
  */
-function LigneNue({ reservation }: { reservation: ReservationDuCreateur }) {
-  const { t, locale } = useI18n();
-  const c = useColors();
-  const quand = reservation.starts_at ?? reservation.valid_until;
-  const issue = issueDe(reservation);
-
-  return (
-    <View
-      testID={`reservation-${reservation.booking_id}`}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        paddingVertical: 13,
-        borderTopWidth: 1,
-        borderTopColor: c['line.default'],
-      }}
-    >
-      <Texte
-        variante="type.dataLabel"
-        couleur="ink.mute"
-        style={{ width: 26 }}
-        testID={`quand-${reservation.booking_id}`}
-      >
-        {formatQuantieme(quand, locale, reservation.business_timezone)}
-      </Texte>
-
-      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-        <Texte variante="type.bodyStrong">{reservation.item_name}</Texte>
-        <Texte variante="type.caption" couleur="ink.soft">
-          {`${reservation.business_name} · ${t(`parcours.format_${reservation.content_format}`)}`}
-        </Texte>
-      </View>
-
-      <View
-        testID={`issue-${reservation.booking_id}`}
-        style={{
-          paddingVertical: 5,
-          paddingHorizontal: 10,
-          borderRadius: radius['radius.sm'],
-          backgroundColor: c[issue.fond],
-        }}
-      >
-        <Texte variante="type.dataLabel" couleur={issue.encre}>
-          {t(issue.libelle).toUpperCase()}
-        </Texte>
-      </View>
-    </View>
-  );
-}
-
-/** Ce qu'une réservation close a produit, du point de vue de la créatrice. */
 function issueDe(reservation: ReservationDuCreateur): {
   libelle: string;
   fond: ColorName;
   encre: ColorName;
+  glyphe: NomIcone;
 } {
   const contrepartie = reservation.contrepartie;
   if (contrepartie?.status === 'approved') {
@@ -420,6 +400,7 @@ function issueDe(reservation: ReservationDuCreateur): {
       libelle: 'parcours.issueHonoree',
       fond: 'status.success.surface',
       encre: 'status.success.text',
+      glyphe: 'coche',
     };
   }
   if (contrepartie?.status === 'unfulfilled' || reservation.status === 'no_show') {
@@ -427,11 +408,30 @@ function issueDe(reservation: ReservationDuCreateur): {
       libelle: 'parcours.issueNonHonoree',
       fond: 'status.danger.surface',
       encre: 'status.danger.text',
+      glyphe: 'alerte',
+    };
+  }
+  // **Fermée sans faute, et ce n'est pas une annulation.** La prestation a bien
+  // été servie ; c'est la demande de publication qui n'a pas été comprise, et
+  // le produit l'a reconnu en fermant le dossier sans rien mettre au débit de
+  // personne. La ranger sous « Cancelled » dirait à la créatrice qu'elle a
+  // renoncé à un rendez-vous auquel elle s'est rendue.
+  if (contrepartie?.status === 'closed_no_fault') {
+    return {
+      libelle: 'parcours.issueClose',
+      fond: 'bg.inset',
+      encre: 'ink.soft',
+      glyphe: 'coche',
     };
   }
   // Annulée, expirée : ni tenue ni manquée. La ranger en « non honorée »
   // l'inscrirait au passif d'une créatrice qui n'a rien fait de mal.
-  return { libelle: 'parcours.issueAnnulee', fond: 'bg.inset', encre: 'ink.soft' };
+  return {
+    libelle: 'parcours.issueAnnulee',
+    fond: 'bg.inset',
+    encre: 'ink.soft',
+    glyphe: 'croix',
+  };
 }
 
 /**
@@ -488,6 +488,7 @@ function CarteDeReservation({
   const contrepartie = reservation.contrepartie;
   const reste = contrepartie ? tempsRestant(contrepartie.deadline_at) : null;
   const glyphe = glypheDePlateforme(reservation.platform);
+  const issue = issueDe(reservation);
   const repere = repereDuCreneau(
     reservation.starts_at ?? reservation.valid_until,
     locale,
@@ -545,31 +546,50 @@ function CarteDeReservation({
           {t(`parcours.format_${reservation.content_format}`)}
         </Texte>
 
-        {/* L'échéance, là où l'onglet la rend utile : pendant l'envoi. */}
+        {/* L'échéance, là où l'onglet la rend utile : pendant l'envoi.
+
+            **Et la dernière heure se voit.** Toutes les échéances portaient le
+            même cramoisi de marque, à cinq minutes comme à deux jours : la
+            couleur disait « c'est une échéance », jamais « celle-ci tombe ». La
+            seule distinction qui compte sur cet écran ne se lisait donc qu'en
+            lisant le nombre, ce qu'on ne fait pas en parcourant dix lignes. */}
         {onglet === ONGLET_QUI_COMPTE && reste ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Icone nom="horloge" couleur="brand.700" taille={15} />
+            <Icone
+              nom="horloge"
+              couleur={reste.urgent ? 'status.danger.text' : 'brand.700'}
+              taille={15}
+            />
             <Texte
               variante="type.bodyStrong"
-              couleur="brand.700"
+              couleur={reste.urgent ? 'status.danger.text' : 'brand.700'}
               testID={`reste-${reservation.booking_id}`}
             >
-              {t('parcours.contrepartieReste', { reste })}
+              {t('parcours.contrepartieReste', { reste: reste.texte })}
             </Texte>
           </View>
         ) : null}
 
         {/* Terminé, l'état prend la place de l'action : il n'y a plus rien à
-            faire, et c'est ce qu'on vient vérifier. */}
+            faire, et c'est ce qu'on vient vérifier.
+
+            **L'issue réelle, et non une coche verte pour tout le monde.** Cette
+            ligne écrivait « Accepted » sur un vert de réussite pour *chaque*
+            réservation de l'onglet — une annulation, une absence et une
+            expiration comprises. `issueDe` existait depuis le début pour dire
+            laquelle des trois, et n'était appelée que par un composant que plus
+            rien ne montait : la fonction paraissait branchée, et personne ne
+            relisait la coche. Un test l'avait même figé, en affirmant qu'une
+            réservation annulée affiche « Accepted ». */}
         {onglet === 'terminees' ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Icone nom="coche" couleur="status.success.text" taille={17} />
+            <Icone nom={issue.glyphe} couleur={issue.encre} taille={17} />
             <Texte
               variante="type.body"
-              couleur="status.success.text"
+              couleur={issue.encre}
               testID={`etat-${reservation.booking_id}`}
             >
-              {t('parcours.reservationAcceptee')}
+              {t(issue.libelle)}
             </Texte>
           </View>
         ) : null}
@@ -605,6 +625,14 @@ function CarteDeReservation({
         {agit ? (
           <Button
             label={t(`parcours.action_${destination(reservation)}`)}
+            // **Cramoisi dans la dernière heure, et seulement là.** Le bouton
+            // était `primary` quelle que soit l'échéance : deux cartes du même
+            // écran, l'une à deux jours et l'autre à cinq minutes, se
+            // présentaient à l'identique. La couleur d'alerte existe déjà dans
+            // le système et ne servait pas ici — c'est le seul endroit du
+            // parcours créatrice où quelque chose peut être perdu faute d'un
+            // geste, et c'était le seul à ne pas le dire.
+            variant={reste?.urgent ? 'danger' : 'primary'}
             onPress={() => onOuvrir(reservation)}
             fullWidth={false}
             testID={`agir-${reservation.booking_id}`}
@@ -642,6 +670,15 @@ function CarteDeReservation({
         />
       ) : null}
 
+      {/* **Ce qu'on a publié, montré et non à rechercher.** L'onglet des
+          terminées ne portait que du texte : pour revoir la story qu'on avait
+          rendue, il fallait quitter les réservations, ouvrir le profil, et
+          retrouver la ligne dans une seconde liste. La vignette existait déjà —
+          `proof_id`, `post_url` et `post_a_une_image` sont servis sur chaque
+          ligne de l'historique, dans les trois onglets — et n'était lue nulle
+          part ici. */}
+      {onglet === 'terminees' ? <CeQuiAEtePublie reservation={reservation} /> : null}
+
       {/* **Annuler est le geste qu'on ne peut pas faire depuis le salon.** Le
           composant se tait de lui-même sur les états terminaux — il n'y a pas
           de condition à écrire ici, et en écrire une la ferait diverger du
@@ -666,6 +703,86 @@ function CarteDeReservation({
       />
 
       <AnnulerLaReservation reservation={reservation} onAnnulee={onRelire} />
+    </Pressable>
+  );
+}
+
+/** Le côté de la vignette de publication, sur une carte de réservation. */
+const VIGNETTE_PUBLIEE = 56;
+
+/**
+ * La publication rendue, sur la carte qui la close.
+ *
+ * **Se tait quand il n'y a rien à montrer.** Une réservation annulée ou expirée
+ * n'a jamais eu de contrepartie, et un dossier non honoré n'a pas d'objet
+ * archivé : le composant ne rend alors rien du tout, plutôt qu'un cadre vide
+ * qui se lirait comme une image qui ne charge pas.
+ *
+ * **L'image n'attend pas un appui.** C'est la demande à laquelle cet écran
+ * répondait le moins bien — « je voudrais voir ce que j'ai publié » — et il y
+ * répondait par un renvoi vers un autre onglet. La vignette se charge avec la
+ * carte ; le lien vers la publication d'origine reste un geste, parce que lui
+ * quitte le produit.
+ */
+function CeQuiAEtePublie({ reservation }: { reservation: ReservationDuCreateur }) {
+  const { t } = useI18n();
+  const c = useColors();
+  const { api } = useApi();
+  const contrepartie = reservation.contrepartie;
+
+  const publiee = usePhotoDeLaPublication(
+    contrepartie?.proof_id ?? null,
+    contrepartie?.post_a_une_image ?? false,
+  );
+  // Le repli est nommé : la photo du service n'est pas la publication, elle en
+  // tient lieu quand rien n'a été archivé. Même règle que sur le profil.
+  const image = publiee ?? api.urlDeLaVignette(reservation.item_photo_key);
+  const lien = contrepartie?.post_url ?? null;
+
+  if (!contrepartie || (!image && !lien)) return null;
+
+  const vignette = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <View
+        style={{
+          width: VIGNETTE_PUBLIEE,
+          height: VIGNETTE_PUBLIEE,
+          borderRadius: radius['radius.photo'],
+          overflow: 'hidden',
+          backgroundColor: c['media.placeholder'],
+        }}
+      >
+        <Photo
+          uri={image}
+          hauteur={VIGNETTE_PUBLIEE}
+          style={{ width: VIGNETTE_PUBLIEE }}
+          testID={`publie-${reservation.booking_id}-image`}
+          replit={
+            <MediaFallback monogramme={reservation.business_name} height={VIGNETTE_PUBLIEE} />
+          }
+        />
+      </View>
+      <Texte variante="type.body" couleur="ink.soft" style={{ flex: 1, minWidth: 0 }}>
+        {t(lien ? 'parcours.publieeOuvrir' : 'parcours.publiee')}
+      </Texte>
+      {/* Le glyphe de sortie dit que la ligne quitte le produit. Sans lui, une
+          ligne pressable au milieu d'une carte qui ne l'est pas se distingue
+          mal. */}
+      {lien ? <Icone nom="sortie" couleur="ink.soft" taille={16} /> : null}
+    </View>
+  );
+
+  if (!lien) return <View testID={`publie-${reservation.booking_id}`}>{vignette}</View>;
+
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={t('profil.publicationOuvrir', { prestation: reservation.item_name })}
+      onPress={() => void Linking.openURL(lien)}
+      testID={`publie-${reservation.booking_id}`}
+      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+    >
+      {vignette}
     </Pressable>
   );
 }

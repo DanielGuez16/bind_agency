@@ -61,6 +61,7 @@ from app.models.enums import (
 from app.services import availability, directory, eligibility, support
 from app.services.audit import AuditedEntity
 from app.services.booking_states import fin_de_l_annulation_libre, ouverture_de_l_absence
+from app.services.collaboration import ATTENDENT_LA_CREATRICE
 
 #: Une page d'historique. Au-delà, l'app pagine par `avant`.
 PAGE_PAR_DEFAUT = 50
@@ -193,6 +194,19 @@ class HistoriqueDuCreateur:
     #: trois ment dès la seconde. Les statuts sans réservation valent zéro et
     #: sont présents dans la clé : l'app n'a pas à connaître la liste.
     compteurs: dict[BookingStatus, int]
+    #: Combien de dossiers attendent **un geste de la créatrice**.
+    #:
+    #: **Servi, et non déduit d'un compteur de statuts.** Le badge de l'onglet
+    #: « à envoyer » sommait `compteurs['consumed']`, ce qui répondait à une
+    #: autre question : une publication soumise et en cours de contrôle est
+    #: `consumed` elle aussi, et elle n'attend personne de ce côté. Le badge
+    #: réclamait donc une action pour des dossiers où la créatrice ne peut rien
+    #: faire — et un chiffre qui demande sans qu'on puisse répondre finit par
+    #: ne plus rien demander du tout.
+    #:
+    #: Deux états seulement le nourrissent : le dossier jamais soumis, et celui
+    #: qu'on a renvoyé corriger.
+    a_envoyer: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -537,6 +551,20 @@ async def historique_du_createur(
     ):
         compteurs[status] = nombre
 
+    # **Ce qui attend un geste, et non ce qui est consommé.** Voir
+    # `HistoriqueDuCreateur.a_envoyer` : les deux se confondaient, et le badge
+    # comptait des dossiers en contrôle sur lesquels personne ne peut agir.
+    a_envoyer = (
+        await session.scalar(
+            sa.select(sa.func.count(Collaboration.id))
+            .join(Booking, Booking.id == Collaboration.booking_id)
+            .where(
+                Booking.creator_id == creator_id,
+                Collaboration.status.in_(ATTENDENT_LA_CREATRICE),
+            )
+        )
+    ) or 0
+
     return HistoriqueDuCreateur(
         items=tuple(
             ReservationDuCreateur(
@@ -570,6 +598,7 @@ async def historique_du_createur(
             for ligne in lignes
         ),
         compteurs=compteurs,
+        a_envoyer=a_envoyer,
     )
 
 

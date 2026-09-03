@@ -32,7 +32,16 @@ export type BookingStatus =
   /** La créatrice a confirmé, le salon n'a pas encore tranché. */
   | 'awaiting_business'
   | 'confirmed'
+  /** Servie, et la publication est encore due. */
   | 'consumed'
+  /**
+   * L'échange est clos des deux côtés : servie, et la contrepartie tranchée.
+   *
+   * **Il ne dit pas laquelle des trois issues** — honorée, non honorée, fermée
+   * sans faute. Celle-là est portée par `contrepartie.status`, qui est le seul
+   * objet à la connaître.
+   */
+  | 'closed'
   | 'cancelled'
   | 'no_show'
   | 'expired';
@@ -846,6 +855,17 @@ export type HistoriqueDuCreateur = {
   items: ReservationDuCreateur[];
   /** Tous les statuts, à zéro s'il le faut, calculés sur tout l'historique. */
   compteurs: Record<BookingStatus, number>;
+  /**
+   * Le badge de l'onglet « à envoyer » : **ce qui attend un geste de la
+   * créatrice**, et rien d'autre.
+   *
+   * **Servi, et non sommé depuis `compteurs`.** L'écran additionnait les
+   * statuts de l'onglet, ce qui répondait à une autre question : une
+   * publication soumise et en cours de contrôle est `consumed` elle aussi, et
+   * n'attend personne de ce côté. Le badge réclamait donc une action sur des
+   * dossiers où elle ne peut rien faire.
+   */
+  a_envoyer: number;
 };
 
 /**
