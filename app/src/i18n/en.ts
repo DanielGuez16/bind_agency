@@ -1246,6 +1246,15 @@ export const en = {
     notificationsTitre: 'Notifications',
     notificationsSurCetAppareil: 'Notify me on this device',
     notificationsPortee: 'This only covers the device you are holding. To stop a lost phone, sign out of it. We cannot list your devices from here yet.',
+    // **Une phrase par issue réelle, et l'interrupteur revient en arrière.**
+    // Il se posait sur « activé » quel que soit le résultat : sur le web, où
+    // aucun jeton n'est obtenable, il annonçait des notifications que rien
+    // n'avait enregistrées.
+    notificationsEchecRefusee:
+      'Your device refused notifications. Turn them on for BIND in your system settings, then try again.',
+    notificationsEchecIndisponible:
+      'This browser cannot receive BIND notifications yet. Nothing was turned on, and there is nothing to change in your settings.',
+    notificationsEchecEnvoi: 'We could not register this device. Try again in a moment.',
     langue: 'Language',
     langueEn: 'English',
     langueEs: 'Español',

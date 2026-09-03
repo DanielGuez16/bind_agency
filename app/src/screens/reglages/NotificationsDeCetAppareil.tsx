@@ -25,7 +25,26 @@ import {
   noterLeRefus,
   refuseesSurCetAppareil,
 } from '../../shell/notificationsDeCetAppareil';
+import { pushDisponible } from '../../shell/pushDisponible';
+import type { IssueDuJeton } from '../../shell/useNotificationsPush';
 import { enregistrerCeTerminal, jetonDeCetAppareil } from '../../shell/useNotificationsPush';
+
+/**
+ * Ce qu'on dit de chaque issue qui n'a rien enregistré.
+ *
+ * Dérivée d'`IssueDuJeton` plutôt qu'écrite à côté : une issue ajoutée au hook
+ * sans sa phrase ne compilerait pas, là où un `Record<string, string>` l'aurait
+ * laissée passer et rendu un interrupteur muet.
+ */
+const MESSAGE_DE_L_ECHEC: Record<Exclude<IssueDuJeton['issue'], 'enregistre'>, string> = {
+  refusee: 'reglages.notificationsEchecRefusee',
+  indisponible: 'reglages.notificationsEchecIndisponible',
+  // **Ne devrait pas arriver** — on vient d'effacer le refus local — mais le
+  // type l'inclut, et une panne d'écriture du stockage le rendrait possible.
+  // « Réessayez » est alors la seule phrase honnête.
+  'refusee-ici': 'reglages.notificationsEchecEnvoi',
+  echec: 'reglages.notificationsEchecEnvoi',
+};
 
 export function NotificationsDeCetAppareil() {
   const { api, messageDErreur } = useApi();
@@ -33,6 +52,18 @@ export function NotificationsDeCetAppareil() {
   const [refusees, setRefusees] = useState<boolean | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
+
+  /**
+   * **Le plus profond des deux mensonges de cet écran.** L'interrupteur se
+   * dessinait sur `!refusees` seul : sans rien en mémoire — le cas de tout
+   * navigateur, où rien n'a jamais pu s'enregistrer — il s'affichait donc
+   * « activé » dès le premier rendu, avant qu'on y touche. Il annonçait des
+   * notifications qu'aucun jeton ne pouvait porter.
+   *
+   * Une plateforme qui ne peut pas rendre de jeton n'a pas de réglage à
+   * offrir : l'interrupteur est éteint, inerte, et la phrase dit pourquoi.
+   */
+  const disponible = pushDisponible();
 
   useEffect(() => {
     let vivant = true;
@@ -59,11 +90,29 @@ export function NotificationsDeCetAppareil() {
         const jeton = await jetonDeCetAppareil();
         if (jeton) await api.revoquerUnTerminal(jeton);
         await noterLeRefus(true);
-      } else {
-        await noterLeRefus(false);
-        await enregistrerCeTerminal(api);
+        setRefusees(true);
+        return;
       }
-      setRefusees(couper);
+
+      // **L'interrupteur suit l'issue réelle, jamais le geste.** Il se posait
+      // sur « activé » sans lire ce que `enregistrerCeTerminal` avait rendu :
+      // sur le web, où aucun jeton n'est obtenable, il annonçait des
+      // notifications que rien n'avait enregistrées. Un interrupteur qui dit
+      // le contraire de l'état est pire qu'un interrupteur absent — celui qui
+      // le lit cesse de vérifier.
+      await noterLeRefus(false);
+      const issue = await enregistrerCeTerminal(api);
+      if (issue.issue === 'enregistre') {
+        setRefusees(false);
+        return;
+      }
+
+      // Rien n'est enregistré : on remet la mémoire comme on l'a trouvée,
+      // sans quoi le prochain lancement croirait à un refus local — celui de
+      // l'écran — là où c'est le système ou la plateforme qui a dit non.
+      await noterLeRefus(true);
+      setRefusees(true);
+      setEchec(t(MESSAGE_DE_L_ECHEC[issue.issue]));
     } catch (erreur) {
       setEchec(messageDErreur(erreur));
     } finally {
@@ -82,10 +131,10 @@ export function NotificationsDeCetAppareil() {
           {t('reglages.notificationsSurCetAppareil')}
         </Texte>
         <Toggle
-          value={!refusees}
+          value={disponible && !refusees}
           onChange={(actives: boolean) => void basculer(!actives)}
           accessibilityLabel={t('reglages.notificationsSurCetAppareil')}
-          disabled={envoi}
+          disabled={envoi || !disponible}
           testID="notifications-actives"
         />
       </View>
@@ -96,6 +145,18 @@ export function NotificationsDeCetAppareil() {
       <Texte variante="type.caption" couleur="ink.soft" testID="notifications-portee">
         {t('reglages.notificationsPortee')}
       </Texte>
+
+      {/* **La raison de l'inertie, dite sans qu'on ait à appuyer.** Un
+          interrupteur éteint et bloqué sans explication se lit comme une
+          panne ; ici ce n'en est pas une, et rien dans les réglages du
+          téléphone n'y changerait quoi que ce soit. */}
+      {!disponible ? (
+        <StatusMessage
+          level="neutral"
+          body={t('reglages.notificationsEchecIndisponible')}
+          testID="notifications-indisponibles"
+        />
+      ) : null}
 
       {echec ? <StatusMessage level="danger" body={echec} testID="echec-notifications" /> : null}
     </View>
