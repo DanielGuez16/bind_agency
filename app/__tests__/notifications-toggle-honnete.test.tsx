@@ -95,7 +95,7 @@ describe('sur un appareil où l’enregistrement peut aboutir', () => {
     const bouton = await screen.findByTestId('notifications-actives');
     await waitFor(() => expect(bouton.props.accessibilityState.checked).toBe(false));
 
-    fireEvent.press(bouton);
+    await fireEvent.press(bouton);
 
     await waitFor(() =>
       expect(
@@ -116,7 +116,7 @@ describe('sur un appareil où l’enregistrement peut aboutir', () => {
     await monter(ok);
 
     const bouton = await screen.findByTestId('notifications-actives');
-    fireEvent.press(bouton);
+    await fireEvent.press(bouton);
 
     await waitFor(() => expect(screen.getByTestId('echec-notifications')).toBeTruthy());
     expect(
