@@ -587,7 +587,9 @@ describe('le titre est la prestation, et le format ouvre la carte', () => {
     await monter([EN_COURS('resubmit_requested')]);
 
     const carte = await screen.findByTestId('reservation-r-verbe');
-    expect(within(carte).getByText('Gel manicure')).toBeTruthy();
+    // La durée rejoint le nom sur cette même ligne depuis R2.6 — le titre
+    // reste la prestation, il porte juste un second fait désormais.
+    expect(within(carte).getByText('Gel manicure · 45 min')).toBeTruthy();
     expect(within(carte).queryByTestId('verbe-r-verbe')).toBeNull();
     // Le format ouvre la carte, et c'est lui qui dit ce qu'on doit rendre.
     expect(within(carte).getByTestId('palier-r-verbe')).toHaveTextContent(/story/i);
