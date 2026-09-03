@@ -64,6 +64,20 @@ logger = logging.getLogger(__name__)
 #: n'en fait pas partie : le créateur a répondu, c'est à nous de contrôler.
 EXPIRABLES = (CollaborationStatus.PENDING, CollaborationStatus.RESUBMIT_REQUESTED)
 
+#: Les dossiers qui attendent **un geste de la créatrice**, et eux seuls.
+#:
+#: `submitted` et `under_review` n'en font pas partie : elle a envoyé, c'est au
+#: salon de regarder. Les confondre est ce qui faisait réclamer une action au
+#: badge des réservations pour des dossiers où elle ne peut rien faire.
+#:
+#: Le même partage que `EXPIRABLES`, et ce n'est pas un hasard : un dossier ne
+#: tombe à l'échéance que s'il attendait quelque chose d'elle. Les deux listes
+#: restent distinctes parce qu'elles répondent à deux questions — ce qui expire,
+#: ce qui se compte — et rien ne garantit qu'elles resteront égales.
+ATTENDENT_LA_CREATRICE = frozenset(
+    {CollaborationStatus.PENDING, CollaborationStatus.RESUBMIT_REQUESTED}
+)
+
 #: Transitions autorisées, comparées au diagramme de `SPEC.md` §4.2.
 TRANSITIONS: dict[CollaborationStatus, frozenset[CollaborationStatus]] = {
     CollaborationStatus.PENDING: frozenset(
@@ -242,7 +256,70 @@ async def transitionner(
     )
     await _emettre_les_evenements(session, collaboration=collaboration, vers=vers)
     await _prevenir_le_createur(session, collaboration=collaboration, vers=vers)
+    await _clore_la_reservation(session, collaboration=collaboration, vers=vers, actor=actor)
     return collaboration
+
+
+#: Les trois façons dont un dossier de publication se termine.
+#:
+#: Déclaré plutôt que répété en `or` : une quatrième issue ajoutée demain se
+#: voit ici, et non trois mois plus tard sur une réservation restée « à
+#: envoyer ». C'est la même raison qui fait exister `EVENEMENTS_PAR_ISSUE`.
+ISSUES_TERMINALES = frozenset(
+    {
+        CollaborationStatus.APPROVED,
+        CollaborationStatus.UNFULFILLED,
+        CollaborationStatus.CLOSED_NO_FAULT,
+    }
+)
+
+#: Ce que le journal de la réservation écrit, selon l'issue qui l'a fermée.
+#:
+#: Un dictionnaire plutôt qu'une chaîne unique : « contrepartie tranchée » ne
+#: distingue pas une publication acceptée d'un dossier tombé à l'échéance, et
+#: c'est exactement la question qu'on pose au journal quand on l'ouvre.
+CAUSES_DE_CLOTURE = {
+    CollaborationStatus.APPROVED: "contrepartie approuvée",
+    CollaborationStatus.UNFULFILLED: "contrepartie non honorée",
+    CollaborationStatus.CLOSED_NO_FAULT: "contrepartie fermée sans faute",
+}
+
+
+async def _clore_la_reservation(
+    session: AsyncSession,
+    *,
+    collaboration: Collaboration,
+    vers: CollaborationStatus,
+    actor: audit.Actor,
+) -> None:
+    """La réservation suit sa contrepartie jusqu'au bout.
+
+    **Ici et pas dans les appelants.** Trois routes ferment un dossier — le
+    salon qui approuve, la boucle d'échéance, l'arbitre — et une quatrième
+    viendra. Posée sur la transition, la clôture les couvre toutes, comme le
+    code de retrait est posé sur l'arrivée en `confirmed` et non sur chacune
+    des deux portes qui y mènent.
+
+    **L'import est différé, et c'est un cycle réel** : `booking_states` importe
+    ce module pour créer la contrepartie à la consommation. Les deux services
+    se tiennent par les deux bouts du même échange, ce qui est le dessin voulu ;
+    seul l'ordre de chargement des modules s'y oppose.
+    """
+    if vers not in ISSUES_TERMINALES:
+        return
+
+    from app.services import booking_states
+
+    booking = await session.get(Booking, collaboration.booking_id)
+    if booking is None:  # pragma: no cover - la clé étrangère l'interdit
+        return
+
+    # L'acteur est celui de la transition de contrepartie : le journal d'audit
+    # de la réservation doit porter qui l'a réellement fermée — le salon qui
+    # approuve, l'arbitre, ou la boucle d'échéance.
+    await booking_states.clore(
+        session, booking=booking, actor=actor, reason=CAUSES_DE_CLOTURE[vers]
+    )
 
 
 #: Ce que chaque issue produit comme événements de fiabilité. Déclaré plutôt que

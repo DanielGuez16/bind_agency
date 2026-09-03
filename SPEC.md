@@ -201,7 +201,7 @@ Les horaires sont des **heures locales du commerce**, pas des instants. Ils sont
 Fermetures exceptionnelles et ajustements ponctuels.
 
 **booking**
-`id, creator_id, business_id, tier_offer_id, catalog_item_id, social_account_id, starts_at (UTC, nullable), ends_at (UTC, nullable), valid_until (UTC), status (held | confirmed | consumed | cancelled | no_show | expired), hold_expires_at, value_cents_snapshot, cancelled_at, consumed_at, created_at`
+`id, creator_id, business_id, tier_offer_id, catalog_item_id, social_account_id, starts_at (UTC, nullable), ends_at (UTC, nullable), valid_until (UTC), status (held | awaiting_business | confirmed | consumed | closed | cancelled | no_show | expired), hold_expires_at, value_cents_snapshot, cancelled_at, consumed_at, created_at`
 
 Pour un item sans réservation, `starts_at` et `ends_at` restent nuls, seul `valid_until` s'applique : le créateur se présente quand il veut avant l'échéance. La capacité n'est pas consultée et l'état `no_show` n'existe pas dans ce cas, l'expiration suffit.
 
@@ -296,7 +296,7 @@ pour une date et un item de durée D :
      libre si count(réservations) < concurrent_slots
 ```
 
-Statuts comptant comme occupants : `held`, `confirmed`, `consumed`.
+Statuts comptant comme occupants : `held`, `awaiting_business`, `confirmed`, `consumed`, `closed`.
 
 ### 3.5 Concurrence
 
@@ -325,7 +325,7 @@ held ──┬─confirmation créateur, commerce en automatique────> co
                                      ├──annulation créateur, sans délai──> cancelled
                                      └──sans réponse dans le délai─────> expired
 
-confirmed ──scan du code──> consumed
+confirmed ──scan du code──> consumed ──contrepartie tranchée──> closed
  │
  ├──annulation créateur > 24h avant──> cancelled
  ├──annulation créateur < 24h──> cancelled, avec un événement `cancelled_late`
@@ -336,6 +336,14 @@ held ──délai de garde dépassé──> expired
 ```
 
 `consumed` est le seul état qui crée la `collaboration` et démarre le délai de publication.
+
+**`consumed` dit « servie », pas « terminée ».** L'échange court tant que la publication est due, et il sort par `closed` dès que la contrepartie atteint l'une de ses trois issues — `approved`, `unfulfilled`, `closed_no_fault`. Sans cette flèche, une réservation servie gardait le même statut qu'elle ait été honorée ou jamais rendue : le compteur « à envoyer » de la créatrice grossissait sans jamais redescendre, et une prestation publiée et acceptée n'atteignait jamais l'onglet des terminées.
+
+**`closed` ne dit pas laquelle des trois issues**, et c'est délibéré : celle-là est portée par la contrepartie, seul objet à la connaître. La recopier sur la réservation ferait deux sources pour un même fait, et deux sources finissent par diverger.
+
+**Aucune flèche de `consumed` ni de `closed` vers `no_show`.** Une place servie ne peut pas devenir une absence : l'événement de fiabilité négatif frapperait une créatrice qui s'est présentée et qu'on a servie.
+
+Statuts comptant comme **prestation livrée** — reporting, valeur offerte, popularité d'un quartier : `consumed` **et** `closed`. Les confondre avec le seul `consumed` ferait fondre ce qu'un salon croit avoir donné au fur et à mesure que ses dossiers se ferment.
 `no_show` génère un `reliability_event` négatif.
 
 **Une annulation tardive coûte moins qu'une absence, et c'est ce qui incite à prévenir.** Les deux coûtaient le même prix, donc rien ne poussait à prévenir plutôt qu'à disparaître — or un salon prévenu à onze heures remplit son créneau de quatorze heures trente, celui qui l'apprend à quatorze heures quarante-cinq a perdu son après-midi. Le dossier arrive donc en `cancelled` — elle a annulé, pas disparu, et l'écran du commerce doit lire ce qui s'est passé — et c'est un troisième événement de fiabilité, `cancelled_late`, qui porte la différence. Son poids est en configuration comme les autres ; l'écart avec celui de l'absence est l'incitation, et le réduire l'affaiblit. **Mais c'est une faute légère, pas une demi-absence** : le poids doit laisser de la marge sous le score de base, sans quoi une créatrice qui a prévenu perd le haut de l'échelle — l'exact contraire de ce que cet événement existe pour faire.

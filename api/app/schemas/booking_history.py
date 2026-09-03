@@ -114,6 +114,10 @@ class HistoriqueDuCreateurRead(BaseModel):
     #: Tous les statuts sont présents, à zéro s'il le faut : l'app affiche ses
     #: onglets sans connaître la liste, et un onglet vide reste un onglet.
     compteurs: dict[BookingStatus, int]
+    #: Le badge de l'onglet « à envoyer » : ce qui attend un geste de la
+    #: créatrice, et rien d'autre. Voir le service — un dossier en contrôle est
+    #: `consumed` lui aussi, et n'attend personne de ce côté.
+    a_envoyer: int
 
 
 class CompteDeLaCreatriceRead(BaseModel):

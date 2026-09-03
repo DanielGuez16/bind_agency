@@ -24,6 +24,7 @@ from app.core.config import API_ROOT, get_settings
 from app.models import AuditLog, Collaboration, Proof, TierOffer
 from app.models.enums import (
     ActorKind,
+    BookingStatus,
     CaptureMethod,
     CollaborationStatus,
     Locale,
@@ -843,3 +844,112 @@ async def test_soumettre_ne_consomme_aucune_tentative(session: AsyncSession) -> 
         reason="insufficient_content",
     )
     assert ligne.attempts_count == 1
+
+
+# --------------------------------------------------------------------------
+# La clôture de l'échange : la réservation suit sa contrepartie jusqu'au bout
+# --------------------------------------------------------------------------
+
+
+class TestLaReservationSeFermeAvecSaContrepartie:
+    """`consumed` disait « servie » et « terminée » à la fois, et les deux
+    divergent : tant que la publication est due, l'échange court.
+
+    **Les trois issues, une par test, et c'est le point.** Un seul cas —
+    l'approbation — laisserait passer l'implémentation qui ne ferme que sur le
+    succès : c'est la plus tentante, et c'est celle qui laisse les dossiers non
+    honorés grossir le compteur pour toujours. Les trois divergent sur elle.
+    """
+
+    async def test_une_publication_approuvee_ferme_la_reservation(
+        self, session: AsyncSession
+    ) -> None:
+        ligne, s = await contrepartie(session)
+        await proof_service.soumettre(
+            session, collaboration=ligne, capture=capture(), actor=Actor.from_user(s["createur"])
+        )
+        assert s["booking"].status is BookingStatus.CONSUMED
+
+        await service.approuver(session, collaboration=ligne, actor=Actor.from_user(s["caissier"]))
+
+        assert s["booking"].status is BookingStatus.CLOSED
+
+    async def test_un_dossier_non_honore_ferme_la_reservation(self, session: AsyncSession) -> None:
+        """**L'issue malheureuse ferme aussi.** Ne fermer que sur l'approbation
+        laisserait « à envoyer » réclamer un geste sur un dossier que plus rien
+        ne peut rattraper — c'est-à-dire précisément le chiffre qui ne
+        redescend jamais."""
+        ligne, s = await contrepartie(session)
+        await proof_service.soumettre(
+            session, collaboration=ligne, capture=capture(), actor=Actor.from_user(s["createur"])
+        )
+
+        await service.constater_non_honoree(
+            session,
+            collaboration=ligne,
+            actor=Actor.system(),
+            reason="échéance dépassée",
+        )
+
+        assert s["booking"].status is BookingStatus.CLOSED
+
+    async def test_un_dossier_ferme_sans_faute_ferme_la_reservation(
+        self, session: AsyncSession
+    ) -> None:
+        ligne, s = await contrepartie(session)
+        await proof_service.soumettre(
+            session, collaboration=ligne, capture=capture(), actor=Actor.from_user(s["createur"])
+        )
+
+        await service.fermer_sans_faute(
+            session,
+            collaboration=ligne,
+            actor=Actor.system(),
+            reason="exigence mal formulée",
+        )
+
+        assert s["booking"].status is BookingStatus.CLOSED
+
+    async def test_un_dossier_encore_ouvert_ne_ferme_rien(self, session: AsyncSession) -> None:
+        """**Le cas divergent, et il fallait l'écrire en premier.** Une
+        implémentation qui fermerait à chaque transition — plutôt qu'aux trois
+        terminales — passerait les trois tests ci-dessus sans faute. Elle tombe
+        ici : une reprise demandée rouvre le dossier, et la réservation doit
+        rester exactement là où la créatrice la cherche."""
+        ligne, s = await contrepartie(session)
+        await proof_service.soumettre(
+            session, collaboration=ligne, capture=capture(), actor=Actor.from_user(s["createur"])
+        )
+
+        await service.demander_une_nouvelle_soumission(
+            session,
+            collaboration=ligne,
+            actor=Actor.from_user(s["caissier"]),
+            reason="non conforme",
+        )
+
+        assert ligne.status is CollaborationStatus.RESUBMIT_REQUESTED
+        assert s["booking"].status is BookingStatus.CONSUMED
+
+    async def test_la_cloture_dit_pourquoi_dans_le_journal(self, session: AsyncSession) -> None:
+        """Une transition posée par la boucle d'échéance sans sa cause est
+        indéfendable trois mois plus tard, et le journal la refuse. Ce test
+        vérifie qu'elle est **écrite**, pas seulement acceptée."""
+        ligne, s = await contrepartie(session)
+        await proof_service.soumettre(
+            session, collaboration=ligne, capture=capture(), actor=Actor.from_user(s["createur"])
+        )
+        await service.approuver(session, collaboration=ligne, actor=Actor.from_user(s["caissier"]))
+
+        motif = await session.scalar(
+            sa.select(AuditLog.reason).where(
+                AuditLog.entity_id == s["booking"].id,
+                AuditLog.to_status == BookingStatus.CLOSED.value,
+            )
+        )
+        assert motif == "contrepartie approuvée"
+
+    def test_chaque_issue_terminale_a_sa_cause(self) -> None:
+        """Une quatrième issue ajoutée sans sa cause lèverait un `KeyError` au
+        premier dossier fermé — c'est-à-dire en production."""
+        assert set(service.CAUSES_DE_CLOTURE) == set(service.ISSUES_TERMINALES)
