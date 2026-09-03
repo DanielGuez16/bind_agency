@@ -22,6 +22,15 @@ et levait donc à chaque appel — l'écran ne s'est jamais affiché. La sous-re
 est celle d'`eligibility`, partagée par trois autres lectures : deux façons de
 dire « le dernier relevé » finiraient par donner deux chiffres différents pour
 la même créatrice sur deux écrans.
+
+**Le palier accessible et son compte, malgré leur coût.** Évaluer chaque
+créatrice contre tous les paliers actifs coûtait trois requêtes **par
+créatrice** avec `evaluer_createur` : cent lignes en auraient demandé trois
+cents, et l'écran n'aurait jamais fini de charger. `evaluer_createurs` fait le
+même calcul, sur le même ensemble de paliers lu une seule fois, en trois
+requêtes pour toute la population — quatre au total avec la liste elle-même.
+Le prix reste assumé : c'est ce qui rend `tier` et `peut_reserver` vrais plutôt
+qu'estimés.
 """
 
 import uuid
@@ -38,10 +47,11 @@ from app.models.enums import SocialAccountStatus, UserRole, UserStatus
 from app.schemas.creator_admin import (
     AnnuaireAdminRead,
     CreateurAdminRead,
+    PalierAccessibleRead,
     ReseauDuCreateurRead,
 )
 from app.services import eligibility
-from app.services.directory import lien_public
+from app.services.directory import ORDRE_DES_FORMATS, lien_public
 
 router = APIRouter(
     prefix="/admin/creators",
@@ -136,15 +146,25 @@ async def list_creators(
 
     lignes = list(groupes.values())
 
-    # **Les quatre nombres portent sur la recherche, pas sur la population.**
-    # Un chiffre qui ne bougerait pas en tapant ne dirait rien de ce qu'on
-    # cherche — c'est l'arbitrage rendu sur l'annuaire des salons. Sans
+    # **Sur `lignes`, pas sur la page.** `peut_reserver` décrit la même
+    # population que les quatre autres nombres de tête — la recherche entière,
+    # pas les cent lignes que le plafond laisse passer. Un total qui bouge sans
+    # que ce compte bouge ferait douter du chiffre qui ment.
+    eligibilites = await eligibility.evaluer_createurs(
+        session, (ligne["creator_id"] for ligne in lignes)
+    )
+    for ligne in lignes:
+        ligne["tier"] = _meilleur_palier(eligibilites[ligne["creator_id"]])
+
+    # **Les quatre premiers nombres portent sur la recherche, pas sur la
+    # population.** Un chiffre qui ne bougerait pas en tapant ne dirait rien de
+    # ce qu'on cherche — c'est l'arbitrage rendu sur l'annuaire des salons. Sans
     # recherche, la recherche courante *est* la population, qui est le cas que
     # la tête décrit.
     #
     # Ils se comptent sur `lignes` et non par des requêtes séparées : la
-    # jointure et le filtre sont déjà faits, et les refaire en trois requêtes
-    # ferait trois occasions de diverger du contenu affiché.
+    # jointure et le filtre sont déjà faits, et les refaire en requêtes à part
+    # ferait autant d'occasions de diverger du contenu affiché.
     scores = [
         ligne["reliability_score"] for ligne in lignes if ligne["reliability_score"] is not None
     ]
@@ -160,6 +180,26 @@ async def list_creators(
         ),
         fiabilite_mediane=_mediane(scores),
         createurs_avec_score=len(scores),
+        peut_reserver=sum(1 for ligne in lignes if ligne["tier"] is not None),
+    )
+
+
+def _meilleur_palier(eligibilite: eligibility.Eligibilite) -> PalierAccessibleRead | None:
+    """Le plus exigeant des paliers accessibles, n'importe où.
+
+    **Le même choix que l'annuaire du commerce fait pour « ici ».** Un seul
+    palier tient sur une ligne de tableau ; la liste complète en dirait plus
+    qu'une colonne ne peut lire, et ce n'est pas la question de cet écran —
+    savoir *qui peut réserver*, pas *tout ce qu'elle ouvre*.
+    """
+    accessibles = [acces for acces in eligibilite.acces if acces.accessible]
+    if not accessibles:
+        return None
+    meilleur = max(accessibles, key=lambda acces: ORDRE_DES_FORMATS.index(acces.content_format))
+    return PalierAccessibleRead(
+        tier_id=meilleur.tier_id,
+        platform=meilleur.platform,
+        content_format=meilleur.content_format,
     )
 
 
