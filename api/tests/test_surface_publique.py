@@ -59,6 +59,10 @@ PUBLIQUES: dict[tuple[str, str], str] = {
         "les photos publiques des salons, servies à une balise d'image, "
         "laquelle ne porte pas d'en-tête d'autorisation"
     ),
+    ("GET", "/api/v1/assets/{nom}"): (
+        "le logo des emails, servi à une balise <img> dans un client de "
+        "messagerie, qui ne porte pas non plus d'en-tête d'autorisation"
+    ),
     ("GET", "/r/{slug}"): (
         "la redirection d'un lien de story : le visiteur qui clique n'a pas de "
         "compte BIND et n'en aura jamais"

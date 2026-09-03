@@ -73,6 +73,10 @@ HORS_CARTE = {
         "servie à une balise d'image et non appelée : les écrans manipulent des"
         " clés, et la convention est décrite dans les conventions de la carte"
     ),
+    "/api/v1/assets/{nom}": (
+        "le logo des emails, servi à une balise <img> de gabarit HTML — jamais"
+        " lue ni appelée par un écran de l'app"
+    ),
     "/api/v1/proofs/{proof_id}": (
         "idem : l'écran demande un droit de lecture, puis pose l'adresse rendue dans une balise"
     ),
