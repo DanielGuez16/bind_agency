@@ -128,11 +128,18 @@ services:
     region: oregon
     rootDir: api
     dockerfilePath: ./Dockerfile
-    dockerCommand: python -m app.workers boucle
     branch: main
     autoDeployTrigger: commit
 
     envVars:
+      # **Ce qui fait de ce service un worker.** L'image décide sur cette
+      # variable plutôt que sur une commande passée au conteneur : une surcharge
+      # de commande vit dans le tableau de bord, pas dans l'image, et un service
+      # créé à la main n'en a aucune. Elle se copie avec les autres variables,
+      # ce qu'on fait déjà.
+      - key: SERVICE_ROLE
+        value: worker
+
       - key: ENVIRONMENT
         value: demo
 
