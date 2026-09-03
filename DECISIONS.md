@@ -10991,3 +10991,24 @@ lue parce que personne ne lisait ce champ.
 Même famille que les cinq jetons inexistants de `components.md` : **un document
 juste que rien ne confronte au produit cesse d'être juste.** Ici il l'était
 depuis le début ; c'est le lecteur qui n'en lisait qu'un quart.
+
+## 2026-09-03 — Un dossier converti, pas ajouté, pour ne pas pousser un score au plancher
+
+**Le seed ne démontrait jamais « fermer sans faute ».** Les quatre dossiers
+`revue_humaine` du jeu opposent tous trois motifs différents — le décor du
+filtre « mixed reasons ». Aucun ne répète le même motif trois fois de suite,
+donc `meme_motif_repete` ne se levait jamais et le bouton vedette de
+l'arbitrage n'avait rien à ouvrir, même après un reseed.
+
+Premier réflexe : ajouter une cinquième ligne dégradée à « plafonnée », la
+créatrice qui porte déjà toutes les autres. `recalculer_les_scores` l'a refusé
+— `demander_une_nouvelle_soumission` émet un `RESUBMIT_REQUIRED` à chaque
+passage, y compris sur une revue jamais tranchée, et le cinquième dossier
+faisait toucher le plancher que le garde-fou existe précisément pour éviter.
+
+La correction retenue **convertit** un des quatre dossiers `revue_humaine`
+existants (`weeks=1, days=2`, Brickell) en `revue_humaine_meme_motif` au lieu
+d'en ajouter un. Le nombre d'événements de fiabilité ne change pas — seul le
+motif répété diffère — donc le score reste celui déjà calibré. Trois dossiers
+« mixed reasons » restent pour démontrer l'autre branche du tri, dont le plus
+frais (deux jours) reste intact.
