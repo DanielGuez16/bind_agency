@@ -1549,6 +1549,46 @@ async def test_plusieurs_revues_humaines_attendent_l_arbitrage(
     assert len(revues) >= 3, f"une file d'arbitrage de {len(revues)} ne se compose pas"
 
 
+async def test_un_dossier_repete_le_meme_motif_trois_fois(seed_conn: AsyncConnection) -> None:
+    """« Fermer sans faute » ne se démontre que si un dossier lève `meme_motif_repete`.
+
+    Les autres revues humaines du jeu opposent trois motifs différents — le
+    décor du filtre « mixed reasons ». Sans un dossier à part où les trois
+    dernières demandes de nouvelle soumission portent **le même** motif, le
+    bouton vedette de l'arbitrage n'a jamais rien à ouvrir, même après un
+    reseed. Lu directement dans le journal d'audit — la même source que
+    `LigneDeFile.repetitions_du_dernier_motif` — et non recalculé ici.
+    """
+    dossiers = list(
+        await seed_conn.scalars(
+            sa.select(Collaboration.id).where(Collaboration.needs_human_review.is_(True))
+        )
+    )
+    assert dossiers, "aucun dossier en revue humaine — voir le test précédent"
+
+    for dossier_id in dossiers:
+        trois_derniers = (
+            (
+                await seed_conn.execute(
+                    sa.select(AuditLog.reason)
+                    .where(
+                        AuditLog.entity_type == "collaboration",
+                        AuditLog.entity_id == dossier_id,
+                        AuditLog.to_status == CollaborationStatus.RESUBMIT_REQUESTED.value,
+                    )
+                    .order_by(AuditLog.occurred_at.desc())
+                    .limit(3)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        if len(trois_derniers) == 3 and len(set(trois_derniers)) == 1:
+            return
+
+    pytest.fail("aucun dossier ne répète le même motif trois fois de suite")
+
+
 async def test_l_histoire_ne_s_entasse_pas_sur_un_seul_salon(
     seed_conn: AsyncConnection,
 ) -> None:

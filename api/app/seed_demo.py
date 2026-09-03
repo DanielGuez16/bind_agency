@@ -1050,7 +1050,16 @@ async def composer_les_parcours(session: AsyncSession, createurs: dict) -> tuple
         # parcours là où le produit l'autorise, et le dit.
         ("revue_humaine", timedelta(weeks=4, days=3), "plafonnee", BRICKELL),
         ("approuvee", timedelta(weeks=5), "confirmee", OCEAN),
-        ("revue_humaine", timedelta(weeks=1, days=2), "plafonnee", BRICKELL),
+        # **Le même motif trois fois, et non trois motifs différents.** Les
+        # autres revues de plafonnée opposent trois reproches distincts — le
+        # décor du filtre « mixed reasons ». Sans une ligne à part où les trois
+        # dernières demandes portent le même motif, `meme_motif_repete` ne se
+        # lève jamais et « fermer sans faute » — la quatrième issue, la seule
+        # qui n'accuse pas — n'est démontrable dans aucun reseed. Une
+        # conversion et non un ajout : `recalculer_les_scores` vérifie que
+        # plafonnée ne touche pas le plancher, et un cinquième dossier dégradé
+        # l'y aurait poussée.
+        ("revue_humaine_meme_motif", timedelta(weeks=1, days=2), "plafonnee", BRICKELL),
         ("approuvee", timedelta(weeks=3), "confirmee", BRICKELL),
         ("deuxieme_tentative", timedelta(weeks=2, days=1), "plafonnee", OCEAN),
         ("non_honoree", timedelta(weeks=6, days=2), "plafonnee", BRICKELL),
@@ -1695,15 +1704,26 @@ async def _mener(
         reason=MotifDeDecision.MENTION_MANQUANTE,
     )
 
-    if issue != "revue_humaine":
+    if issue not in ("revue_humaine", "revue_humaine_meme_motif"):
         return
 
     # Trois passages lèvent le drapeau de revue humaine. On refait le tour
     # complet plutôt que d'incrémenter le compteur : c'est le compteur qui doit
     # être la conséquence, pas la cause.
-    for rang, motif in enumerate(
-        (MotifDeDecision.LIEU_MANQUANT, MotifDeDecision.FORMAT_INATTENDU), start=2
-    ):
+    #
+    # **Le même motif trois fois, et non trois motifs différents.** C'est la
+    # seule combinaison qui lève `meme_motif_repete` — le drapeau que la file
+    # d'arbitrage lit pour proposer « fermer sans faute ». `revue_humaine`
+    # exerce l'autre branche du tri, celle où l'arbitre doit trancher entre
+    # trois reproches distincts ; sans `revue_humaine_meme_motif`, le bouton
+    # vedette de l'arbitrage n'était démontrable dans aucun jeu de données,
+    # même après un reseed.
+    motifs_suivants = (
+        (MotifDeDecision.MENTION_MANQUANTE, MotifDeDecision.MENTION_MANQUANTE)
+        if issue == "revue_humaine_meme_motif"
+        else (MotifDeDecision.LIEU_MANQUANT, MotifDeDecision.FORMAT_INATTENDU)
+    )
+    for rang, motif in enumerate(motifs_suivants, start=2):
         await session.refresh(contrepartie)
         await _soumettre(session, contrepartie, createur=createur, marque=str(rang))
         await session.refresh(contrepartie)
