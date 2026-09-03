@@ -799,6 +799,119 @@ async def _consommations_du_quartier(
     return {business_id: compte for business_id, compte in lignes.all()}
 
 
+@dataclass(frozen=True, slots=True)
+class SalonPopulaire:
+    business_id: uuid.UUID
+    nom: str
+    category: BusinessCategory
+    neighborhood: Neighborhood | None
+    prestations: int
+
+
+@dataclass(frozen=True, slots=True)
+class FilPopulaire:
+    salons: tuple[SalonPopulaire, ...]
+
+
+#: Combien de salons rendus sans position. Vingt : assez pour ne pas laisser un
+#: écran creux, assez peu pour rester une liste qu'on lit et non un annuaire.
+SALONS_POPULAIRES_MAX = 20
+
+
+async def fil_populaire_du_createur(
+    session: AsyncSession, *, creator_id: uuid.UUID
+) -> FilPopulaire:
+    """Le fil sans position — trié par popularité, jamais par une distance qui
+    n'existe pas.
+
+    **Un refus de géolocalisation n'est pas une raison de ne rien montrer.**
+    L'écran bloquait entièrement sur `position === null`, ce qui confond deux
+    choses : ne pas savoir où est la créatrice, et n'avoir rien à lui montrer.
+    La seconde est fausse tant qu'un palier lui est ouvert quelque part à
+    Miami — c'est vrai dans l'immense majorité des cas.
+
+    **Le même tamis que le fil géolocalisé, moins le rayon.** Paliers
+    accessibles, offre active, item disponible, parent disponible : les
+    mêmes quatre conditions que `fil_du_createur`. Seul le filtre de
+    distance disparaît — il n'a pas de sens sans position à comparer.
+
+    **La popularité est celle de la ville entière, pas d'un quartier.**
+    `_consommations_du_quartier` a besoin d'un quartier pour se poser la
+    question ; ici il n'y en a pas à choisir. Un salon jamais consommé se
+    classe à zéro et le tri retombe sur son nom — stable, jamais sur un
+    ordre d'insertion qui changerait à chaque relecture.
+    """
+    verdict = await eligibility.evaluer_createur(session, creator_id)
+    paliers_ouverts = verdict.paliers_accessibles
+    if not paliers_ouverts:
+        return FilPopulaire(salons=())
+
+    parent = sa.orm.aliased(CatalogItem)
+    lignes = (
+        await session.execute(
+            sa.select(
+                Business.id.label("business_id"),
+                Business.name.label("nom"),
+                Business.category,
+                Business.neighborhood,
+                CatalogItem.id.label("catalog_item_id"),
+            )
+            .join(TierOffer, TierOffer.business_id == Business.id)
+            .join(CatalogItem, CatalogItem.id == TierOffer.catalog_item_id)
+            .join(Tier, Tier.id == TierOffer.tier_id)
+            .outerjoin(parent, parent.id == CatalogItem.parent_item_id)
+            .where(
+                Business.status == BusinessStatus.ACTIVE,
+                TierOffer.is_active.is_(True),
+                Tier.is_active.is_(True),
+                Tier.id.in_(paliers_ouverts),
+                CatalogItem.is_available.is_(True),
+                CatalogItem.archived_at.is_(None),
+                sa.or_(parent.id.is_(None), parent.is_available.is_(True)),
+            )
+        )
+    ).all()
+
+    if not lignes:
+        return FilPopulaire(salons=())
+
+    populaires = await _consommations_citywide(session)
+
+    par_salon: dict[uuid.UUID, list] = {}
+    for ligne in lignes:
+        par_salon.setdefault(ligne.business_id, []).append(ligne)
+
+    salons = sorted(
+        (
+            SalonPopulaire(
+                business_id=identifiant,
+                nom=groupe[0].nom,
+                category=groupe[0].category,
+                neighborhood=groupe[0].neighborhood,
+                prestations=len(groupe),
+            )
+            for identifiant, groupe in par_salon.items()
+        ),
+        key=lambda s: (-populaires.get(s.business_id, 0), s.nom),
+    )
+
+    return FilPopulaire(salons=tuple(salons[:SALONS_POPULAIRES_MAX]))
+
+
+async def _consommations_citywide(session: AsyncSession) -> dict[uuid.UUID, int]:
+    """La même mesure que `_consommations_du_quartier`, sans le filtre de
+    quartier : sans position, il n'y en a pas à choisir."""
+    lignes = await session.execute(
+        sa.select(Booking.business_id, sa.func.count(Booking.id))
+        .where(
+            Booking.status == BookingStatus.CONSUMED,
+            Booking.consumed_at > sa.func.now() - FENETRE_DE_POPULARITE,
+        )
+        .group_by(Booking.business_id)
+    )
+    return {business_id: compte for business_id, compte in lignes.all()}
+
+
 def _compter_par_categorie(reservables: list, rayon: int) -> tuple[CompteParCategorie, ...]:
     """Ce que chaque catégorie rapporte dans le rayon courant.
 

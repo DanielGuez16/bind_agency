@@ -1032,3 +1032,45 @@ async def test_une_prestation_ouverte_a_deux_paliers_ne_compte_qu_une_fois(
     quartier = next((q for q in fil.quartiers if q.quartier == salon.neighborhood), None)
     if quartier is not None:
         assert quartier.prestations == 1
+
+
+# --------------------------------------------------------------------------
+# le fil sans position — trié par popularité
+# --------------------------------------------------------------------------
+
+
+async def test_le_fil_populaire_classe_par_consommations_et_ignore_la_distance(
+    session: AsyncSession,
+) -> None:
+    """**Le décor où les deux tris divergent.** Le salon le plus loin est celui
+    qui a servi une réservation ; s'il ressort en tête, le tri est bien la
+    popularité et non une distance qu'aucune position ne pourrait fournir.
+    """
+    proche = await commerce(session, longitude=-80.1301, latitude=25.7908)
+    loin = await commerce(session, longitude=-80.4000, latitude=26.1000)
+    await offre(session, proche)
+    await offre(session, loin)
+    await _consommer_une_reservation(session, loin)
+
+    user, _ = await createur(session, followers=60_000)
+    resultat = await service.fil_populaire_du_createur(session, creator_id=user.id)
+
+    assert [s.business_id for s in resultat.salons][:2] == [loin.id, proche.id]
+
+
+async def test_le_fil_populaire_respecte_les_paliers_comme_le_fil_geolocalise(
+    session: AsyncSession,
+) -> None:
+    """**Le même décor que `test_un_palier_inaccessible_n_apparait_pas`.** Le
+    seul commerce du jeu n'offre qu'au palier reel ; à 3 100 abonnés, au-dessus
+    du story mais en dessous du reel, la créatrice ne l'atteint pas. Un salon
+    qui n'apparaît que grâce à un palier fermé serait une invite à réserver ce
+    qu'elle ne peut pas prendre — pire qu'une liste plus courte.
+    """
+    b = await commerce(session, longitude=-80.1301, latitude=25.7908)
+    await offre(session, b, tier_id=REEL)
+    user, _ = await createur(session, followers=3_100)
+
+    resultat = await service.fil_populaire_du_createur(session, creator_id=user.id)
+
+    assert resultat.salons == ()

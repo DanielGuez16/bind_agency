@@ -445,7 +445,20 @@ export const en = {
     // Refusée : le système ne repose plus la question, et un bouton qui
     // promettrait de la reposer mentirait. On dit où lever le refus.
     filPositionRefusee: 'Location is turned off for BIND, so we can’t sort by distance.',
-    filReactiverNavigateur:
+    // **Quatre variantes web, une par plateforme réelle.** `Platform.OS`
+    // rend « web » pour Safari mobile comme pour Chrome de bureau — le
+    // message doit donc distinguer ce que `usePosition` ne pouvait pas.
+    // Les deux variantes iOS portent en plus l'explication du refus
+    // silencieux : le réglage général du téléphone et celui, par site, du
+    // navigateur sont deux interrupteurs différents, et c'est le second
+    // qui compte ici.
+    filReactiverIosSafariWeb:
+      'Tap the “Aa” icon at the left of the address bar, then Website Settings, then set Location to “Allow”. iPhone’s general Location Services can be on while Safari still remembers an earlier refusal for this site specifically: they’re two different switches, and this is the one to check.',
+    filReactiverIosAutreWeb:
+      'Open this browser’s site settings for BIND, usually via the icon next to the address bar, and set Location to “Allow”. iPhone’s general Location Services can be on while this browser still remembers an earlier refusal for this site specifically: they’re two different switches, and this is the one to check.',
+    filReactiverAndroidWeb:
+      'Tap the lock icon left of the address bar, then Permissions, then set Location to “Allow”.',
+    filReactiverDesktopWeb:
       'Click the lock icon left of the address bar, set Location to “Allow”, then reload the page.',
     filReactiverIos: 'Open Settings › Privacy & Security › Location Services › BIND, then pick “While Using the App”.',
     filReactiverAndroid: 'Open Settings › Apps › BIND › Permissions › Location, then pick “Allow only while using the app”.',
@@ -454,6 +467,10 @@ export const en = {
     filPositionSansReponse:
       'We are still waiting for an answer. If your browser is asking, choose “Allow”. Otherwise, try again.',
     filReessayer: 'Try again',
+    filCopierLesInstructions: 'Copy instructions',
+    filInstructionsCopiees: 'Copied',
+    filPopulaireTitre: 'Popular right now',
+    filPopulaireSousTitre: 'Sorted by popularity: location is off',
     ficheOffres: 'What they offer',
     ficheOuvertJusqua: 'Open until {{heure}}',
     ficheDuree: '{{count}} minutes',

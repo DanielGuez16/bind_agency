@@ -51,6 +51,11 @@ export const routes = {
 
   // ---- découverte ----
   fil: () => chemin('/businesses'),
+  /**
+   * Le fil de secours, sans coordonnées : `fil()` les exige, celle-ci n'en
+   * demande jamais — trier par popularité n'en a pas besoin.
+   */
+  filPopulaire: () => chemin('/businesses/populaire'),
   fichePublique: (businessId: string) => chemin(`/businesses/${businessId}`),
   disponibilite: (businessId: string) => chemin(`/businesses/${businessId}/availability`),
   resumeDeLaBande: (businessId: string) =>
@@ -226,6 +231,7 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     revoquerUnTerminal: ['DELETE'],
 
     fil: ['GET'],
+    filPopulaire: ['GET'],
     fichePublique: ['GET'],
     disponibilite: ['GET'],
     resumeDeLaBande: ['GET'],

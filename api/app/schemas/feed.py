@@ -17,6 +17,8 @@ __all__ = [
     "OrigineDesSuggestions",
     "SuggestionsRead",
     "FilRead",
+    "FilPopulaireRead",
+    "SalonPopulaireRead",
     "ItemDuFilRead",
     "ObstacleRead",
 ]
@@ -176,3 +178,25 @@ class SuggestionsRead(BaseModel):
     #: Le quartier de la position, `null` hors des quartiers ouverts.
     quartier: Neighborhood | None
     origine: OrigineDesSuggestions
+
+
+class SalonPopulaireRead(BaseModel):
+    """Un salon du fil sans position — pas de `distance_metres` : il n'y en a
+    pas à rendre sans position pour la calculer."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    business_id: uuid.UUID
+    nom: str
+    category: BusinessCategory
+    neighborhood: Neighborhood | None
+    prestations: int
+
+
+class FilPopulaireRead(BaseModel):
+    """Le fil de secours : une position refusée n'est pas une raison de ne
+    rien montrer, voir `feed.fil_populaire_du_createur`."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    salons: list[SalonPopulaireRead]

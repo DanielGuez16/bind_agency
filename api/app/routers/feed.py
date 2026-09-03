@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query
 from app.core.dependencies import CurrentUser, SessionDep, require_role
 from app.integrations.geocoding import Coordinates
 from app.models.enums import BusinessCategory, UserRole
-from app.schemas.feed import FilRead, SuggestionsRead
+from app.schemas.feed import FilPopulaireRead, FilRead, SuggestionsRead
 from app.services import feed as service
 from app.services.feed import FenetreDeDisponibilite
 
@@ -45,6 +45,20 @@ async def read_feed(
         recherche=recherche,
     )
     return FilRead.model_validate(fil)
+
+
+@router.get("/populaire", response_model=FilPopulaireRead)
+async def read_feed_populaire(session: SessionDep, user: CurrentUser) -> FilPopulaireRead:
+    """Le fil quand la position est refusée, indisponible, ou sans réponse.
+
+    **Sans coordonnées, exprès.** `read_feed` les exige parce que trier par
+    distance n'a pas de sens sans elles ; ici on trie par popularité, qui n'en
+    a pas besoin. Un refus de géolocalisation ne doit pas laisser un écran
+    vide — voir `feed.fil_populaire_du_createur`.
+    """
+    return FilPopulaireRead.model_validate(
+        await service.fil_populaire_du_createur(session, creator_id=user.id)
+    )
 
 
 @router.get("/suggestions", response_model=SuggestionsRead)

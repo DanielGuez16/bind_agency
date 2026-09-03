@@ -11119,3 +11119,42 @@ vérification. Le pied de l'email ne porte donc que deux lignes — pourquoi on
 reçoit ceci, puis les liens — jamais une troisième. `EMAIL_POSTAL_ADDRESS`,
 posée en configuration le temps que la question reste ouverte, a été
 retirée : ce n'est plus une décision en attente.
+
+## 2026-09-03 — Refus de géolocalisation web : détection par agent utilisateur, pas de redirection automatique
+
+**Le défaut trouvé à l'audit.** `Platform.OS === 'web'` ne distingue rien :
+Safari sur iPhone et Chrome de bureau rendent tous deux `'web'`. Rebecca a
+reçu « cliquez sur l'icône cadenas à gauche de la barre d'adresse » sur
+Safari mobile, qui n'a pas ce cadenas — l'icône réelle est « Aa », ailleurs.
+
+**Détection par agent utilisateur (`navigator.userAgent`), fonction pure
+testée sur des chaînes réelles.** C'est la seule source disponible sur le
+web : React Native ne porte aucune API de détection de navigateur plus fine
+que `Platform.OS`. La technique est connue pour être fragile — un agent
+utilisateur peut être usurpé, et Apple modifie parfois son format — mais
+c'est le seul signal qui existe, et le pire des deux mauvais choix est celui
+qui reproduit le défaut d'origine : rien du tout.
+
+**Le repli d'iPad depuis iPadOS 13** (qui se présente comme un Mac de
+bureau) passe par `navigator.maxTouchPoints`, seul signal qui distingue les
+deux une fois l'agent utilisateur identique — calculé une fois dans
+`plateformeWebCourante`, jamais dans la fonction pure elle-même.
+
+**Aucune redirection automatique vers les réglages n'existe depuis le web
+sur iOS — vérifié, pas supposé.** `prefs:root=Privacy&path=LOCATION` est un
+schéma d'URL privé qu'Apple bloque explicitement depuis Safari (« Safari
+cannot open the page because the address is invalid »), et de plus en plus
+même depuis une app native — iOS 18 a cassé jusqu'aux sous-chemins pour les
+apps qui y avaient encore droit. Rien ne remplace donc le geste manuel :
+`BlocPositionRefusee` mise sur deux parades à la place — un schéma composé
+des primitives existantes (aucune icône neuve, `Icone` documente son jeu
+comme volontairement court) et un bouton qui copie la marche à suivre.
+
+**Le fil sans position se classe par popularité, citywide, sans
+`distance_metres`.** Trier par distance n'a pas de sens sans position ; la
+popularité — réservations consommées, 90 jours, la même fenêtre que
+`suggestions_du_createur` — n'en a pas besoin. Nouvel endpoint plutôt qu'un
+paramètre optionnel sur `GET /businesses` : les schémas existants portent
+tous `distance_metres` en champ obligatoire, et le rendre nullable aurait
+propagé le changement à l'annuaire, la carte de suggestion et l'écran des
+paliers pour un besoin qui ne les concerne pas.

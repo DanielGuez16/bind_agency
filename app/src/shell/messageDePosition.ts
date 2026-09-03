@@ -39,7 +39,10 @@ export type MessageDePosition = {
 };
 
 const REACTIVER: Record<OuReactiver, string> = {
-  navigateur: 'parcours.filReactiverNavigateur',
+  web_ios_safari: 'parcours.filReactiverIosSafariWeb',
+  web_ios_autre: 'parcours.filReactiverIosAutreWeb',
+  web_android: 'parcours.filReactiverAndroidWeb',
+  web_desktop: 'parcours.filReactiverDesktopWeb',
   ios: 'parcours.filReactiverIos',
   android: 'parcours.filReactiverAndroid',
 };
