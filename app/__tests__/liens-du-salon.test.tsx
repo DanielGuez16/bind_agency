@@ -62,6 +62,18 @@ describe('ce que la fiche montre', () => {
     await monter({ ...RIEN, instagram_url: 'https://instagram.com/vela' });
     expect(screen.getByTestId('liens-du-salon-instagram')).toBeTruthy();
     expect(screen.queryByTestId('liens-du-salon-tiktok')).toBeNull();
+    expect(screen.queryByTestId('liens-du-salon-facebook')).toBeNull();
     expect(screen.queryByTestId('liens-du-salon-site')).toBeNull();
+  });
+
+  it('Facebook compris, qui n’existait nulle part dans le produit', async () => {
+    // **Le quatrième réseau ne se déduit d'aucun autre.** Un salon peut n'avoir
+    // qu'une page Facebook : si elle ne se rendait pas seule, la demande de
+    // Rebecca — cliquer pour ouvrir la page du commerce — resterait sans
+    // réponse pour exactement ceux qui n'ont que ça.
+    await monter({ ...RIEN, facebook_url: 'https://facebook.com/vela' });
+
+    expect(screen.getByTestId('liens-du-salon-facebook')).toBeTruthy();
+    expect(screen.queryByTestId('liens-du-salon-instagram')).toBeNull();
   });
 });

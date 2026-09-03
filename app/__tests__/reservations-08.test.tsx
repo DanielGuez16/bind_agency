@@ -604,3 +604,37 @@ describe('le titre est la prestation, et le format ouvre la carte', () => {
     );
   });
 });
+
+/**
+ * R2 — les logos, et lesquels mènent quelque part.
+ *
+ * **Deux choses se ressemblent sur cette carte et ne disent pas la même
+ * chose.** Le glyphe en tête est la plateforme de la *contrepartie* — où la
+ * créatrice va publier — et il n'a jamais été cliquable : une plateforme n'est
+ * pas une adresse. Ce que Rebecca demandait est l'autre : les comptes du salon,
+ * pour aller voir à quoi il ressemble avant de s'engager. Ils manquaient.
+ */
+describe('les liens du salon sur la carte', () => {
+  it('mènent aux comptes du salon, sans remplacer le glyphe de la contrepartie', async () => {
+    await monter([
+      reservation({
+        business_instagram_url: 'https://instagram.com/vela',
+        business_facebook_url: 'https://facebook.com/vela',
+      } as Partial<ReservationDuCreateur>),
+    ]);
+
+    expect(await screen.findByTestId('liens-du-salon-r1-instagram')).toBeTruthy();
+    expect(screen.getByTestId('liens-du-salon-r1-facebook')).toBeTruthy();
+    // Le glyphe de la contrepartie reste : il répond à une autre question.
+    expect(screen.getByTestId('palier-r1')).toBeTruthy();
+  });
+
+  it('et ne montrent rien quand le salon n’a rien renseigné', async () => {
+    // Quatre lignes vides diraient « ce salon n'est nulle part », ce qui est
+    // faux : elles diraient seulement qu'il ne l'a pas écrit.
+    await monter([reservation()]);
+
+    await screen.findByTestId('reservation-r1');
+    expect(screen.queryByTestId('liens-du-salon-r1')).toBeNull();
+  });
+});
