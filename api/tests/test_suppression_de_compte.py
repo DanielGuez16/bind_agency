@@ -374,9 +374,7 @@ async def test_un_administrateur_ne_peut_pas_supprimer_son_compte(
     )
     await session.commit()
 
-    reponse = await client.post(
-        f"{PREFIX}/me/deletion", headers=await _jetons(client, admin.email)
-    )
+    reponse = await client.post(f"{PREFIX}/me/deletion", headers=await _jetons(client, admin.email))
 
     assert reponse.status_code == 403, reponse.text
     assert reponse.json()["detail"] == "deletion_forbidden_for_role"
