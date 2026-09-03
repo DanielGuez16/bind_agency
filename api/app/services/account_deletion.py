@@ -42,7 +42,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models import Booking, Collaboration, User
-from app.models.enums import ActorKind, CollaborationStatus, UserStatus
+from app.models.enums import ActorKind, CollaborationStatus, UserRole, UserStatus
 from app.services import anonymization
 from app.services.audit import Actor, AuditedEntity, record_transition
 
@@ -74,6 +74,27 @@ class AucuneDemande(Exception):
     """Rien à annuler."""
 
 
+class RoleNonSupprimable(Exception):
+    """Un administrateur ne supprime pas son propre compte.
+
+    **Ce n'est pas une règle d'écran, c'est une règle de produit.** La demande
+    n'a aucune des conditions qui bloquent les autres : un administrateur n'a ni
+    contrepartie en cours, ni réservation, ni rien qui retienne la suppression.
+    Elle passait donc, et trente jours plus tard l'anonymisation emportait le
+    seul compte capable d'arbitrer un dossier, de reprendre un salon et de fixer
+    un prix — sans qu'aucun autre chemin ne permette d'en recréer un.
+
+    **Le bloc est masqué à l'écran, et ça ne suffit pas.** Masquer un bouton
+    retire le geste à celui qui le cherchait, pas à celui qui connaît la route.
+    C'est le refus côté serveur qui ferme la porte ; l'écran ne fait que cesser
+    de la montrer.
+
+    Le jour où plusieurs administrateurs existeront, la règle qui remplacera
+    celle-ci n'est pas « on autorise » mais « on refuse le dernier » — et elle
+    demandera de compter, ce qui est un autre travail.
+    """
+
+
 class CompteAnonymise(Exception):
     """Il n'y a plus de compte. L'anonymisation ne se défait pas."""
 
@@ -98,6 +119,8 @@ async def demander(session: AsyncSession, *, user: User, actor: Actor) -> User:
     """Ouvre le délai. L'échéance est posée, pas calculée à la lecture."""
     if actor.kind is ActorKind.SYSTEM:
         raise ValueError("une suppression a toujours un demandeur, jamais le système")
+    if user.role is UserRole.ADMIN:
+        raise RoleNonSupprimable(str(user.id))
     if user.status is UserStatus.ANONYMIZED:
         raise CompteAnonymise(str(user.id))
     if user.deletion_requested_at is not None:

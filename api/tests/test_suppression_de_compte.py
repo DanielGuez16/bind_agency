@@ -18,6 +18,7 @@ plausibles **divergent** — jamais sur celui où elles diraient la même chose 
   satisferait « aucun compte anonymisé visible » et raterait tout le sujet.
 """
 
+import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -27,11 +28,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models import Booking, Collaboration, User
-from app.models.enums import ActorKind, CollaborationStatus, UserStatus
+from app.models.enums import ActorKind, CollaborationStatus, UserRole, UserStatus
 from app.services import account_deletion as service
 from app.services import booking_history
 from app.services import collaboration as collaboration_service
 from app.services.audit import Actor
+from tests.conftest import inscrire_verifie
 from tests.test_collaboration import contrepartie
 from tests.test_counterpart_queue import statut
 
@@ -340,3 +342,67 @@ async def test_la_journee_du_commerce_dit_aussi_le_depart(session: AsyncSession)
     la_notre = next(r for r in lignes if r.booking_id == booking.id)
     assert la_notre.creator_partie is True
     assert la_notre.creator_handle is None
+
+
+# --------------------------------------------------------------------------
+# le rôle qui ne se supprime pas
+# --------------------------------------------------------------------------
+
+
+async def test_un_administrateur_ne_peut_pas_supprimer_son_compte(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """**Le trou n'était pas un oubli d'écran, c'était une route ouverte.**
+
+    Aucune des conditions qui bloquent les autres ne s'appliquait à un
+    administrateur : ni contrepartie en cours, ni réservation, ni rien. La
+    demande passait, et trente jours plus tard l'anonymisation emportait le seul
+    compte capable d'arbitrer un dossier, de reprendre un salon et de fixer un
+    prix — sans aucun chemin pour en recréer un.
+
+    **Le test passe par la route, pas par le service.** Masquer le bloc à
+    l'écran retire le geste à qui le cherchait, pas à qui connaît l'adresse :
+    c'est le refus HTTP qui ferme la porte, et c'est donc lui qu'on éprouve.
+    """
+    from tests.test_redemption_caisse import MOT_DE_PASSE
+
+    admin = await inscrire_verifie(
+        session,
+        email=f"{uuid.uuid4()}@example.com",
+        password=MOT_DE_PASSE,
+        role=UserRole.ADMIN,
+    )
+    await session.commit()
+
+    reponse = await client.post(
+        f"{PREFIX}/me/deletion", headers=await _jetons(client, admin.email)
+    )
+
+    assert reponse.status_code == 403, reponse.text
+    assert reponse.json()["detail"] == "deletion_forbidden_for_role"
+
+    # **Et rien n'a été posé au passage.** Un refus qui laisserait la date
+    # d'échéance écrite rendrait le compte supprimable au prochain balayage,
+    # c'est-à-dire refuserait à l'écran et accepterait dans les faits.
+    await session.refresh(admin)
+    assert admin.deletion_requested_at is None
+
+
+async def test_une_creatrice_peut_toujours_partir(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    """**Le cas qui fait diverger les deux implémentations.**
+
+    Un refus posé sur tout le monde passerait le test du dessus tout aussi
+    bien. C'est ici qu'il se verrait : le départ d'une créatrice est un droit,
+    et c'est celui que la garde ne doit pas emporter.
+    """
+    ligne, s = await contrepartie(session)
+    await _clore(session, ligne)
+    await session.commit()
+
+    reponse = await client.post(
+        f"{PREFIX}/me/deletion", headers=await _jetons(client, s["createur"].email)
+    )
+
+    assert reponse.status_code == 202, reponse.text
