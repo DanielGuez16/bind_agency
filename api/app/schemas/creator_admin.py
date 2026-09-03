@@ -57,3 +57,39 @@ class CreateurAdminRead(BaseModel):
     #: pas un mauvais score, elle n'en a pas. Rendre zéro la ferait lire comme
     #: la moins fiable de la liste alors qu'elle est seulement la plus récente.
     reliability_score: Decimal | None
+
+
+class AnnuaireAdminRead(BaseModel):
+    """L'annuaire, et les quatre nombres qui situent ce qu'on y lit.
+
+    **Une enveloppe, et non une liste nue.** La route borne à cent : sans total,
+    « 128 sur BIND » ne s'écrit pas, et le plafond dit qu'on tronque sans dire de
+    combien. C'est le manque que l'annuaire des salons avait déjà réglé, reposé
+    ici un jour plus tard.
+
+    **Les quatre nombres décrivent la recherche courante**, pas la population.
+    Un chiffre qui ne bougerait pas en tapant ne dirait rien de ce qu'on
+    cherche — c'est l'arbitrage rendu sur les salons, et il vaut tel quel. Sans
+    recherche, la recherche courante *est* la population, qui est le cas que la
+    tête décrit.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    items: list[CreateurAdminRead]
+    #: Le total de la recherche, sans plafond. La liste, elle, s'arrête à cent.
+    total: int
+    #: Les comptes créés depuis sept jours. Dit si le produit grandit, ce
+    #: qu'aucun total ne dit à lui seul.
+    arrivees_cette_semaine: int
+    #: La médiane des scores **qui existent**, jamais de l'ensemble.
+    #:
+    #: `null` signifie neutre et non zéro : compter les sans-historique comme des
+    #: zéros écraserait la médiane à chaque inscription, et le chiffre baisserait
+    #: précisément quand le produit grandit. Nulle quand aucun score n'existe
+    #: encore — il n'y a alors pas de médiane, et zéro en serait une fausse.
+    fiabilite_mediane: Decimal | None
+    #: L'effectif de la médiane, et il ne se déduit pas de `total`. « 86 » sorti
+    #: de trois scores n'est pas « 86 » sorti de cent vingt-huit ; c'est
+    #: l'arbitrage déjà rendu sur les deux médianes d'abonnement.
+    createurs_avec_score: int

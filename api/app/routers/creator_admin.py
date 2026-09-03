@@ -25,6 +25,8 @@ la même créatrice sur deux écrans.
 """
 
 import uuid
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from typing import Annotated
 
 import sqlalchemy as sa
@@ -33,7 +35,11 @@ from fastapi import APIRouter, Depends, Query
 from app.core.dependencies import SessionDep, require_role
 from app.models import CreatorProfile, SocialAccount, User
 from app.models.enums import SocialAccountStatus, UserRole, UserStatus
-from app.schemas.creator_admin import CreateurAdminRead, ReseauDuCreateurRead
+from app.schemas.creator_admin import (
+    AnnuaireAdminRead,
+    CreateurAdminRead,
+    ReseauDuCreateurRead,
+)
 from app.services import eligibility
 from app.services.directory import lien_public
 
@@ -49,17 +55,19 @@ router = APIRouter(
 PLAFOND = 100
 
 
-@router.get("", response_model=list[CreateurAdminRead])
+@router.get("", response_model=AnnuaireAdminRead)
 async def list_creators(
     session: SessionDep,
     recherche: Annotated[str | None, Query(max_length=100)] = None,
-) -> list[CreateurAdminRead]:
+) -> AnnuaireAdminRead:
     """Les créatrices inscrites, la plus récente d'abord.
 
     **Les anonymisées n'y sont pas.** Un compte supprimé a perdu son
     pseudonyme et sa photo ; le laisser dans la liste afficherait une ligne
     vide que personne ne peut relier à quoi que ce soit.
     """
+    depuis_une_semaine = datetime.now(UTC) - timedelta(days=7)
+
     releve = eligibility._dernier_releve()
     comptes = (
         sa.select(
@@ -107,6 +115,7 @@ async def list_creators(
             {
                 "creator_id": ligne.id,
                 "city": ligne.city,
+                "created_at": ligne.created_at,
                 "reliability_score": ligne.reliability_score,
                 "reseaux": [],
                 "audience_totale": 0,
@@ -125,4 +134,47 @@ async def list_creators(
         )
         vu["audience_totale"] += ligne.followers_count or 0
 
-    return [CreateurAdminRead(**vu) for vu in list(groupes.values())[:PLAFOND]]
+    lignes = list(groupes.values())
+
+    # **Les quatre nombres portent sur la recherche, pas sur la population.**
+    # Un chiffre qui ne bougerait pas en tapant ne dirait rien de ce qu'on
+    # cherche — c'est l'arbitrage rendu sur l'annuaire des salons. Sans
+    # recherche, la recherche courante *est* la population, qui est le cas que
+    # la tête décrit.
+    #
+    # Ils se comptent sur `lignes` et non par des requêtes séparées : la
+    # jointure et le filtre sont déjà faits, et les refaire en trois requêtes
+    # ferait trois occasions de diverger du contenu affiché.
+    scores = [
+        ligne["reliability_score"] for ligne in lignes if ligne["reliability_score"] is not None
+    ]
+
+    return AnnuaireAdminRead(
+        # **Le plafond ne tombe que sur la liste.** Les nombres, eux, portent
+        # sur tout ce que la recherche a trouvé : c'est précisément ce que le
+        # plafond empêcherait de savoir.
+        items=[CreateurAdminRead(**vu) for vu in lignes[:PLAFOND]],
+        total=len(lignes),
+        arrivees_cette_semaine=sum(
+            1 for ligne in lignes if ligne["created_at"] >= depuis_une_semaine
+        ),
+        fiabilite_mediane=_mediane(scores),
+        createurs_avec_score=len(scores),
+    )
+
+
+def _mediane(valeurs: list[Decimal]) -> Decimal | None:
+    """La médiane, ou rien.
+
+    **Nulle plutôt que zéro sur une liste vide.** Zéro serait une médiane, et
+    fausse : elle placerait la population au plus bas de l'échelle alors
+    qu'aucun score n'a encore été mesuré. C'est la même distinction que le score
+    lui-même fait entre « neutre » et « zéro ».
+    """
+    if not valeurs:
+        return None
+    ordonnees = sorted(valeurs)
+    milieu = len(ordonnees) // 2
+    if len(ordonnees) % 2 == 1:
+        return ordonnees[milieu]
+    return (ordonnees[milieu - 1] + ordonnees[milieu]) / 2
