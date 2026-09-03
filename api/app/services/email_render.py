@@ -64,7 +64,6 @@ ORANGE = "#F39120"
 PAGE_BG = "#EFEEEB"
 TEXTE_CORPS = "#473E31"
 TEXTE_DOUX = "#796D5B"
-TEXTE_PIED_ADRESSE = "#A89F92"
 DIVIDER = "#E5E2DE"
 POLICE = "'Helvetica Neue',Helvetica,Arial,sans-serif"
 
@@ -215,8 +214,6 @@ def rendre_html(cle: str, locale: Locale, *, sujet: str, valeurs: dict[str, Any]
         pied_raison = translate("email.footer.account", locale=locale)
         pied_liens = translate("email.footer.accountLinks", locale=locale)
 
-    pied_adresse = settings.email_postal_address or ""
-
     # Le bouton en ligne se pose exactement où le catalogue a mis
     # `{lien}`/`{url}` — le marqueur porte sa position, jamais recalculée.
     bouton_en_ligne = any(bloc.genre == "bouton" for bloc in blocs)
@@ -242,13 +239,17 @@ def rendre_html(cle: str, locale: Locale, *, sujet: str, valeurs: dict[str, Any]
             lien=lien, libelle=libelle_bouton, padding="padding:28px 32px 0 32px;"
         )
 
-    pied_lignes = [f'<div style="margin:0 0 8px 0;">{html.escape(pied_raison)}</div>']
-    pied_lignes.append(f'<div style="margin:0 0 8px 0;">{html.escape(pied_liens)}</div>')
-    if pied_adresse:
-        pied_lignes.append(
-            f'<div style="color:{TEXTE_PIED_ADRESSE};">{html.escape(pied_adresse)}</div>'
-        )
-    pied_html = "".join(pied_lignes)
+    # **Deux lignes, et pas trois.** Design portait une troisième — l'adresse
+    # postale — comme un repère à remplir avant l'envoi, pas comme une
+    # exigence : c'était son repli faute de vérification juridique, pas la
+    # planche. La vérification faite (CAN-SPAM exempte les messages
+    # transactionnels/relationnels, GDPR n'exige aucune adresse en pied
+    # d'email), Design l'a retirée. Le pied ne porte donc que pourquoi on
+    # reçoit ceci, puis les liens.
+    pied_html = (
+        f'<div style="margin:0 0 8px 0;">{html.escape(pied_raison)}</div>'
+        f"<div>{html.escape(pied_liens)}</div>"
+    )
 
     rule = (
         f'<tr><td style="background:{ORANGE}; height:3px; line-height:3px; '
