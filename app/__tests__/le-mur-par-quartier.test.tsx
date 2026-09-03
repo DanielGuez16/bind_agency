@@ -7,11 +7,12 @@
  * le salon l'attribution, et le compte dit-il ce qui est ouvert chez lui ?
  * C'est le seul acquis que la v5 ne rejoue pas, et c'est ce qu'on éprouve.
  */
-import { render, screen, waitFor, within } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider, type Fil } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { en } from '../src/i18n/en';
+import type { FavorisDeLaCarte } from '../src/screens/mur/CarteDeSalon';
 import { SectionsParQuartier } from '../src/screens/mur/SectionsParQuartier';
 import { ThemeProvider } from '../src/theme';
 
@@ -86,7 +87,11 @@ const FIL = {
   prochain_palier: null,
 } as unknown as Fil;
 
-async function monter(fil: Fil = FIL, categorie: 'beauty' | null = null) {
+async function monter(
+  fil: Fil = FIL,
+  categorie: 'beauty' | null = null,
+  favoris?: FavorisDeLaCarte,
+) {
   const api = new ApiClient({
     baseUrl: 'https://api.test',
     coffre: { lire: async () => null, ecrire: async () => {} },
@@ -96,7 +101,7 @@ async function monter(fil: Fil = FIL, categorie: 'beauty' | null = null) {
     <I18nProvider initialLocale="en">
       <ThemeProvider role="creator">
         <ApiProvider client={api}>
-          <SectionsParQuartier fil={fil} categorie={categorie} onOuvrir={() => {}} />
+          <SectionsParQuartier fil={fil} categorie={categorie} onOuvrir={() => {}} favoris={favoris} />
         </ApiProvider>
       </ThemeProvider>
     </I18nProvider>,
@@ -226,14 +231,116 @@ describe('la carte, et ce qui a traversé les trois fils', () => {
     await vue.unmount();
   });
 
-  it('et le mur ne porte toujours aucun cœur', async () => {
-    // Le favori porte sur la prestation et vit sur la fiche depuis la v4 : la
-    // carte du fil mène à un lieu, elle ne garde rien de côté.
-    const vue = await monter();
-    await waitFor(() => expect(screen.getByTestId('rangee-proches')).toBeTruthy());
+  describe('et le mur porte un cœur, un par salon', () => {
+    /**
+     * **Renversement assumé, et documenté comme tel.** Cette description
+     * décrivait le contraire jusqu'à ce jour — voir `CarteDeSalon.tsx` et
+     * `DECISIONS.md`. Le favori reste sur la prestation ; le cœur du salon
+     * n'en est que le raccourci qui les garde toutes d'un geste.
+     */
+    it('est plein seulement quand toutes les prestations du salon sont gardées', async () => {
+      // **Le décor qui sépare les deux implémentations.** Vela a deux
+      // prestations : une gardée, l'autre non. Une implémentation qui
+      // remplirait le cœur dès qu'*une* est gardée rendrait le même verdict
+      // qu'une bonne implémentation sur un salon à une seule prestation —
+      // c'est pour ça que Wynwood Strength (une seule, gardée) ne suffit pas
+      // seul à éprouver la règle.
+      const favoris: FavorisDeLaCarte = {
+        estFavori: (id) => id === 'i-o1' || id === 'i-o3',
+        basculer: jest.fn(),
+      };
+      const vue = await monter(FIL, null, favoris);
+      await waitFor(() =>
+        expect(screen.getByTestId('rangee-proches-apercu-b1-coeur')).toBeTruthy(),
+      );
 
-    expect(screen.queryAllByTestId(/-coeur$/)).toHaveLength(0);
-    await vue.unmount();
+      // Vela (b1) : gardée + non gardée → pas plein.
+      expect(
+        screen.getByTestId('rangee-proches-apercu-b1-coeur').props.accessibilityState.checked,
+      ).toBe(false);
+      // Wynwood Strength (b2) : sa seule prestation est gardée → plein.
+      expect(
+        screen.getByTestId('rangee-proches-apercu-b2-coeur').props.accessibilityState.checked,
+      ).toBe(true);
+      await vue.unmount();
+    });
+
+    it('ne rebascule pas ce qui l’est déjà : un salon mixte ne garde que ce qui manque', async () => {
+      // **La divergence à éprouver.** Une implémentation qui rebasculerait
+      // *chaque* prestation (un XOR par ligne) retirerait `i-o1`, déjà
+      // gardée, en même temps qu'elle ajoute `i-o2` — ce test tombe sur cette
+      // implémentation-là et passe sur celle qui ne touche que ce qui manque.
+      const basculer = jest.fn();
+      const favoris: FavorisDeLaCarte = {
+        estFavori: (id) => id === 'i-o1',
+        basculer,
+      };
+      const vue = await monter(FIL, null, favoris);
+      await waitFor(() =>
+        expect(screen.getByTestId('rangee-proches-apercu-b1-coeur')).toBeTruthy(),
+      );
+
+      await fireEvent.press(screen.getByTestId('rangee-proches-apercu-b1-coeur'));
+
+      expect(basculer).toHaveBeenCalledTimes(1);
+      expect(basculer).toHaveBeenCalledWith('i-o2', true, false, 'Classic pedicure');
+      await vue.unmount();
+    });
+
+    it('un salon déjà entièrement gardé se retire d’un geste', async () => {
+      // **`servi` vient de la donnée, pas du mock.** `est_favori` sur les deux
+      // articles de Vela doit être vrai pour de bon : simuler « déjà gardées »
+      // en forçant seulement `estFavori()` à répondre `true` laisserait
+      // `servi` à sa valeur par défaut du décor — `false` — et `basculer`
+      // recevrait alors une vérité serveur qu'aucune des deux implémentations
+      // ne peut produire dans ce cas.
+      const basculer = jest.fn();
+      const favoris: FavorisDeLaCarte = {
+        estFavori: (_id, servi) => servi,
+        basculer,
+      };
+      const fil = {
+        ...FIL,
+        commerces: [
+          commerce('b1', 'Vela Nail Studio', 'beauty', [
+            { ...item('o1', 'Gel manicure'), est_favori: true },
+            { ...item('o2', 'Classic pedicure'), est_favori: true },
+          ]),
+          commerce('b2', 'Wynwood Strength', 'fitness', [item('o3', 'Coaching', 'post')], {
+            distance_metres: 1400,
+          }),
+        ],
+      } as unknown as Fil;
+      const vue = await monter(fil, null, favoris);
+      await waitFor(() =>
+        expect(screen.getByTestId('rangee-proches-apercu-b1-coeur')).toBeTruthy(),
+      );
+
+      await fireEvent.press(screen.getByTestId('rangee-proches-apercu-b1-coeur'));
+
+      // Les deux prestations de Vela retirées, aucune autre touchée.
+      expect(basculer).toHaveBeenCalledTimes(2);
+      expect(basculer).toHaveBeenCalledWith('i-o1', false, true, 'Gel manicure');
+      expect(basculer).toHaveBeenCalledWith('i-o2', false, true, 'Classic pedicure');
+      await vue.unmount();
+    });
+
+    it('sans favoris fourni, lit l’état servi et ne bascule rien', async () => {
+      // Le montage direct sans `favoris` — celui des écrans qui n'en ont pas
+      // besoin — ne doit ni planter, ni prétendre qu'un appui a un effet.
+      const vue = await monter();
+      await waitFor(() =>
+        expect(screen.getByTestId('rangee-proches-apercu-b1-coeur')).toBeTruthy(),
+      );
+
+      expect(
+        screen.getByTestId('rangee-proches-apercu-b1-coeur').props.accessibilityState.checked,
+      ).toBe(false);
+      // Ne lève pas : un appui sans favoris fourni ne doit ni planter, ni
+      // prétendre avoir un effet. L'absence d'exception est l'assertion.
+      await fireEvent.press(screen.getByTestId('rangee-proches-apercu-b1-coeur'));
+      await vue.unmount();
+    });
   });
 });
 
