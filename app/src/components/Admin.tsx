@@ -490,3 +490,78 @@ export function Toolbar({
     </View>
   );
 }
+
+/**
+ * La bande de chiffres de tête, mesurée sur la planche.
+ *
+ * **Un cartouche, pas une rangée flottante.** Card bordée, chaque cellule
+ * séparée par un filet à droite sauf la dernière — c'est ce que « Reviews »,
+ * « Salons », « Plans », « Outreach » et « Creators » ont en commun dès qu'un
+ * écran ouvre sur des nombres avant sa table. `Toolbar` et `TableHeader` sont
+ * la grammaire des lignes ; celle-ci est la grammaire de l'en-tête.
+ */
+export function BandeDeChiffres({
+  children,
+  testID,
+}: {
+  children: ReactNode;
+  testID?: string;
+}) {
+  const c = useColors();
+  return (
+    <View
+      testID={testID}
+      style={{
+        flexDirection: 'row',
+        borderRadius: radius['radius.lg'],
+        borderWidth: 1,
+        borderColor: c['line.default'],
+        backgroundColor: c['bg.surface'],
+        overflow: 'hidden',
+      }}
+    >
+      {children}
+    </View>
+  );
+}
+
+/**
+ * Un chiffre de tête et sa légende, dans `type.figureSmall` — le corps
+ * ajouté au 2026-08-19 précisément pour « le chiffre d'un cartouche », comme
+ * celui-ci. Le filet de droite sépare les cellules ; la dernière n'en porte
+ * pas, une bordure fermerait la carte sur elle-même une deuxième fois.
+ */
+export function Chiffre({
+  valeur,
+  legende,
+  dernier = false,
+  testID,
+}: {
+  valeur: string;
+  legende: string;
+  dernier?: boolean;
+  testID?: string;
+}) {
+  const c = useColors();
+  return (
+    <View
+      testID={testID}
+      style={{
+        flex: 1,
+        // 18/20, relevés sur la planche : ni l'un ni l'autre n'a de jeton
+        // d'espacement exact, et une carte de tête n'a qu'un exemplaire par
+        // écran — l'écart avec la grille de 4 ne se voit nulle part ailleurs.
+        paddingVertical: 18,
+        paddingHorizontal: 20,
+        gap: 2,
+        borderRightWidth: dernier ? 0 : 1,
+        borderRightColor: c['line.default'],
+      }}
+    >
+      <Texte variante="type.figureSmall">{valeur}</Texte>
+      <Texte variante="type.body" couleur="ink.soft">
+        {legende}
+      </Texte>
+    </View>
+  );
+}

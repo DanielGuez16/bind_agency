@@ -196,6 +196,45 @@ describe('la file distingue les deux dossiers', () => {
     expect(screen.getByTestId('ligne-k2')).toHaveTextContent(/3 · mixed/);
   });
 
+  it('rend le palier en badge traduit, pas la clé anglaise recopiée', async () => {
+    /**
+     * **Le décor qui distingue le badge de l'ancien texte brut.**
+     *
+     * La colonne rendait `required_format.toUpperCase()` : en anglais, « POST »
+     * en capitales est indiscernable du mot traduit — les deux affichent la
+     * même chaîne, donc un test en anglais ne prouverait rien. En espagnol, les
+     * deux implémentations divergent : la clé recopiée resterait « POST »,
+     * le badge traduit écrit « PUBLICACIÓN ». C'est cette divergence qu'on
+     * éprouve, pas la ressemblance en anglais.
+     */
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: (async (url: unknown) =>
+        ({
+          ok: true,
+          status: 200,
+          json: async () =>
+            String(url).includes('motifs-qui-reviennent')
+              ? []
+              : [{ ...DOSSIER('k1', ['missing_mention']), required_format: 'post' }],
+        }) as Response) as unknown as typeof fetch,
+    });
+    await render(
+      <I18nProvider initialLocale="es">
+        <ThemeProvider role="admin">
+          <ApiProvider client={api}>
+            <ArbitrageScreen />
+          </ApiProvider>
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+    await waitFor(() => expect(screen.getByTestId('ligne-k1')).toBeTruthy());
+
+    expect(screen.getByTestId('palier-k1')).toHaveTextContent('PUBLICACIÓN');
+    expect(screen.getByTestId('palier-k1')).not.toHaveTextContent('POST');
+  });
+
   it('et le filtre garde les uns sans les autres', async () => {
     // Une file de trente dossiers mêle ceux que le produit a ratés et ceux où
     // la créatrice n'a pas suivi : ce ne sont pas les mêmes décisions.

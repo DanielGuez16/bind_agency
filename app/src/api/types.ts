@@ -2008,6 +2008,21 @@ export type ReseauDuCreateur = {
  * jamais ce nombre**, et le palier accessible lui suffit puisqu'un score
  * dégradé plafonne mécaniquement.
  */
+/**
+ * Le palier le plus exigeant qu'elle ouvre, n'importe où sur le produit.
+ *
+ * **Distinct de `PalierAccessibleIci`, et le nom le dit.** Celui-là se
+ * calcule contre ce qu'**un** salon offre ; celui-ci contre tous les paliers
+ * actifs, parce qu'un administrateur n'a pas de salon pour restreindre la
+ * question. Les deux répondent à des questions différentes — les confondre
+ * ferait lire « ce qu'elle ouvre ici » sur un écran qui n'a pas de « ici ».
+ */
+export type PalierAccessibleGlobalement = {
+  tier_id: string;
+  platform: Platform;
+  content_format: ContentFormat;
+};
+
 export type CreateurAdmin = {
   creator_id: string;
   city: string | null;
@@ -2027,6 +2042,13 @@ export type CreateurAdmin = {
    * elle n'en a pas.
    */
   reliability_score: string | null;
+  /**
+   * Nul quand elle n'ouvre aucun palier — aucun compte vérifié, aucun relevé
+   * récent, ou aucun format à sa portée. Coûtait trois requêtes par créatrice
+   * évaluée une par une ; le serveur l'évalue désormais pour la population
+   * entière en trois requêtes, pas trois cents.
+   */
+  tier: PalierAccessibleGlobalement | null;
 };
 
 /** Un salon abonné à un plan. Le statut est celui de l'abonnement, pas du salon. */
@@ -2061,4 +2083,13 @@ export type AnnuaireAdmin = {
   fiabilite_mediane: string | null;
   /** L'effectif de la médiane. « 86 » sorti de trois scores n'est pas « 86 » sorti de cent. */
   createurs_avec_score: number;
+  /**
+   * Combien, sur cette recherche, ouvrent au moins un palier.
+   *
+   * Sur la même population que les quatre autres — avant le plafond de la
+   * liste — pour que les cinq nombres de tête bougent ensemble sur une
+   * recherche. Un total qui change sans que celui-ci bouge ferait douter
+   * lequel des deux ment.
+   */
+  peut_reserver: number;
 };
