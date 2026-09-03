@@ -237,6 +237,10 @@ class Settings(BaseSettings):
     #: la place** : `awaiting_business` compte dans la capacité, et un commerce
     #: distrait bloquait un créneau pour toujours. `SPEC.md` §4.1 prescrivait la
     #: transition depuis le début ; elle n'avait jamais été construite.
+    #: Repos entre deux passages du service de fond. Trente secondes : un email
+    #: déposé part dans la demi-minute, et la base ne voit qu'un aller-retour
+    #: par tour quand la file est vide.
+    worker_loop_seconds: int = 30
     booking_approval_seconds: int = 86_400
     #: Fenêtre de validité d'un droit sans créneau. Le créateur se présente
     #: quand il veut avant l'échéance.

@@ -20,7 +20,7 @@ from app.integrations.social import SocialProvider
 from app.models.enums import Platform
 from app.workers import runner, scheduler
 
-USAGE = "usage : python -m app.workers [plan|run]"
+USAGE = "usage : python -m app.workers [plan|run|boucle]"
 
 
 def _fournisseurs(client: httpx.AsyncClient):
@@ -67,10 +67,42 @@ async def _run() -> str:
         await engine.dispose()
 
 
+async def _boucle() -> str:
+    """Planifie, puis exécute sans fin. **C'est le mode du service de fond.**
+
+    `run` fait un passage et rend la main : c'est ce qu'il faut à un cron, et
+    c'est exactement ce qu'un service de fond ne supporte pas — il redémarrerait
+    en boucle d'échec, et l'hébergeur finirait par le déclarer mort.
+
+    **La planification est refaite à chaque tour, pas seulement au démarrage.**
+    Un compte social qui s'active pendant que le service tourne doit gagner ses
+    travaux sans qu'on redéploie ; et les balayages globaux se recréent d'eux-
+    mêmes si quelque chose les a retirés.
+
+    **Une erreur ne tue pas la boucle.** Un passage qui lève — la base qui
+    redémarre, un fournisseur injoignable — est écrit puis oublié : la file est
+    reprise au tour suivant, et rien n'est perdu puisque rien n'a été acquitté.
+    Laisser remonter arrêterait l'envoi des emails jusqu'au prochain
+    déploiement.
+    """
+    repos = get_settings().worker_loop_seconds
+    while True:
+        try:
+            print(await _plan(), flush=True)
+            print(await _run(), flush=True)
+        except Exception as erreur:  # noqa: BLE001 - la boucle survit à tout
+            print(f"passage en échec, repris au suivant : {erreur}", file=sys.stderr, flush=True)
+        await asyncio.sleep(repos)
+
+
 def main(argv: list[str]) -> int:
-    if len(argv) != 2 or argv[1] not in ("plan", "run"):
+    if len(argv) != 2 or argv[1] not in ("plan", "run", "boucle"):
         print(USAGE, file=sys.stderr)
         return 2
+
+    if argv[1] == "boucle":
+        asyncio.run(_boucle())
+        return 0
 
     print(asyncio.run(_plan() if argv[1] == "plan" else _run()))
     return 0
