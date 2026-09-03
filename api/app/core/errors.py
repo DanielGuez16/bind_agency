@@ -41,6 +41,10 @@ class ErrorCode(StrEnum):
     #: protège un tiers : un salon qui attend une contrepartie ne doit pas voir
     #: la personne disparaître sans qu'il puisse ni relancer ni clore.
     DELETION_BLOCKED_BY_COLLABORATION = "deletion_blocked_by_collaboration"
+    #: Un administrateur ne supprime pas son propre compte : l'anonymisation
+    #: emporterait le seul compte capable d'arbitrer, de reprendre un salon et
+    #: de fixer un prix, sans chemin pour en recréer un.
+    DELETION_FORBIDDEN_FOR_ROLE = "deletion_forbidden_for_role"
 
     # Autorisation
     INSUFFICIENT_ROLE = "insufficient_role"

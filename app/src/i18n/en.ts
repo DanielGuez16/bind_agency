@@ -1593,6 +1593,8 @@ export const en = {
     deletion_already_requested:
       'Your account is already scheduled for deletion. You can cancel it from your settings.',
     deletion_not_requested: 'No deletion is under way on this account.',
+    deletion_forbidden_for_role:
+      'An administrator account cannot be deleted from here. Ask another administrator.',
     deletion_blocked_by_collaboration:
       'You still owe a post. Publish it, or let the business close the counterpart, then try again.',
     password_too_short: 'Use at least 12 characters.',

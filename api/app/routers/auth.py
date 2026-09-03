@@ -207,6 +207,11 @@ async def request_deletion(user: CurrentUser, session: SessionDep) -> UserRead:
         ) from error
     except deletion_service.DejaDemandee as error:
         raise api_error(status.HTTP_409_CONFLICT, ErrorCode.DELETION_ALREADY_REQUESTED) from error
+    except deletion_service.RoleNonSupprimable as error:
+        # **403 et non 409.** Un conflit se résout en changeant d'état — finir
+        # ses contreparties, annuler la demande en cours. Celui-ci ne se résout
+        # pas : c'est le rôle qui interdit, et il ne changera pas en attendant.
+        raise api_error(status.HTTP_403_FORBIDDEN, ErrorCode.DELETION_FORBIDDEN_FOR_ROLE) from error
     except deletion_service.CompteAnonymise as error:
         raise api_error(status.HTTP_403_FORBIDDEN, ErrorCode.ACCOUNT_NOT_ACTIVE) from error
 
