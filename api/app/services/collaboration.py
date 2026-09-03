@@ -347,7 +347,13 @@ async def _deposer_pour_le_createur(
         format=contexte.format,
         deadline=contexte.deadline,
         requirements=contexte.requirements,
-        motif=contexte.motif,
+        # **`reason` et non `motif`.** Tous les gabarits nomment leurs
+        # variables en anglais — `{creator}`, `{business}`, `{item}` — et
+        # `collaboration.resubmit` écrit `{reason}`. Le seul champ déposé en
+        # français levait donc un `KeyError` au rendu : le message de reprise
+        # ne partait jamais, et c'est celui qui explique à quelqu'un ce qu'on
+        # lui reproche.
+        reason=contexte.motif,
     )
 
 
