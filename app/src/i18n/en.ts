@@ -861,6 +861,7 @@ export const en = {
   },
   admin: {
     abonnesTitre: 'Who pays for this plan',
+    abonneDepuisInconnu: 'Date unknown',
     abonnesVide: 'No business has taken this plan yet.',
     abonnesColonneNom: 'Business',
     abonnesColonneQuartier: 'Neighbourhood',

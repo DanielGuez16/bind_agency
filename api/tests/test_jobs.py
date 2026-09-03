@@ -14,9 +14,11 @@ import asyncio
 import uuid
 from datetime import UTC, datetime, timedelta
 
+import httpx
 import pytest
 import sqlalchemy as sa
 from httpx import AsyncClient
+from pydantic import SecretStr
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.core.config import ConfigurationError, get_settings
@@ -755,6 +757,98 @@ async def test_un_balayage_ne_demande_aucun_fournisseur(session: AsyncSession) -
     # cause pour ce job.
     assert bilan.reussis == 1
     assert bilan.reportes == 0
+
+
+async def test_un_traitement_qui_leve_n_arrete_pas_le_passage(session: AsyncSession) -> None:
+    """**Le second défaut trouvé le 2026-09-03, sous le premier.**
+
+    `vider_la_boite_d_envoi` levait à chaque appel — `get_sender()` sans client
+    HTTP, avec `EMAIL_PROVIDER=resend`. Cette levée n'était rattrapée nulle
+    part sur la branche `SANS_CIBLE` : elle sortait de `executer()` entier, pas
+    seulement du job fautif. Un job voisin sans aucun défaut restait donc
+    bloqué derrière lui, jamais atteint, tant que le premier gardait
+    l'échéance la plus ancienne.
+
+    Le décor pose **deux** jobs sans cible : un qui lève, un qui réussit. Une
+    correction qui ne protégerait que le premier job de la file laisserait le
+    second injoignable — c'est exactement le symptôme mesuré en production.
+    """
+
+    def leve_toujours(platform):
+        raise AssertionError("ne devrait jamais être appelé pour un balayage")
+
+    async def traitement_casse(session, *, account, provider):
+        raise RuntimeError("service d'envoi injoignable (simulé)")
+
+    import app.workers.handlers as handlers_module
+
+    ancien = handlers_module.TRAITEMENTS[JobType.LINK_CLICK_PURGE_SWEEP]
+    handlers_module.TRAITEMENTS[JobType.LINK_CLICK_PURGE_SWEEP] = traitement_casse
+    try:
+        await session.execute(
+            sa.insert(Job).values(
+                job_type=JobType.LINK_CLICK_PURGE_SWEEP, target_id=scheduler.SENTINELLE
+            )
+        )
+        await session.execute(
+            sa.insert(Job).values(job_type=JobType.OUTBOX_SWEEP, target_id=scheduler.SENTINELLE)
+        )
+        await session.flush()
+
+        sessions = async_sessionmaker(session.bind, expire_on_commit=False)
+        bilan = await runner.executer(sessions, fournisseur_pour=leve_toujours, maximum=2)
+
+        # Le job cassé échoue pour lui-même — reporté, pas épuisé au premier
+        # coup — et le voisin, lui, aboutit malgré tout.
+        assert bilan.reportes == 1
+        assert bilan.reussis == 1
+    finally:
+        handlers_module.TRAITEMENTS[JobType.LINK_CLICK_PURGE_SWEEP] = ancien
+
+
+async def test_get_sender_avec_resend_exige_un_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """**La cause précise du blocage de production.**
+
+    `vider_la_boite_d_envoi` appelait `get_sender()` sans argument. Avec
+    `EMAIL_PROVIDER=resend`, cet appel lève systématiquement — la fonction le
+    dit dans son propre corps, « un client HTTP est requis » — et la levée
+    n'était rattrapée nulle part avant la correction de `runner._traiter`.
+    """
+    from app.integrations.email import get_sender
+
+    monkeypatch.setattr(get_settings(), "email_provider", "resend")
+
+    with pytest.raises(ConfigurationError, match="client HTTP"):
+        get_sender()
+
+    # Le pendant : avec un client **et** une clé, l'appel aboutit — c'est tout
+    # ce que `vider_la_boite_d_envoi` avait à faire, et ne faisait pas. La clé
+    # est nécessaire ici : sans elle, `ResendSender.__init__` lève sa propre
+    # erreur de configuration, distincte de celle qu'on éprouve.
+    monkeypatch.setattr(get_settings(), "email_api_key", SecretStr("test-key"))
+    monkeypatch.setattr(get_settings(), "email_from", "demo@bind.example")
+    async with httpx.AsyncClient() as client:
+        get_sender(client)
+
+
+async def test_vider_la_boite_ne_leve_pas_avec_resend(
+    session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """**Le vrai appelant, pas seulement `get_sender()` isolé.**
+
+    Le test précédent prouve le contrat de `get_sender()` ; celui-ci prouve que
+    `vider_la_boite_d_envoi` le respecte. Une correction qui n'aurait touché
+    que l'un des deux laisserait l'autre faux, sans qu'aucun test ne le dise.
+    """
+    monkeypatch.setattr(get_settings(), "email_provider", "resend")
+    monkeypatch.setattr(get_settings(), "email_api_key", SecretStr("test-key"))
+    monkeypatch.setattr(get_settings(), "email_from", "demo@bind.example")
+
+    issue = await handlers.vider_la_boite_d_envoi(session, account=None, provider=None)
+
+    assert isinstance(issue, handlers.Fait)
 
 
 async def test_un_type_de_job_sans_traitement_est_epuise_pas_ignore(

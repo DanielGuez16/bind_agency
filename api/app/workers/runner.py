@@ -107,7 +107,7 @@ async def _traiter(
     # vérifié sur les huit, pas supposé. Ils gardent le paramètre pour la même
     # signature que les jobs par compte, et n'en font rien.
     if job.job_type in handlers.SANS_CIBLE:
-        issue = await traitement(session, account=compte, provider=None)
+        provider = None
     else:
         try:
             provider = fournisseur_pour(compte.platform)
@@ -120,7 +120,19 @@ async def _traiter(
             statut = await job_service.echouer(session, job, erreur=str(error))
             return bilan.plus(epuises=1 if statut is JobStatus.EXHAUSTED else 0, reportes=1)
 
+    # **Un traitement qui lève fait échouer *son* job, pas le passage entier —
+    # exactement la même garantie que ci-dessus, étendue au traitement lui-même
+    # et non plus seulement au choix du fournisseur.** Mesuré en production le
+    # 2026-09-03 : `vider_la_boite_d_envoi` levait à chaque appel, cette levée
+    # sortait de `executer()` sans être rattrapée, et la boucle d'exécution
+    # s'arrêtait là — un job voisin sans aucun défaut (`favorite_availability
+    # _sweep`) restait bloqué derrière, jamais atteint, tant que le premier
+    # gardait l'échéance la plus ancienne de la file.
+    try:
         issue = await traitement(session, account=compte, provider=provider)
+    except Exception as error:  # noqa: BLE001 - le report est la conduite voulue
+        statut = await job_service.echouer(session, job, erreur=str(error))
+        return bilan.plus(epuises=1 if statut is JobStatus.EXHAUSTED else 0, reportes=1)
 
     match issue:
         case handlers.Fait(prochain=prochain):
