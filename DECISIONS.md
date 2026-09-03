@@ -11095,3 +11095,27 @@ autre forme — une réponse qui prétend être fraîche et ne l'est plus. La
 question n'est pas technique, elle est produit : accepter une fenêtre de
 staleness volontaire sur cet écran précis demande une décision, pas une
 optimisation glissée dans une correction de charge.
+
+## 2026-09-03 — Le pied de l'email ne porte pas d'adresse postale
+
+**Tranché, après vérification juridique.** La planche Design du gabarit email
+portait une adresse postale au pied de page, avec la note « à ajouter avant
+l'envoi ». Daniel préférait n'y rien mettre, sans savoir si c'était une
+option ou une obligation légale — la question a donc été vérifiée avant
+d'écrire quoi que ce soit.
+
+CAN-SPAM (US) exige une adresse postale pour un email **commercial** — but
+publicitaire — mais exempte les messages **transactionnels/relationnels**.
+Les seize gabarits du produit (vérification de compte, statut de
+réservation, cycle de vie d'une collaboration, statut d'abonnement)
+correspondent à cette exemption sur la lecture de leur contenu réel. GDPR
+n'impose aucune adresse postale en pied d'email ; cette exigence, quand elle
+existe en UE, vient de règles nationales distinctes (e-commerce, Impressum),
+hors de portée d'un marché lancé à Miami.
+
+Design a retiré la ligne et son jeton des deux langues de la planche : ce
+n'était pas une exigence de composition, c'était son repli faute de cette
+vérification. Le pied de l'email ne porte donc que deux lignes — pourquoi on
+reçoit ceci, puis les liens — jamais une troisième. `EMAIL_POSTAL_ADDRESS`,
+posée en configuration le temps que la question reste ouverte, a été
+retirée : ce n'est plus une décision en attente.
