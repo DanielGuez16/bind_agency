@@ -11,7 +11,7 @@
  * porte que personne n'ouvre. Rien ne pouvait le dire — l'écran a ses propres
  * tests, et ils passaient tous.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 
 import { AbonnementScreen } from '../src/screens/AbonnementScreen';
 import { ReglagesScreen } from '../src/screens/ReglagesScreen';
@@ -52,6 +52,14 @@ it('porte une entrée vers l’abonnement, et elle mène quelque part', async ()
   await waitFor(() => expect(screen.getByTestId('ouvrir-l-abonnement')).toBeTruthy());
   await fireEvent.press(screen.getByTestId('ouvrir-l-abonnement'));
   expect(ouvrir).toHaveBeenCalled();
+
+  // **Sous le même intertitre que la pause, parce que c'est le même sujet.**
+  // La formule portait son propre titre, en rangée pressable avec un chevron
+  // de sortie ; la pause portait le sien, en bouton. Deux rangs là où le salon
+  // n'en lit qu'un — ce qu'il peut faire de son commerce.
+  expect(
+    within(screen.getByTestId('section-commerce')).getByTestId('ouvrir-l-abonnement'),
+  ).toBeTruthy();
 });
 
 it('et ne la rend pas là où il n’y a rien à ouvrir', async () => {
@@ -63,6 +71,25 @@ it('et ne la rend pas là où il n’y a rien à ouvrir', async () => {
 
   expect(screen.queryByTestId('ouvrir-l-abonnement')).toBeNull();
   expect(screen.queryByTestId('abonnement-depuis-les-reglages')).toBeNull();
+});
+
+it('rend le retour en flèche seule, sans le mot qui redit le geste', async () => {
+  /**
+   * **Quatrième signalement sur la même chose.** « Back » écrit à côté d'une
+   * flèche vers la gauche redit ce que la flèche fait, et sur une sous-page de
+   * menu il écrivait « More » — le nom de l'endroit qu'on venait de quitter,
+   * répété en haut de chaque page qu'on y ouvrait.
+   *
+   * Ce que le mot apportait ne disparaît pas : il vit dans le libellé
+   * accessible, où il répond à « où revient-on » pour qui n'a pas l'écran sous
+   * les yeux. Le décor l'exige dans les deux sens — pas de texte rendu, et
+   * l'annonce entière conservée.
+   */
+  await monter({ onRetour: () => {} });
+
+  const retour = await waitFor(() => screen.getByTestId('retour-des-reglages'));
+  expect(retour.props.accessibilityLabel).toBe('Back');
+  expect(within(retour).queryByText('Back')).toBeNull();
 });
 
 /** Ce que le serveur rend a Ocean : trois formules, et l'une souscrite. */

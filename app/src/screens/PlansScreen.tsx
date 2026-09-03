@@ -67,7 +67,11 @@ export function PlansScreen() {
     { cle: 'name', label: t('admin.plansTitre'), largeur: 200 },
     { cle: 'intervalle', label: t('admin.plansIntervalle'), largeur: 100 },
     { cle: 'prix', label: t('admin.plansPrix'), largeur: 110, chiffre: true },
-    { cle: 'abonnes', label: t('admin.plansAbonnes'), largeur: 90, chiffre: true },
+    // **130 et non 90.** La cellule ne porte pas toujours un nombre : un plan
+    // que personne n'a pris dit « Not taken yet », qui se cassait sur trois
+    // lignes. La colonne est dimensionnée sur son contenu le plus long, pas sur
+    // le plus fréquent.
+    { cle: 'abonnes', label: t('admin.plansAbonnes'), largeur: 130, chiffre: true },
     { cle: 'actifs', label: t('admin.plansActifs'), largeur: 90, chiffre: true },
     // **La colonne qui manquait le plus.** Sept mois contre onze à prix double
     // dit que le second n'est pas trop cher, et aucun total ne le disait.

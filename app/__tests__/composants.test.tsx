@@ -673,17 +673,48 @@ describe('back office', () => {
     { cle: 'followers', label: 'Followers', largeur: 100, chiffre: true },
   ];
 
-  it('pose la gouttière droite sur les colonnes numériques', async () => {
-    // Sans elle, une valeur alignée à droite touche la colonne suivante et se
-    // lit comme si elle lui appartenait — sur une table de décision, cela fait
-    // trancher sur le mauvais chiffre.
+  it('ne laisse aucune cellule passer à la ligne', async () => {
+    // **C'est ce qui cassait les deux tableaux de l'administration.** Une date
+    // « Sep 2, 2026 » dans 110 points, un « Not taken yet » dans 90 : la valeur
+    // se cassait en deux ou trois lignes, la rangée prenait deux hauteurs, et
+    // la table cessait d'en être une — l'œil ne suit plus une colonne, il
+    // déchiffre des blocs.
+    //
+    // La colonne de chiffres est celle qui échappait à la règle : elle seule
+    // n'avait pas `ellipseSurNomPropre`, précisément parce qu'on la croyait
+    // toujours courte.
+    await monter(
+      <TableRow
+        colonnes={COLONNES}
+        valeurs={{ handle: 'un pseudonyme très long qui déborde', followers: 'Not taken yet' }}
+        testID="rangee"
+      />,
+    );
+
+    for (const valeur of ['un pseudonyme très long qui déborde', 'Not taken yet']) {
+      expect(screen.getByText(valeur).props.numberOfLines).toBe(1);
+    }
+  });
+
+  it('sépare toutes les colonnes, et l’alignement dit lesquelles sont des chiffres', async () => {
+    // **La gouttière ne distinguait rien, elle séparait.** Elle n'était posée
+    // que sur les colonnes numériques, au motif qu'elle les désignait ; deux
+    // colonnes de texte voisines se touchaient donc, et c'est ce qui donnait au
+    // tableau des salons son aspect brut — plus encore que les hauteurs
+    // inégales.
+    //
+    // Ce qui désigne une colonne de chiffres est son **alignement à droite**,
+    // pas son creux : le creux, lui, empêche une valeur de se lire comme
+    // appartenant à la colonne suivante, et ce besoin-là est le même pour du
+    // texte. Les deux propriétés sont donc éprouvées séparément, chacune sur ce
+    // qu'elle fait.
     await monter(<TableHeader colonnes={COLONNES} testID="entete" />);
 
     expect(style(screen.getByTestId('entete-followers')).paddingRight).toBe(14);
+    expect(style(screen.getByTestId('entete-handle')).paddingRight).toBe(14);
+
     expect(style(screen.getByTestId('entete-followers')).alignItems).toBe('flex-end');
-    // Le pendant : une colonne de texte n'en porte pas, sinon la gouttière ne
-    // dirait rien de particulier.
-    expect(style(screen.getByTestId('entete-handle')).paddingRight).toBe(0);
+    expect(style(screen.getByTestId('entete-handle')).alignItems).toBe('flex-start');
   });
 
   it('retire les décisions qui exigent un motif tant qu’il manque', async () => {

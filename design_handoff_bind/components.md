@@ -392,12 +392,16 @@ Une ligne par retrait, la version qui l'a décidé, et la raison en une phrase.
 | Le serrage négatif sous 22 px | v8, partout | Il tient un display de 44 px ; à 22 et moins il ferme des contreformes déjà compactes. |
 | Les tirets cadratins | v8, partout | Remplacés **par le sens** : virgule pour une apposition, point pour deux phrases. Jamais par un point médian, qui est le séparateur de champs. |
 | Le tiret dans une cellule vide | v12, commerce | Un signe à interpréter, en `ink.faint` à 2,46:1. La cellule reste vide quand une autre colonne porte déjà le fait. |
+| ~~Le « 0 » sur un jour sans décision~~ **remis en v14** | v11 puis v14, commerce | Retiré tant que la bande tenait **sept cases dans l'écran** : sept chiffres à lire pour en retenir deux. Remis à quatorze cases sur une piste qui défile, où une case vide ne se distingue plus d'une case pas encore chargée. Ce n'est pas le retrait qui était faux, c'est la longueur de la bande qui a changé la question. En `ink.mute`, jamais `ink.faint` : un chiffre posé pour être lu ne peut pas vivre à 2,46:1. |
 | Le chevron **comme promesse** sur chaque ligne d'un tableau | v12, commerce | Sept chevrons répétaient sept fois la même promesse. Il revient en v13 comme **marque** et non comme cible : la rangée entière reste la seule zone cliquable, et rien d'autre dedans ne l'est. Même partage que le glyphe `sortie`. |
 | « MIAMI » sous le titre du fil | v9, créateur | Le fil est local par construction ; le nom de la ville n'informe personne. |
 | La vidéo de fond de l'accueil | v3, créateur | Quatre états à tenir pour un fond qui ne fait pas arriver plus vite au fil. |
 | Le bloc noir de la connexion de bureau | v3, créateur | Il expliquait le produit à la seule personne qui a déjà un compte. |
 | La signature « AGENCY » et « CRÉATEUR DE LIEN » | v1.0, marque | Le logotype seul suffit, et la seconde est en français quand BIND parle anglais et espagnol. |
 | Le sélecteur de période à zéro donnée | v3, rapports | Il n'y a aucune période à comparer. |
+| Le mot à côté de la flèche de retour | v14, partout | « Back » redit le geste que la flèche fait, et sur une sous-page de menu il écrivait « More » — le nom de l'endroit qu'on venait de quitter, en haut de chaque page qu'on y ouvre. La destination reste dans le libellé accessible, où elle répond à « où revient-on » pour qui n'a pas l'écran sous les yeux. |
+| Le glyphe `sortie` sur l'entrée d'abonnement | v14, commerce | Il dit « ce lien quitte l'application », et l'abonnement est un écran du produit. Il ne marquait qu'un lien interne, c'est-à-dire rien. |
+| L'intertitre propre de la pause et celui de l'abonnement | v14, commerce | Deux titres de même taille pour deux gestes que le salon lit comme un seul sujet — ce qu'il peut faire de son commerce. Un seul intertitre, et deux boutons de même forme. |
 | La recherche par pseudonyme dans l'annuaire | v3, commerce | Un salon ne connaît aucun pseudonyme : le champ ne sert qu'à qui sait déjà quoi taper. |
 | La suspension punitive | v0.7, produit | Le score de fiabilité couvre le cas, gradué et réversible, là où une suspension est binaire et engage des droits. |
 | `tiers.valueHint` | v0.7, créateur | Une valeur monétaire présentée à un créateur. |

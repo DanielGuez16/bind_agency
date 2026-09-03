@@ -10,6 +10,7 @@
  * sur l'activation, une clôture proposée à qui n'y a pas droit.
  */
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import type { ReactElement, ReactNode } from 'react';
 
 import { ApiClient, ApiProvider, PREFIXE } from '../src/api';
@@ -817,7 +818,24 @@ describe('horaires et capacité', () => {
     );
     await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
 
+    /**
+     * **La mise en garde a suivi l'action, et c'est ce qu'on éprouve ici.**
+     *
+     * Elle se tenait sous la table en permanence ; l'ajout d'une date étant
+     * devenu la dernière rangée de cette table, elle vit dans le panneau que
+     * la rangée ouvre — donc devant celui qui est en train de fermer un jour,
+     * plutôt qu'au-dessus de tous ceux qui n'en ferment pas.
+     *
+     * Le décor l'exige dans les deux sens : absente tant que la rangée n'est
+     * pas ouverte, présente une fois qu'elle l'est. Une implémentation qui
+     * l'aurait laissée en permanence passerait la seconde moitié seule.
+     */
+    expect(screen.queryByText(en.composition.fermerNAnnuleRien)).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('ajouter-une-date'));
+
     expect(screen.getByText(en.composition.fermerNAnnuleRien)).toBeTruthy();
+    expect(screen.getByTestId('fermer-cette-date')).toBeTruthy();
   });
 
   it('affiche une date de fermeture sans la faire traverser un fuseau', async () => {
@@ -840,6 +858,102 @@ describe('horaires et capacité', () => {
     await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
 
     expect(screen.getByTestId('exception-e1')).toHaveTextContent(/15/);
+  });
+
+  it('dit les heures d’une exception qui ouvre, plutôt que « fermé » sur les deux', async () => {
+    /**
+     * **Le décor porte les deux cas, parce qu'un seul ne prouve rien.**
+     *
+     * L'écran écrivait « fermé » sur toute exception, sans regarder
+     * `is_closed`, `start_time` ni `end_time` — trois champs servis depuis
+     * toujours. Une journée qui ouvrait à 14 h se lisait fermée, et le salon
+     * refusait des créatrices qu'il avait décidé d'accueillir.
+     *
+     * Avec une seule exception fermée au décor, l'implémentation fautive rend
+     * exactement le même verdict que la bonne. Il en faut donc une de chaque,
+     * et c'est celle qui ouvre qui les sépare.
+     */
+    const fermee = {
+      id: 'e1',
+      business_id: 'b1',
+      date: '2026-08-15',
+      is_closed: true,
+      start_time: null,
+      end_time: null,
+      concurrent_slots: null,
+    };
+    const reduite = {
+      id: 'e2',
+      business_id: 'b1',
+      date: '2026-08-22',
+      is_closed: false,
+      start_time: '14:00:00',
+      end_time: '19:00:00',
+      concurrent_slots: 1,
+    };
+    await monter(
+      <HorairesScreen businessId="b1" />,
+      clientDe({ '/capacity-rules': [REGLE], '/capacity-exceptions': [fermee, reduite] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
+
+    expect(screen.getByTestId('exception-e1')).toHaveTextContent(
+      new RegExp(en.composition.fermeToutLeJour),
+    );
+    expect(screen.getByTestId('exception-e2')).toHaveTextContent(/14:00.*19:00/);
+    expect(screen.getByTestId('exception-e2')).not.toHaveTextContent(
+      new RegExp(en.composition.fermeToutLeJour),
+    );
+  });
+
+  it('compose les deux tables avec la même rangée', async () => {
+    /**
+     * **Troisième signalement de divergence, donc on éprouve la cause.**
+     *
+     * Les deux tables décrivaient chacune leur rangée, avec les mêmes six
+     * mesures recopiées de part et d'autre. Chaque planche qui en corrigeait
+     * une laissait l'autre derrière, et la divergence revenait par un autre
+     * chiffre — hauteur, puis intervalle, puis filet.
+     *
+     * On ne compare donc pas des valeurs attendues, qu'il faudrait tenir à
+     * jour ici aussi : **on compare les deux rangées entre elles.** Ce test
+     * reste vrai quand la planche suivante change la hauteur, et rouge le jour
+     * où l'une des deux tables change sans l'autre — c'est exactement la faute
+     * qu'il doit attraper.
+     */
+    const exception = {
+      id: 'e1',
+      business_id: 'b1',
+      date: '2026-08-15',
+      is_closed: true,
+      start_time: null,
+      end_time: null,
+      concurrent_slots: null,
+    };
+    await monter(
+      <HorairesScreen businessId="b1" />,
+      clientDe({ '/capacity-rules': [REGLE], '/capacity-exceptions': [exception] }),
+    );
+    await waitFor(() => expect(screen.getByTestId('etat-nominal')).toBeTruthy());
+
+    const forme = (testID: string) => {
+      const plat = StyleSheet.flatten(screen.getByTestId(testID).props.style) as Record<
+        string,
+        unknown
+      >;
+      return {
+        minHeight: plat.minHeight,
+        paddingHorizontal: plat.paddingHorizontal,
+        gap: plat.gap,
+        borderBottomWidth: plat.borderBottomWidth,
+        borderBottomColor: plat.borderBottomColor,
+        alignItems: plat.alignItems,
+      };
+    };
+
+    expect(forme('exception-e1')).toEqual(forme(`modifier-${REGLE.weekday}`));
+    // Et la rangée d'ajout est de la même table, pas un bouton posé dessous.
+    expect(forme('ajouter-une-date')).toEqual(forme('exception-e1'));
   });
 });
 

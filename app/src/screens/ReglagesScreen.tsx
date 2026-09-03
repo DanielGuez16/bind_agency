@@ -50,7 +50,7 @@ import { Button, Chip, DataRow, Filet, Icone, RangeeDeChips, Texte, TextField } 
 import { formatDate } from '../format';
 import { useI18n, type SupportedLocale } from '../i18n';
 import { trousseauDisponible, useSession } from '../session';
-import { useTheme } from '../theme';
+import { size, useTheme } from '../theme';
 import { SelecteurDeSalon } from '../shell/SelecteurDeSalon';
 import { useMonCommerce } from '../shell/useMonCommerce';
 import { HealthScreen } from './HealthScreen';
@@ -100,19 +100,20 @@ export function ReglagesScreen({
           accessibilityLabel={t('common.retour')}
           onPress={onRetour}
           style={({ pressed }) => ({
-            minHeight: 44,
+            minWidth: size.touchMin,
+            minHeight: size.touchMin,
+            alignItems: 'center',
             justifyContent: 'center',
+            alignSelf: 'flex-start',
             opacity: pressed ? 0.7 : 1,
           })}
           hitSlop={12}
           testID="retour-des-reglages"
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Icone nom="retour" couleur="ink.soft" taille={18} />
-            <Texte variante="type.label" couleur="ink.soft">
-              {t('common.retour')}
-            </Texte>
-          </View>
+          {/* La flèche seule, comme partout ailleurs. « Back » écrit à côté
+              d'une flèche vers la gauche redit le geste que la flèche fait ;
+              l'annonce, elle, le garde — c'est là qu'il manque. */}
+          <Icone nom="retour" couleur="ink.soft" taille={18} />
         </Pressable>
       ) : null}
       <Texte variante="type.screenTitle">{t('reglages.titre')}</Texte>
@@ -144,30 +145,33 @@ export function ReglagesScreen({
           pouvait donc ni voir sa formule, ni en changer, ni résilier — la
           moitié des gestes que l'écran sait faire n'avait aucun chemin.
 
-          C'est la même famille que la carte du fil : construit, branché, et
-          derrière une porte que personne n'ouvre. */}
-      {onVoirLAbonnement ? (
-        <View style={{ gap: 10 }} testID="abonnement-depuis-les-reglages">
+          **Deux actions de même rang, donc deux boutons de même forme.** La
+          formule et la pause portaient chacune son intertitre, l'une en rangée
+          pressable avec un chevron de sortie, l'autre en bouton : deux rangs
+          là où le salon n'en lit qu'un — ce qu'il peut faire de son commerce.
+          Deux formes pour deux gestes voisins font chercher laquelle des deux
+          est la vraie commande.
+
+          **Et le glyphe de sortie part.** Il dit « ce lien quitte
+          l'application », et l'abonnement est un écran du produit. Il ne
+          marquait qu'un lien interne, c'est-à-dire rien. */}
+      {onVoirLAbonnement || role === 'business_member' ? (
+        <View style={{ gap: 10 }} testID="section-commerce">
           <Texte variante="type.label" couleur="ink.soft">
-            {t('reglages.abonnementTitre')}
+            {t('reglages.sectionCommerce')}
           </Texte>
-          <Pressable
-            accessibilityRole="button"
-            onPress={onVoirLAbonnement}
-            testID="ouvrir-l-abonnement"
-            style={({ pressed }) => ({
-              minHeight: 60,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 12,
-              opacity: pressed ? 0.7 : 1,
-            })}
-          >
-            <Texte variante="type.body" style={{ flex: 1 }}>
-              {t('reglages.abonnementLigne')}
-            </Texte>
-            <Icone nom="sortie" couleur="ink.soft" taille={16} />
-          </Pressable>
+          {onVoirLAbonnement ? (
+            <View style={{ alignSelf: 'flex-start' }} testID="abonnement-depuis-les-reglages">
+              <Button
+                label={t('reglages.abonnementLigne')}
+                variant="secondary"
+                onPress={onVoirLAbonnement}
+                testID="ouvrir-l-abonnement"
+              />
+            </View>
+          ) : null}
+
+          {role === 'business_member' ? <PauseDuCommerce /> : null}
         </View>
       ) : null}
 

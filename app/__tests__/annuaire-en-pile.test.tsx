@@ -189,6 +189,20 @@ it('porte le retour nommé sur l’écran qu’on voit, pas sur le mur', async (
   // la question se pose. Sur le mur, le test d'à côté n'aurait rien prouvé.
   await monter(390);
 
-  expect(screen.getByTestId('retour')).toBeTruthy();
-  expect(screen.getByTestId('retour-vers')).toHaveTextContent('More');
+  /**
+   * **La destination a quitté l'écran et vit dans l'annonce.**
+   *
+   * Cette assertion lisait « More » écrit à côté de la flèche. Le mot répétait
+   * sur chaque sous-page le nom du menu qu'on venait de quitter, là où la
+   * flèche le dit déjà — à qui voit l'écran. À qui l'écoute, elle ne dit rien,
+   * et c'est exactement ce que le libellé accessible porte maintenant.
+   *
+   * Ce qui est éprouvé reste le même défaut qu'à l'origine : la prop posée sur
+   * le mur d'abonnement plutôt que sur l'annuaire, donc nommée dans le code et
+   * nulle part à l'usage.
+   */
+  const retour = screen.getByTestId('retour');
+  expect(retour.props.accessibilityLabel).toBe('More');
+  expect(screen.queryByTestId('retour-vers')).toBeNull();
+  expect(screen.queryByText('More')).toBeNull();
 });

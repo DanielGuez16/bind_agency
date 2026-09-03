@@ -98,7 +98,11 @@ const COLONNES = (t: (cle: string) => string): Colonne[] => [
   // la police non homogène qu'on voit sans savoir la nommer — et c'est la règle
   // typographique du dépôt prise à revers : mono pour un code ou un décompte,
   // jamais pour une date.
-  { cle: 'inscrit', label: t('admin.commercesColonneInscrit'), largeur: 110 },
+  // **140 et non 110.** `formatDate` rend une date « moyenne » — « Sep 2, 2026 »
+  // — que 110 points ne portent pas : elle se cassait en « Sep 2, » au-dessus de
+  // « 2026 », et la rangée prenait deux hauteurs. Élargir vaut mieux
+  // qu'ellipser : une date coupée ne se lit pas mieux qu'une date cassée.
+  { cle: 'inscrit', label: t('admin.commercesColonneInscrit'), largeur: 140 },
   { cle: 'action', label: '', largeur: LARGEUR_ACTION },
 ];
 
