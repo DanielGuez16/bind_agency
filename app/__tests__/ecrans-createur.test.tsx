@@ -12,7 +12,7 @@
  * vérification, « pas encore mesuré » qui n'est pas « zéro », les obstacles de
  * la fiche identiques à ceux des paliers.
  */
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactElement, ReactNode } from 'react';
 
 import { ApiClient, ApiProvider } from '../src/api';
@@ -847,5 +847,72 @@ describe('historique', () => {
     );
     await waitFor(() => expect(screen.getByTestId('onglet-vide')).toBeTruthy());
     expect(screen.getByTestId('onglets')).toBeTruthy();
+  });
+});
+
+describe('mes publications : le filtre part au serveur, et la liste se continue', () => {
+  /** Une réservation publiée de plus, distincte par son identifiant et sa date. */
+  const publiee = (n: number) => ({
+    ...RESERVATION_PUBLIEE,
+    booking_id: `b-${n}`,
+    created_at: `2026-08-${String(n).padStart(2, '0')}T00:00:00Z`,
+  });
+
+  it('demande les consommées, et va chercher la page suivante au curseur', async () => {
+    // **Le décor reproduit le défaut mesuré en base.** Cinquante réservations
+    // consommées dont une seule publiée en tête de page : un écran qui
+    // filtrerait après coup sur une page non filtrée n'en verrait aucune, et
+    // un écran sans pagination s'arrêterait à la première page.
+    const demandes: string[] = [];
+    const premiere = [publiee(1), ...Array.from({ length: 49 }, (_, i) => ({
+      ...RESERVATION_PUBLIEE,
+      booking_id: `n-${i}`,
+      created_at: `2026-07-${String((i % 28) + 1).padStart(2, '0')}T00:00:00Z`,
+      contrepartie: { ...RESERVATION_PUBLIEE.contrepartie, status: 'pending' },
+    }))];
+
+    await monter(
+      <MesPublicationsScreen onRetour={() => {}} />,
+      clientQui(async (url) => {
+        demandes.push(url);
+        // La seconde page est celle qui porte un curseur.
+        return url.includes('avant=')
+          ? { items: [publiee(2)], compteurs: {} }
+          : { items: premiere, compteurs: {} };
+      }),
+    );
+    await waitFor(() => expect(screen.getByTestId('liste-des-publications')).toBeTruthy());
+
+    // **1. Le filtre est dans la requête, pas dans l'écran.** Sans lui, le
+    // serveur rend les cinquante plus récentes toutes catégories confondues.
+    expect(demandes[0]).toContain('status=consumed');
+    expect(demandes[0]).toContain('limite=50');
+
+    // Une seule publiée sur la page, et c'est bien elle qui est rendue.
+    expect(screen.getByTestId('publication-b-1')).toBeTruthy();
+    expect(screen.queryByTestId('publication-b-2')).toBeNull();
+
+    // **2. La page était pleine, donc la suite est proposée.**
+    await fireEvent.press(screen.getByTestId('voir-plus-publications'));
+    await waitFor(() => expect(screen.getByTestId('publication-b-2')).toBeTruthy());
+
+    // **Le curseur est la dernière ligne REÇUE, pas la dernière retenue.** Le
+    // prendre sur la publication sauterait les quarante-neuf lignes entre les
+    // deux, et la page suivante rendrait ce qu'on a déjà lu.
+    expect(demandes[1]).toContain(encodeURIComponent(premiere[premiere.length - 1].created_at));
+    // La première reste à l'écran : la suite s'ajoute, elle ne remplace pas.
+    expect(screen.getByTestId('publication-b-1')).toBeTruthy();
+  });
+
+  it('et ne propose pas de suite quand la page n’était pas pleine', async () => {
+    // Le cas qui sépare les deux implémentations : un bouton permanent ferait
+    // douter de la fin de liste, et ne ramènerait jamais rien.
+    await monter(
+      <MesPublicationsScreen onRetour={() => {}} />,
+      clientDe({ '/me/bookings': { items: [publiee(1)], compteurs: {} } }),
+    );
+    await waitFor(() => expect(screen.getByTestId('liste-des-publications')).toBeTruthy());
+
+    expect(screen.queryByTestId('voir-plus-publications')).toBeNull();
   });
 });
