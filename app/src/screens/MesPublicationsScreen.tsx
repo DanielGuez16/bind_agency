@@ -127,7 +127,17 @@ function Publication({ item }: { item: ReservationDuCreateur }) {
         />
       </View>
       <View style={{ flexShrink: 1, gap: 2 }}>
-        <Texte variante="type.body">{item.item_name}</Texte>
+        {/* Même donnée, même défaut, même correction que la carte des
+            réservations à venir : `duration_minutes` existait déjà sur ce
+            type et seul le nom était rendu. */}
+        <Texte variante="type.body">
+          {item.duration_minutes
+            ? t('parcours.prestationEtDuree', {
+                prestation: item.item_name,
+                minutes: item.duration_minutes,
+              })
+            : item.item_name}
+        </Texte>
         <Texte variante="type.caption" couleur="ink.soft">
           {[
             item.business_name,

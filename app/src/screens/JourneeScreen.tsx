@@ -1353,8 +1353,16 @@ function Ligne({
         <Texte variante="type.data" couleur={passe ? 'ink.mute' : 'ink.default'}>
           {heureDe(reservation, timezone, t('commerce.journeeSansCreneau'), locale)}
         </Texte>
+        {/* La durée rejoint le nom, même correction que la carte créatrice :
+            `duration_minutes` existait déjà sur `ReservationDuCommerce`, seul
+            le nom était rendu sur cette ligne de la journée. */}
         <Texte variante="type.body" style={{ flex: 1 }} ellipseSurNomPropre>
-          {reservation.item_name}
+          {reservation.duration_minutes
+            ? t('commerce.prestationEtDuree', {
+                prestation: reservation.item_name,
+                minutes: reservation.duration_minutes,
+              })
+            : reservation.item_name}
         </Texte>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

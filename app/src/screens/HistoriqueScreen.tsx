@@ -576,8 +576,21 @@ function CarteDeReservation({
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
         <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+          {/* **La durée rejoint le nom, sur la même ligne.** Les deux
+              existaient déjà sur la donnée — `item_name`, `duration_minutes` —
+              et seul le nom était rendu. Une créatrice qui compare deux cartes
+              du même salon ne les distingue souvent que par la durée ; la
+              taire obligeait à ouvrir la réservation pour savoir laquelle
+              tenir. `· ` et non un tiret entre espaces : la garde de
+              ponctuation des catalogues l'interdit, et le point centré est déjà
+              la façon dont le produit joint deux faits sur une ligne. */}
           <Texte variante="type.titreDApercu" ellipseSurNomPropre>
-            {reservation.item_name}
+            {reservation.duration_minutes
+              ? t('parcours.prestationEtDuree', {
+                  prestation: reservation.item_name,
+                  minutes: reservation.duration_minutes,
+                })
+              : reservation.item_name}
           </Texte>
           <Texte
             variante="type.body"
