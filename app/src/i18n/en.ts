@@ -920,6 +920,11 @@ export const en = {
     commerceSuspended: 'Suspended',
     commerceRepriseEnCours: 'You are in',
     commerceFermer: 'Close',
+    // Le bandeau de l'administration, une fois entrée dans le compte repris.
+    // Le motif, la portée et les dates reprennent les clés `commerce.*` que le
+    // salon lit de son côté — un seul jeu de mots pour la même donnée.
+    repriseBandeauTitre: "You're in {{salon}}'s account",
+    repriseBandeauFermer: 'Close my access',
     plansIntervalle: 'Billing',
     plansMensuel: 'Monthly',
     plansAnnuel: 'Yearly',

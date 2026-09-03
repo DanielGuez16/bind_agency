@@ -11012,3 +11012,34 @@ d'en ajouter un. Le nombre d'événements de fiabilité ne change pas — seul l
 motif répété diffère — donc le score reste celui déjà calibré. Trois dossiers
 « mixed reasons » restent pour démontrer l'autre branche du tri, dont le plus
 frais (deux jours) reste intact.
+## 2026-09-03 — La reprise ouvrait une porte que rien ne savait franchir
+
+L'audit fonctionnel de l'administration a trouvé que le parcours de reprise de
+compte s'arrêtait net après l'ouverture : `ReprendreLeCompte` savait ouvrir un
+accès, aucun écran ne menait ensuite au commerce repris, et `fermerLaReprise()`
+— le geste de l'administration sur son propre accès — n'était appelé nulle
+part côté client.
+
+**`Navigation.tsx` tient maintenant la bascule.** `OngletsAdmin` porte l'état
+de la reprise en cours et remplace sa propre barre d'onglets par un nouvel
+`EcranDeReprise`, qui rejoue les écrans marchands (`ecransDuCommerce`, extrait
+de `OngletsDuCommerceChoisi` pour ce second appelant) sur le `businessId` de la
+reprise. Chaque écran marchand prenait déjà `businessId` en prop explicite,
+jamais depuis un contexte — c'est ce qui a rendu l'extraction possible sans
+toucher un seul écran.
+
+**Le réglage du commerce reste hors de la reprise, délibérément.** Les
+sections de pause et d'historique de `ReglagesScreen` sont gardées sur le rôle
+de **la session connectée** (`business_member`), pas sur celui qu'on visite —
+les y montrer sous une reprise aurait rendu un écran de réglages amputé, sans
+le dire. `ecransDuCommerce` ne porte donc pas « reglages » ; chaque appelant
+compose le sien.
+
+**`fermerLaReprise` sort de la table `SANS_APPELANT`**
+(`routes-sans-appelant.test.ts`), où elle portait depuis son ajout une raison
+qui disait l'inverse de ce qu'on vient de construire : « l'administration se
+retire en quittant, un bouton ne protège personne ». L'audit a demandé
+explicitement le contraire — un geste distinct pour refermer son propre accès
+— et c'est la décision qui tient maintenant. Trouvé seulement parce que la
+suite complète tourne avant de pousser : cette garde ne touche ni
+`Navigation.tsx` ni les écrans modifiés, rien ne l'aurait signalée autrement.

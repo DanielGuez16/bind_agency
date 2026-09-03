@@ -42,6 +42,7 @@ import {
   type EtatDeLaTournee,
   type FichePreparee,
   type LienRemis,
+  type RepriseOuverte,
 } from '../api';
 import {
   Button,
@@ -139,7 +140,18 @@ const EN_COURS = new Set<EtatDeLaTournee>([
   'blocked_on_commitment',
 ]);
 
-export function TerrainScreen() {
+export function TerrainScreen({
+  onEntrerEnReprise,
+}: {
+  /**
+   * Naviguer dans le commerce qu'on vient de reprendre depuis le terrain.
+   *
+   * Optionnel pour la même raison qu'à l'écran des salons : seule
+   * l'administration sous onglets, qui tient la bascule, a de quoi en faire
+   * quelque chose.
+   */
+  onEntrerEnReprise?: (businessId: string, nom: string, detail?: RepriseOuverte) => void;
+}) {
   const { t, locale } = useI18n();
   const c = useColors();
   const { api, messageDErreur } = useApi();
@@ -383,6 +395,7 @@ export function TerrainScreen() {
                   }
                   onEmettre={() => void emettre(fiche)}
                   onRevoquer={() => void revoquer(fiche)}
+                  onEntrerEnReprise={onEntrerEnReprise}
                 />
               ))}
             </View>
@@ -474,6 +487,7 @@ function LigneDeFiche({
   onOuvrir,
   onEmettre,
   onRevoquer,
+  onEntrerEnReprise,
 }: {
   fiche: FichePreparee;
   colonnes: Colonne[];
@@ -481,6 +495,7 @@ function LigneDeFiche({
   onOuvrir: () => void;
   onEmettre: () => void;
   onRevoquer: () => void;
+  onEntrerEnReprise?: (businessId: string, nom: string, detail?: RepriseOuverte) => void;
 }) {
   const { t, locale } = useI18n();
   const etat = fiche.etat;
@@ -565,7 +580,18 @@ function LigneDeFiche({
 
       {etat === 'claimed' ? (
         reprise ? (
-          <ReprendreLeCompte businessId={fiche.business_id} nomDuSalon={fiche.name} />
+          <ReprendreLeCompte
+            businessId={fiche.business_id}
+            nomDuSalon={fiche.name}
+            // Même bascule qu'à l'écran des salons : entrer sans second geste,
+            // et le motif rejoint le bandeau de `EcranDeReprise` plutôt que de
+            // s'afficher un instant sur une ligne qu'on quitte aussitôt.
+            //
+            // **Nommé `detail`, pas `reprise` : le composant tient déjà un
+            // état booléen de ce nom** — un paramètre qui l'aurait masqué se
+            // serait lu juste ici et aurait cassé `setReprise` plus bas.
+            onOuverte={(detail) => onEntrerEnReprise?.(fiche.business_id, fiche.name, detail)}
+          />
         ) : (
           <View style={{ flexDirection: 'row' }}>
             <Button

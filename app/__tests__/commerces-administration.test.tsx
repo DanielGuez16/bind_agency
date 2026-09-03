@@ -80,16 +80,65 @@ function clientDe(
   });
 }
 
-function monter(api: ApiClient) {
+function monter(
+  api: ApiClient,
+  onEntrerEnReprise?: (businessId: string, nom: string, detail?: unknown) => void,
+) {
   return render(
     <I18nProvider initialLocale="en">
       <ThemeProvider role="admin">
         <ApiProvider client={api}>
-          <CommercesScreen />
+          <CommercesScreen onEntrerEnReprise={onEntrerEnReprise} />
         </ApiProvider>
       </ThemeProvider>
     </I18nProvider>,
   );
+}
+
+/**
+ * Un client qui répond aussi aux routes de la reprise elle-même, pas
+ * seulement à la liste.
+ *
+ * **Le formulaire d'ouverture lit le compte de l'appelant avant l'appui** —
+ * `/admin/me/support-access/recent` — et poste sur
+ * `/admin/businesses/{id}/support-access` à l'ouverture. Sans les deux, la
+ * garde `route non simulée` masquerait le vrai sujet du test, qui est ce que
+ * `onEntrerEnReprise` reçoit ensuite.
+ */
+function clientAvecReprise(salons: unknown[]) {
+  return new ApiClient({
+    baseUrl: 'https://api.test',
+    coffre,
+    fetchImpl: async (url, init) => {
+      const chemin = String(url);
+      const methode = (init as { method?: string } | undefined)?.method ?? 'GET';
+      const rendre = (corps: unknown) => ({ ok: true, status: 200, json: async () => corps }) as Response;
+
+      if (chemin.includes('/admin/businesses') && methode === 'GET') {
+        return rendre({ items: salons, total: salons.length });
+      }
+      if (chemin.includes('/support-access/recent')) {
+        return rendre({ reprises_recentes_de_l_appelant: 0, fenetre_en_jours: 7 });
+      }
+      if (chemin.includes('/support-access') && methode === 'POST') {
+        const corps = JSON.parse(String((init as { body?: unknown }).body));
+        return rendre({
+          id: 'r1',
+          business_id: chemin.match(/businesses\/([^/]+)\//)?.[1],
+          admin_name: 'Rebecca',
+          reason: corps.reason,
+          scope: corps.scope,
+          spontaneous: corps.spontaneous,
+          started_at: '2026-09-03T10:00:00Z',
+          expires_at: '2026-09-03T11:00:00Z',
+          ended_at: null,
+          reprises_recentes_de_l_appelant: 1,
+          fenetre_en_jours: 7,
+        });
+      }
+      throw new Error(`route non simulée : ${methode} ${chemin}`);
+    },
+  });
 }
 
 describe('la liste des salons', () => {
@@ -239,5 +288,74 @@ describe('le bord de la liste', () => {
 
     expect(screen.queryByTestId('plafond-commerces')).toBeNull();
     expect(screen.getByTestId('compte-commerces')).not.toHaveTextContent(/narrow the name/i);
+  });
+});
+
+// --------------------------------------------------------------------------
+// naviguer dans le commerce repris
+// --------------------------------------------------------------------------
+
+/**
+ * **Le parcours s'arrêtait net après l'ouverture.** La reprise s'ouvrait, un
+ * rappel du motif s'affichait sur cette même ligne, et rien n'y menait
+ * ensuite — aucun écran du commerce n'était atteignable, et fermer son propre
+ * accès n'avait pas de bouton. `onEntrerEnReprise` est le seul fil qui relie
+ * cet écran à `Navigation.tsx`, qui tient la bascule ; ce que les tests ici
+ * éprouvent est ce que la rangée **lui envoie**, pas ce que
+ * `Navigation.tsx` en fait — c'est le sujet d'un autre fichier, qui monte
+ * l'arbre entier.
+ */
+describe('naviguer dans le commerce repris', () => {
+  it('une reprise déjà ouverte s’entre sans second geste, et sans motif à raconter', async () => {
+    // **Aucun `detail` ici, et c'est délibéré.** Cette ligne ne sait que
+    // l'ouverture existe ; elle ne porte ni le motif ni la portée, et les
+    // redemander retarderait l'entrée pour une phrase qui ne bloque rien.
+    const onEntrerEnReprise = jest.fn();
+    await monter(clientAvecReprise([salon({ reprise_en_cours: true })]), onEntrerEnReprise);
+    await waitFor(() => expect(screen.getByTestId('commerce-b1')).toBeTruthy());
+
+    await act(async () => {
+      await fireEvent.press(screen.getByTestId('reprise-en-cours-b1'));
+    });
+
+    expect(onEntrerEnReprise).toHaveBeenCalledTimes(1);
+    expect(onEntrerEnReprise).toHaveBeenCalledWith('b1', 'Vela Nail Studio');
+    // **Et non un troisième argument `undefined` passé explicitement** — la
+    // mutation qui écrirait `onEntrerEnReprise(id, nom, undefined)` doit
+    // encore faire tomber ce test, faute de quoi il ne prouve rien sur ce
+    // point : `toHaveBeenCalledWith` compare l'arité en plus des valeurs.
+    expect(onEntrerEnReprise.mock.calls[0]).toHaveLength(2);
+  });
+
+  it('ouvrir une reprise neuve envoie le motif et la portée qu’on vient d’écrire', async () => {
+    const onEntrerEnReprise = jest.fn();
+    await monter(clientAvecReprise([salon({ reprise_en_cours: false })]), onEntrerEnReprise);
+    await waitFor(() => expect(screen.getByTestId('commerce-b1')).toBeTruthy());
+
+    await act(async () => {
+      await fireEvent.press(screen.getByTestId('reprendre-b1'));
+    });
+    await waitFor(() => expect(screen.getByTestId('champ-motif')).toBeTruthy());
+
+    await act(async () => {
+      await fireEvent.changeText(
+        screen.getByTestId('champ-motif'),
+        'A guest complained the last post never went up',
+      );
+      await fireEvent.press(screen.getByTestId('portee-fiche'));
+    });
+    await act(async () => {
+      await fireEvent.press(screen.getByTestId('ouvrir-la-reprise'));
+    });
+
+    await waitFor(() => expect(onEntrerEnReprise).toHaveBeenCalledTimes(1));
+    expect(onEntrerEnReprise).toHaveBeenCalledWith(
+      'b1',
+      'Vela Nail Studio',
+      expect.objectContaining({
+        reason: 'A guest complained the last post never went up',
+        scope: ['fiche'],
+      }),
+    );
   });
 });

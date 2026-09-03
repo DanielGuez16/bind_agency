@@ -829,6 +829,8 @@ export const es: Catalogue = {
     commerceSuspended: 'Suspendido',
     commerceRepriseEnCours: 'Ya estás dentro',
     commerceFermer: 'Cerrar',
+    repriseBandeauTitre: 'Estás en la cuenta de {{salon}}',
+    repriseBandeauFermer: 'Cerrar mi acceso',
     plansIntervalle: 'Facturación',
     plansMensuel: 'Mensual',
     plansAnnuel: 'Anual',
