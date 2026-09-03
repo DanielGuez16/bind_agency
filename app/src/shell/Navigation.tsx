@@ -18,6 +18,7 @@
  * que d'afficher une erreur.
  */
 import { useState } from 'react';
+import { Pressable, View } from 'react-native';
 import {
   NavigationContainer,
   DefaultTheme,
@@ -29,11 +30,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import type { FichePublique, OffreDeLaFiche, PalierAccessible } from '../api';
-import { Icone, type NomIcone } from '../components';
+import type { FichePublique, OffreDeLaFiche, PalierAccessible, RepriseOuverte } from '../api';
+import { useApi } from '../api';
+import { Button, Icone, StatusMessage, Texte, type NomIcone } from '../components';
+import { formatDateTime } from '../format';
 import { useI18n } from '../i18n';
 import { useSession } from '../session';
-import { useTheme } from '../theme';
+import { size, useColors, useTheme } from '../theme';
 import { AbonnementScreen } from '../screens/AbonnementScreen';
 import { AnnuaireScreen } from '../screens/AnnuaireScreen';
 import { ArbitrageScreen } from '../screens/ArbitrageScreen';
@@ -71,6 +74,7 @@ import { indexAllume } from './ongletAllume';
 import { useGabarit } from './gabarit';
 import { usePosition } from './usePosition';
 import { CommerceProvider, useMonCommerce } from './useMonCommerce';
+import { nomDeLEcran } from '../screens/reprise/portee';
 
 // --------------------------------------------------------------------------
 // paramètres
@@ -894,6 +898,60 @@ function OngletsDuCommerceChoisi() {
 
   return (
     <Onglets.Navigator screenOptions={options} tabBar={barreLaterale}>
+      {ecransDuCommerce({ businessId, timezone, compteDuJour, large, t })}
+      <Onglets.Screen
+        name="reglages"
+        options={
+          large
+            ? onglet(t('onglets.reglages'), 'reglages')
+            : ongletHorsBarre(t('onglets.reglages'), 'reglages')
+        }
+      >
+        {() => <PileDesReglagesDuCommerce businessId={businessId} />}
+      </Onglets.Screen>
+    </Onglets.Navigator>
+  );
+}
+
+/**
+ * Les onglets du commerce, en fragment plutôt qu'en composant.
+ *
+ * **Une fonction et non un composant**, exprès : les enfants d'un navigateur
+ * d'onglets doivent être des `Onglets.Screen` directement, pas un composant
+ * qui les enveloppe. Une fonction ordinaire retournant un fragment traverse
+ * exactement comme les écrans conditionnels déjà posés en ligne ailleurs dans
+ * ce fichier ; un composant y ajouterait une couche que la bibliothèque ne
+ * traverse pas de la même façon.
+ *
+ * **Extraite pour un second appelant.** Le commerce qui a choisi son salon
+ * l'appelle depuis toujours ; l'administration l'appelle maintenant depuis une
+ * reprise ouverte, sur le `businessId` qu'elle vient d'obtenir plutôt que sur
+ * celui d'une appartenance. Les écrans eux-mêmes ne savent pas d'où vient leur
+ * `businessId`, et n'ont jamais eu à le savoir : ils le prenaient déjà en
+ * paramètre explicite, jamais d'un contexte de session.
+ *
+ * **Réglages n'y est pas.** Il ferme une porte pour l'ouvrir : sous une
+ * session d'administration, `ReglagesScreen` masque la pause et l'historique
+ * de reprise — les deux sont gardés sur `role === 'business_member'`, le rôle
+ * de la session et non celui qu'on exerce. Le rendre quand même montrerait un
+ * réglage amputé sans le dire ; l'omettre le dit en ne le montrant pas du
+ * tout. Chaque appelant pose donc son propre onglet « reglages ».
+ */
+function ecransDuCommerce({
+  businessId,
+  timezone,
+  compteDuJour,
+  large,
+  t,
+}: {
+  businessId: string;
+  timezone: string | null;
+  compteDuJour: number | undefined;
+  large: boolean;
+  t: (cle: string, valeurs?: Record<string, unknown>) => string;
+}) {
+  return (
+    <>
       <Onglets.Screen
         name="journee"
         options={onglet(t('onglets.journee'), 'calendrier', compteDuJour)}
@@ -1003,17 +1061,7 @@ function OngletsDuCommerceChoisi() {
           />
         )}
       </Onglets.Screen>
-      <Onglets.Screen
-        name="reglages"
-        options={
-          large
-            ? onglet(t('onglets.reglages'), 'reglages')
-            : ongletHorsBarre(t('onglets.reglages'), 'reglages')
-        }
-      >
-        {() => <PileDesReglagesDuCommerce businessId={businessId} />}
-      </Onglets.Screen>
-    </Onglets.Navigator>
+    </>
   );
 }
 
@@ -1021,11 +1069,48 @@ function OngletsDuCommerceChoisi() {
 // administrateur
 // --------------------------------------------------------------------------
 
+/** Le commerce dans lequel l'administration navigue, ou aucun. */
+type RepriseActive = {
+  businessId: string;
+  nom: string;
+  /**
+   * Servi seulement à l'ouverture d'une reprise neuve. En y revenant depuis la
+   * liste des salons, on ne le rapporte pas — la ligne dit « ouverte », pas ce
+   * qu'elle porte, et refaire l'aller-retour pour l'obtenir retarderait
+   * l'entrée pour une phrase qui ne bloque rien.
+   */
+  detail?: RepriseOuverte;
+};
+
 function OngletsAdmin() {
   const { t } = useI18n();
   const options = useOptionsDOnglets();
   // L'administration n'a pas de contexte à situer : le rôle suffit.
   const barreLaterale = useBarreLaterale(null);
+
+  /**
+   * **La bascule vit ici, en état local, comme le fait déjà `businessId` sur
+   * le commerce qui a choisi son salon.** Aucune route nommée, aucun
+   * navigateur de plus : ouvrir une reprise remplace la barre d'onglets de
+   * l'administration par celle du commerce, le temps qu'elle dure, exactement
+   * comme un commerce sans salon voit sa propre barre remplacée par un
+   * formulaire de création. Le motif est le même dans les deux cas — deux
+   * arbres d'onglets réellement différents ne se laissent pas fondre en un
+   * troisième qui les couvrirait mal tous les deux.
+   */
+  const [reprise, setReprise] = useState<RepriseActive | null>(null);
+
+  if (reprise) {
+    return (
+      <EcranDeReprise
+        businessId={reprise.businessId}
+        nomDuSalon={reprise.nom}
+        detail={reprise.detail}
+        onQuitter={() => setReprise(null)}
+      />
+    );
+  }
+
   return (
     <Onglets.Navigator screenOptions={options} tabBar={barreLaterale}>
       <Onglets.Screen
@@ -1036,12 +1121,20 @@ function OngletsAdmin() {
       {/* **Les salons, deuxième et non dernier.** C'est l'entrée du travail de
           support : reconnaître le bon salon parmi cent, puis décider d'y
           entrer. Les plans sont de la configuration, qu'on ouvre une fois par
-          trimestre. */}
-      <Onglets.Screen
-        name="commerces"
-        component={CommercesScreen}
-        options={onglet(t('onglets.commerces'), 'lieu')}
-      />
+          trimestre.
+
+          **Et depuis ce soir, y entrer veut dire quelque chose.** Une reprise
+          ouverte donnait une autorisation que rien dans l'app ne savait
+          exercer : l'administration lisait un message de confirmation et
+          s'arrêtait là, sans écran pour regarder ce que l'accès venait
+          d'ouvrir. */}
+      <Onglets.Screen name="commerces" options={onglet(t('onglets.commerces'), 'lieu')}>
+        {() => (
+          <CommercesScreen
+            onEntrerEnReprise={(businessId, nom, detail) => setReprise({ businessId, nom, detail })}
+          />
+        )}
+      </Onglets.Screen>
       <Onglets.Screen
         name="createurs"
         component={CreateursAdminScreen}
@@ -1055,17 +1148,194 @@ function OngletsAdmin() {
       {/* **Le mode terrain.** Il n'est pas rangé derrière un autre écran : la
           fondatrice l'ouvre debout dans un salon, entre deux clients, et deux
           gestes de plus pour l'atteindre suffisent à ne pas le sortir. */}
-      <Onglets.Screen
-        name="terrain"
-        component={TerrainScreen}
-        options={onglet(t('onglets.terrain'), 'personne')}
-      />
+      <Onglets.Screen name="terrain" options={onglet(t('onglets.terrain'), 'personne')}>
+        {() => (
+          <TerrainScreen
+            onEntrerEnReprise={(businessId, nom, detail) => setReprise({ businessId, nom, detail })}
+          />
+        )}
+      </Onglets.Screen>
       <Onglets.Screen
         name="reglages"
         component={ReglagesScreen}
         options={onglet(t('onglets.reglages'), 'reglages')}
       />
     </Onglets.Navigator>
+  );
+}
+
+/**
+ * L'administration, à l'intérieur d'un commerce qu'elle a repris.
+ *
+ * **Ce qui manquait n'était pas le pouvoir, c'était l'écran.** Le serveur
+ * accorde déjà, à chaque requête, exactement l'autorité d'un salon sur les
+ * écrans que la reprise couvre — `require_business_member` la synthétise sans
+ * qu'une ligne ne soit jamais écrite en base. Rien côté app ne l'exerçait :
+ * ouvrir une reprise rendait un message de confirmation, et l'administration
+ * n'avait ensuite aucun moyen de regarder une réservation, une preuve, un
+ * horaire. Le pouvoir existait, la porte pour s'en servir non.
+ *
+ * **Les mêmes écrans, sur le même `businessId`.** Chacun le prend déjà en
+ * paramètre explicite — jamais d'un contexte de session — donc aucun n'a eu à
+ * changer pour servir cet appelant-ci plutôt que celui qui a choisi son salon.
+ *
+ * **Un aller sans y toucher, et un retrait qui touche.** La flèche revient à
+ * l'administration sans rien faire à la reprise : un administrateur qui va
+ * vérifier autre chose sur Plans ne perd pas son accès pour l'avoir quitté des
+ * yeux. « Close my access » est le geste distinct, et le seul des deux qui
+ * appelle le serveur — c'est `fermerLaReprise`, que le client d'API portait
+ * depuis le début sans qu'aucun écran ne l'appelle.
+ */
+function EcranDeReprise({
+  businessId,
+  nomDuSalon,
+  detail,
+  onQuitter,
+}: {
+  businessId: string;
+  nomDuSalon: string;
+  detail?: RepriseOuverte;
+  onQuitter: () => void;
+}) {
+  const { t, locale } = useI18n();
+  const { api, messageDErreur } = useApi();
+  const c = useColors();
+  const { large } = useGabarit();
+  const options = useOptionsDOnglets();
+  const barreLaterale = useBarreLaterale(nomDuSalon);
+  const [fermeture, setFermeture] = useState(false);
+  const [echec, setEchec] = useState<string | null>(null);
+
+  async function fermer() {
+    setEchec(null);
+    setFermeture(true);
+    try {
+      await api.fermerLaReprise(businessId);
+      onQuitter();
+    } catch (erreur) {
+      setEchec(messageDErreur(erreur));
+    } finally {
+      setFermeture(false);
+    }
+  }
+
+  return (
+    <View style={{ flex: 1 }}>
+      {/* **Le bandeau, sur la même encre que celui que le salon lit.**
+          `BandeauDeReprise` le lui montre depuis son côté ; celui-ci est
+          l'autre moitié de la même promesse — l'administration voit qu'elle
+          est entrée, pas seulement le salon qui la reçoit. */}
+      <View
+        testID="bandeau-reprise-admin"
+        style={{
+          gap: 8,
+          paddingTop: 8,
+          paddingBottom: 14,
+          paddingHorizontal: 16,
+          backgroundColor: c['bg.inverse'],
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Pressable
+            accessibilityRole="button"
+            // La même clé partagée que les autres flèches de retour de l'app
+            // (`CodeScreen`, `FicheScreen`, `ReglagesScreen`) : une clé de plus
+            // pour le même mot aurait divergé le jour où l'une des deux change.
+            accessibilityLabel={t('common.retour')}
+            onPress={onQuitter}
+            hitSlop={12}
+            style={({ pressed }) => ({
+              minWidth: size.touchMin,
+              minHeight: size.touchMin,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginLeft: -12,
+              opacity: pressed ? 0.7 : 1,
+            })}
+            testID="reprise-admin-retour"
+          >
+            <Icone nom="retour" teinte={c['ink.onDark']} taille={18} />
+          </Pressable>
+          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+            <Texte variante="type.label" couleur="ink.onDark" ellipseSurNomPropre>
+              {t('admin.repriseBandeauTitre', { salon: nomDuSalon })}
+            </Texte>
+            {/* **Le motif, quand on l'a.** Il n'arrive qu'à l'ouverture ; en
+                revenant depuis la liste des salons, la ligne dit « ouverte »
+                et rien de plus, et refaire l'aller-retour pour l'obtenir
+                retarderait l'entrée pour une phrase qui ne bloque rien. */}
+            {detail ? (
+              // **La même clé que le bandeau du salon.** Le motif se cite mot
+              // pour mot des deux côtés — le composer deux fois aurait fini
+              // par le citer différemment, guillemets compris.
+              <Texte
+                variante="type.caption"
+                couleur="ink.onDark"
+                ellipseSurNomPropre
+                testID="reprise-admin-motif"
+              >
+                {t('commerce.repriseMotif', { motif: detail.reason })}
+              </Texte>
+            ) : null}
+          </View>
+          <Button
+            // **« Ferme mon accès », pas « Termine-la ».** Le salon coupe une
+            // reprise qu'il n'a pas ouverte — `reglages.repriseRefermerAction`
+            // parle depuis ce côté-là. Ici c'est l'administration qui referme
+            // ce qu'elle a elle-même ouvert : une voix différente, un mot
+            // différent, même si le geste serveur (`fermerLaReprise`) est
+            // distinct de celui du salon (`refermerLaReprise`).
+            label={t('admin.repriseBandeauFermer')}
+            variant="secondary"
+            size="sm"
+            fullWidth={false}
+            loading={fermeture}
+            onPress={() => void fermer()}
+            testID="reprise-admin-fermer"
+          />
+        </View>
+        {detail ? (
+          // **Les deux mêmes clés que le bandeau du salon** (`commerce.*`) et
+          // que l'historique des réglages : trois lecteurs de la même donnée,
+          // un seul jeu de mots pour la dire.
+          <>
+            <Texte variante="type.dataLabel" couleur="ink.onDark" testID="reprise-admin-portee">
+              {t('commerce.repriseOuvre', {
+                ecrans: detail.scope
+                  .map((ecran) => nomDeLEcran(ecran, t))
+                  .join(t('reglages.porteeSeparateur')),
+              })}
+            </Texte>
+            {/* **En UTC, comme le reste de cette liste.** L'administration
+                n'est pas sur le fuseau du salon — `CommercesScreen` lit déjà
+                ses dates ainsi, pour la même raison : celle qui regarde peut
+                être n'importe où. */}
+            <Texte variante="type.dataLabel" couleur="ink.onDark" testID="reprise-admin-quand">
+              {t('commerce.repriseDepuisJusqua', {
+                debut: formatDateTime(detail.started_at, locale, 'UTC'),
+                fin: formatDateTime(detail.expires_at, locale, 'UTC'),
+              })}
+            </Texte>
+          </>
+        ) : null}
+        {echec ? (
+          <StatusMessage level="danger" body={echec} testID="reprise-admin-echec" />
+        ) : null}
+      </View>
+
+      <Onglets.Navigator screenOptions={options} tabBar={barreLaterale}>
+        {ecransDuCommerce({
+          businessId,
+          // **Nulle, et non devinée.** L'admin n'a pas la fiche du salon sous
+          // la main à cet instant ; `LieuScreen` traite déjà un fuseau absent
+          // comme une donnée à charger, pas comme une erreur.
+          timezone: null,
+          compteDuJour: undefined,
+          large,
+          t,
+        })}
+      </Onglets.Navigator>
+    </View>
   );
 }
 

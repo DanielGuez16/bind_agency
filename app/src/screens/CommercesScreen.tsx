@@ -29,7 +29,12 @@
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { useApi, type CommerceVuParLAdministration, type ListeDesCommerces } from '../api';
+import {
+  useApi,
+  type CommerceVuParLAdministration,
+  type ListeDesCommerces,
+  type RepriseOuverte,
+} from '../api';
 import {
   EmptyState,
   SkeletonLignes,
@@ -115,7 +120,22 @@ const COLONNES = (t: (cle: string) => string): Colonne[] => [
   { cle: 'action', label: '', largeur: LARGEUR_ACTION },
 ];
 
-export function CommercesScreen() {
+export function CommercesScreen({
+  onEntrerEnReprise,
+}: {
+  /**
+   * Naviguer dans le commerce repris. `detail` n'arrive que pour une reprise
+   * qu'on vient d'ouvrir depuis cette rangée — en y revenant depuis « You are
+   * in », la ligne dit qu'elle est ouverte, pas ce qu'elle porte, et refaire
+   * l'aller-retour pour l'obtenir retarderait l'entrée pour une phrase qui ne
+   * bloque rien.
+   *
+   * **Optionnel, comme `onOuverte` sur `ReprendreLeCompte` qu'il relaie.**
+   * Seul l'appelant qui tient la bascule — l'administration sous onglets — a
+   * quelque chose à en faire ; un rendu isolé de cet écran n'a rien à ouvrir.
+   */
+  onEntrerEnReprise?: (businessId: string, nom: string, detail?: RepriseOuverte) => void;
+}) {
   const { api } = useApi();
   const { t, locale } = useI18n();
   const c = useColors();
@@ -193,6 +213,7 @@ export function CommercesScreen() {
                 onOuvrir={() =>
                   setOuvert(ouvert === commerce.business_id ? null : commerce.business_id)
                 }
+                onEntrerEnReprise={onEntrerEnReprise}
               />
             ))}
           </View>
@@ -253,11 +274,13 @@ function Rangee({
   colonnes,
   ouvert,
   onOuvrir,
+  onEntrerEnReprise,
 }: {
   commerce: CommerceVuParLAdministration;
   colonnes: Colonne[];
   ouvert: boolean;
   onOuvrir: () => void;
+  onEntrerEnReprise?: (businessId: string, nom: string, detail?: RepriseOuverte) => void;
 }) {
   const { t, locale } = useI18n();
   const c = useColors();
@@ -290,14 +313,24 @@ function Rangee({
               /* **« Tu es déjà dedans », et rien sur les collègues.** Le champ
                  est vrai pour l'appelant seul : savoir qu'un autre est entré ne
                  change pas ce que je peux faire, et l'afficher inviterait à se
-                 demander pourquoi lui plutôt que moi. */
-              <Texte
-                variante="type.label"
-                couleur="status.success.text"
+                 demander pourquoi lui plutôt que moi.
+
+                 **Et depuis ce soir, cliquable.** Une reprise déjà ouverte —
+                 la sienne, rouverte en revenant sur cet écran — n'avait aucun
+                 moyen d'y rentrer : le mot le disait, rien ne le faisait. Pas
+                 de `detail` ici : cette ligne ne sait que l'ouverture existe,
+                 pas ce qu'elle porte. */
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => onEntrerEnReprise?.(commerce.business_id, commerce.name)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 testID={`reprise-en-cours-${commerce.business_id}`}
+                style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
               >
-                {t('admin.commerceRepriseEnCours')}
-              </Texte>
+                <Texte variante="type.label" couleur="status.success.text">
+                  {t('admin.commerceRepriseEnCours')}
+                </Texte>
+              </Pressable>
             ) : (
               <Pressable
                 accessibilityRole="button"
@@ -324,7 +357,20 @@ function Rangee({
           au salon, et c'est le motif mot pour mot qui fait tout le mécanisme. */}
       {ouvert && !commerce.reprise_en_cours ? (
         <View style={{ padding: 16, backgroundColor: c['bg.inset'] }}>
-          <ReprendreLeCompte businessId={commerce.business_id} nomDuSalon={commerce.name} />
+          <ReprendreLeCompte
+            businessId={commerce.business_id}
+            nomDuSalon={commerce.name}
+            // **On entre dès l'ouverture, sans attendre un second geste.** Le
+            // parcours s'arrêtait net ici : la reprise s'ouvrait, l'écran
+            // rendait un rappel du motif, et rien n'y menait ensuite. Le motif
+            // et la portée ne sont pas perdus — ils passent dans le bandeau de
+            // `EcranDeReprise`, où ils restent visibles tant que la reprise
+            // dure, plutôt qu'un instant sur cet écran qu'on quitte à la
+            // seconde suivante.
+            onOuverte={(reprise) =>
+              onEntrerEnReprise?.(commerce.business_id, commerce.name, reprise)
+            }
+          />
         </View>
       ) : null}
     </View>
