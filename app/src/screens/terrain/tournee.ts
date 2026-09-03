@@ -98,3 +98,39 @@ function mediane(triee: number[]): number | null {
   const milieu = Math.floor(triee.length / 2);
   return triee.length % 2 === 1 ? triee[milieu] : (triee[milieu - 1] + triee[milieu]) / 2;
 }
+
+/**
+ * Ce que cette fiche-là a fait attendre, en heures.
+ *
+ * **Trois cas, et le troisième n'est pas zéro.** Une fiche activée a mis un
+ * temps mesurable, et c'est lui qu'on lit. Une fiche remise et toujours
+ * ouverte fait attendre **depuis** sa remise, et ce compteur court. Une fiche
+ * jamais remise n'attend pas : elle n'est pas partie.
+ *
+ * Rendre zéro pour le dernier cas le classerait en tête d'un tri par délai,
+ * c'est-à-dire parmi les plus rapides — exactement l'inverse de ce qu'il est.
+ */
+export function attenteDeLaFiche(
+  fiche: FichePreparee,
+  maintenant: string,
+): { heures: number; encoreEnCours: boolean } | null {
+  if (!fiche.issued_at) return null;
+  const jusqua = fiche.used_at ?? maintenant;
+  const heures = heuresEntre(fiche.issued_at, jusqua);
+  if (heures === null) return null;
+  return { heures, encoreEnCours: !fiche.used_at };
+}
+
+/**
+ * La nature d'un état, pour son cartouche.
+ *
+ * **Trois natures pour cinq états**, parce que ce qui compte est la conduite
+ * qu'ils appellent et non leur nuance : une fiche assumée vit, une fiche
+ * préparée que personne n'a encore reçue dort, et les trois situations
+ * intermédiaires attendent toutes un geste — revisiter, relancer, ou débloquer.
+ */
+export function natureDeLEtat(etat: FichePreparee['etat']): 'vivant' | 'attente' | 'dormant' {
+  if (etat === 'claimed') return 'vivant';
+  if (etat === 'prepared') return 'dormant';
+  return 'attente';
+}

@@ -45,19 +45,22 @@ import {
 } from '../api';
 import {
   Button,
-  Chip,
   EmptyState,
   FiletSegmente,
   SkeletonLignes,
   StatusMessage,
+  TableHeader,
+  TableRow,
   Texte,
   TextField,
+  type Colonne,
 } from '../components';
 import { formatDate, formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { codeColors, elevationDeCarte, radius, useColors } from '../theme';
 import { Ecran } from './Ecran';
 import { mainsDeLaFiche } from './terrain/mains';
+import { attenteDeLaFiche, natureDeLEtat } from './terrain/tournee';
 import { bilanDeTournee } from './terrain/tournee';
 import { useRequete } from './useRequete';
 
@@ -72,6 +75,16 @@ const TAILLE_DU_QR = 220;
  * cas — partout ailleurs, la date se lit dans le fuseau du commerce concerné.
  */
 const FUSEAU = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+/**
+ * L'instant de référence de la colonne d'attente, **figé au chargement du
+ * module**.
+ *
+ * Une table dont chaque rangée relit l'horloge peut rendre deux valeurs de
+ * part et d'autre d'une heure sur des fiches remises à la même minute — et une
+ * colonne dont deux valeurs ne se comparent pas n'est pas une colonne.
+ */
+const MAINTENANT = new Date().toISOString();
 
 /** Ce que la fondatrice saisit debout. Le strict nécessaire pour géolocaliser. */
 type Brouillon = {
@@ -102,6 +115,24 @@ const VIDE: Brouillon = { nom: '', adresse: '', telephone: '' };
  * retire. Sur une fiche jamais remise il n'y a rien à révoquer, et sur une
  * fiche expirée il n'y a plus rien à retirer.
  */
+/**
+ * Les six colonnes de la planche, dans son ordre.
+ *
+ * **« Préparée par » et « remise comment » sont deux colonnes et non une.**
+ * Sans la première, le taux d'activation par voie compare deux démarcheurs en
+ * croyant comparer deux méthodes — si toutes les fiches remises au comptoir
+ * viennent d'une tournée et toutes celles envoyées d'une autre, l'écart mesuré
+ * n'est pas celui qu'on lit.
+ */
+const COLONNES_DE_TOURNEE = (t: (cle: string) => string): Colonne[] => [
+  { cle: 'nom', label: t('terrain.colonneSalon'), largeur: 240 },
+  { cle: 'preparePar', label: t('terrain.colonnePreparePar'), largeur: 170 },
+  { cle: 'prepare', label: t('terrain.colonnePrepare'), largeur: 140 },
+  { cle: 'voie', label: t('terrain.colonneVoie'), largeur: 130 },
+  { cle: 'etat', label: t('terrain.colonneEtat'), largeur: 190, etat: true },
+  { cle: 'attente', label: t('terrain.colonneAttente'), largeur: 90, chiffre: true },
+];
+
 const EN_COURS = new Set<EtatDeLaTournee>([
   'never_opened',
   'opened_not_claimed',
@@ -112,6 +143,9 @@ export function TerrainScreen() {
   const { t, locale } = useI18n();
   const c = useColors();
   const { api, messageDErreur } = useApi();
+  // Une seule fiche ouverte à la fois : deux panneaux dépliés font perdre la
+  // comparaison que la table sert à rendre possible.
+  const [ouverte, setOuverte] = useState<string | null>(null);
 
   const requete = useRequete<FichePreparee[]>((signal) => api.fichesPreparees(signal), {
     estVide: (lignes) => lignes.length === 0,
@@ -312,17 +346,46 @@ export function TerrainScreen() {
               tournée valait le déplacement ? */}
           <BilanDeLaTournee fiches={fiches} />
 
-          {/* Le suivi. Les fiches assumées y restent. */}
+          {/* **Le suivi, en table et non plus en cartes.**
+
+              Chaque écran de l'administration avait été réparé séparément,
+              donc chacun avait fini avec sa grammaire : quatre tables et une
+              liste de cartes. Une carte par fiche portait bien les mêmes faits,
+              mais posés les uns sous les autres — on ne pouvait comparer deux
+              tournées qu'en lisant deux blocs, alors que la question de cet
+              écran est justement une comparaison.
+
+              **Les gestes ne descendent pas dans la rangée.** Émettre un lien,
+              le révoquer, reprendre un compte : trois boutons par ligne
+              feraient d'une table de comparaison une table de décision, et il y
+              en a déjà une. La rangée s'ouvre, et le panneau porte ce qu'elle
+              portait. */}
           <View style={{ gap: 12 }}>
             <Texte variante="type.bodyStrong">{t('terrain.suivi')}</Texte>
-            {fiches.map((fiche) => (
-              <LigneDeFiche
-                key={fiche.business_id}
-                fiche={fiche}
-                onEmettre={() => void emettre(fiche)}
-                onRevoquer={() => void revoquer(fiche)}
-              />
-            ))}
+            <View
+              style={{
+                borderRadius: radius['radius.lg'],
+                borderWidth: 1,
+                borderColor: c['line.default'],
+                backgroundColor: c['bg.surface'],
+                overflow: 'hidden',
+              }}
+            >
+              <TableHeader colonnes={COLONNES_DE_TOURNEE(t)} testID="entete-tournee" />
+              {fiches.map((fiche) => (
+                <LigneDeFiche
+                  key={fiche.business_id}
+                  fiche={fiche}
+                  colonnes={COLONNES_DE_TOURNEE(t)}
+                  ouverte={ouverte === fiche.business_id}
+                  onOuvrir={() =>
+                    setOuverte(ouverte === fiche.business_id ? null : fiche.business_id)
+                  }
+                  onEmettre={() => void emettre(fiche)}
+                  onRevoquer={() => void revoquer(fiche)}
+                />
+              ))}
+            </View>
           </View>
         </View>
       )}
@@ -406,85 +469,100 @@ function Chiffre({
 
 function LigneDeFiche({
   fiche,
+  colonnes,
+  ouverte,
+  onOuvrir,
   onEmettre,
   onRevoquer,
 }: {
   fiche: FichePreparee;
+  colonnes: Colonne[];
+  ouverte: boolean;
+  onOuvrir: () => void;
   onEmettre: () => void;
   onRevoquer: () => void;
 }) {
   const { t, locale } = useI18n();
-  const c = useColors();
   const etat = fiche.etat;
   const mains = mainsDeLaFiche(fiche);
   const [reprise, setReprise] = useState(false);
 
+  /**
+   * L'attente, lue à l'ouverture de l'écran.
+   *
+   * **Figée pour toute la table, et non relue par rangée.** Sept lignes qui
+   * appelleraient chacune l'horloge pourraient tomber de part et d'autre d'une
+   * heure et rendre une colonne dont deux valeurs ne se comparent pas.
+   */
+  const attente = attenteDeLaFiche(fiche, MAINTENANT);
+
   return (
-    <View
-      testID={`fiche-${fiche.business_id}`}
-      style={{
-        gap: 8,
-        padding: 16,
-        borderRadius: radius['radius.lg'],
-        backgroundColor: c['bg.surface'],
-        borderWidth: 1,
-        borderColor: c['line.default'],
-        // « Un coin de 18 px sans ombre flotte au lieu de se poser » : passation §2.
-        ...elevationDeCarte(),
-      }}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Texte variante="type.body" style={{ flex: 1 }}>
-          {fiche.name}
-        </Texte>
-        {/* **Le mot, et pas une couleur seule.** L'écart entre « préparée » et
-            « lien ouvert » est ce qui dit si la tournée a servi ; le lire
-            demande un mot, pas une pastille à interpréter. */}
-        <Chip label={t(`terrain.etat.${etat}`)} testID={`etat-${fiche.business_id}`} />
-      </View>
-      {fiche.address ? (
-        <Texte variante="type.caption" couleur="ink.mute">
-          {fiche.address}
-        </Texte>
-      ) : null}
-      <Texte variante="type.caption" couleur="ink.mute" ellipseSurNomPropre>
-        {mains.preparee
-          ? t('terrain.prepareePar', {
-              quand: formatDate(fiche.prepared_at, locale, FUSEAU),
-              par: mains.preparee,
-            })
-          : t('terrain.preparee', { quand: formatDate(fiche.prepared_at, locale, FUSEAU) })}
-      </Texte>
+    <View>
+      <TableRow
+        testID={`fiche-${fiche.business_id}`}
+        colonnes={colonnes}
+        actif={ouverte}
+        onPress={onOuvrir}
+        valeurs={{
+          nom: fiche.name,
+          // L'adresse de qui a préparé, jamais un nom : un compte d'équipe n'en
+          // a pas, et les noms vivent sur le profil créateur.
+          preparePar: mains.preparee ?? '—',
+          prepare: formatDate(fiche.prepared_at, locale, FUSEAU),
+          /* **« Pas encore remise » plutôt qu'un tiret.** Un tiret est un signe
+             à interpréter dans une colonne dont toutes les autres valeurs sont
+             des mots ; la fiche préparée et jamais partie est un cas courant du
+             début de tournée, pas une donnée manquante. */
+          /* **Deux clés littérales, et non une clé composée.** La voie n'a que
+             deux valeurs ; les composer sortirait ces deux libellés de la garde
+             qui vérifie que chaque clé existe dans les deux langues, et c'est
+             exactement ce qu'elle compte pour ne pas couvrir de moins en moins
+             sans le dire. */
+          voie:
+            fiche.channel === 'qr'
+              ? t('terrain.voieEnMain')
+              : fiche.channel === 'email'
+                ? t('terrain.voieParLien')
+                : t('terrain.voiePasEncore'),
+          etat: t(`terrain.etat.${etat}`),
+          attente: attente
+            ? t(attente.encoreEnCours ? 'terrain.attenteDepuis' : 'terrain.attenteMise', {
+                n: formatNumber(Math.round(attente.heures), locale),
+              })
+            : t('terrain.attenteAucune'),
+        }}
+        natures={{ etat: natureDeLEtat(etat) }}
+      />
 
-      {/* **La seconde main ne paraît que si c'en est une autre.** Le cas
-          courant est que la même personne prépare et remet ; écrire son adresse
-          deux fois sur la même ligne n'ajoute rien et allonge une liste qu'on
-          parcourt. */}
-      {mains.remiseParUnAutre ? (
-        <Texte
-          variante="type.caption"
-          couleur="ink.mute"
-          ellipseSurNomPropre
-          testID={`remise-par-${fiche.business_id}`}
+      {/* **Le panneau porte les gestes, la rangée ne porte que les faits.**
+          Trois boutons par ligne feraient d'une table de comparaison une table
+          de décision — or la question de cet écran est « la tournée
+          valait-elle le déplacement », pas « que faire de cette fiche ». */}
+      {ouverte ? (
+        <View
+          style={{ gap: 8, paddingHorizontal: 12, paddingBottom: 12 }}
+          testID={`panneau-${fiche.business_id}`}
         >
-          {t('terrain.remisePar', { par: mains.remiseParUnAutre })}
-        </Texte>
-      ) : null}
+          {fiche.address ? (
+            <Texte variante="type.body" couleur="ink.soft">
+              {fiche.address}
+            </Texte>
+          ) : null}
 
-      {/* **Rien à faire sur une fiche assumée.** Le salon en est propriétaire ;
-          lui rouvrir un lien de prise en main n'aurait aucun sens, et le
-          serveur le refuse. */}
-      {/* **Reprendre le compte n'existe que sur une fiche assumée**, et c'est
-          le seul endroit du produit où l'administration a un salon nommé sous
-          les yeux. Avant la prise en main, il n'y a pas de compte à reprendre :
-          la fiche n'a pas d'utilisateur, et il n'y a personne à prévenir.
+          {/* **La seconde main ne paraît que si c'en est une autre.** Le cas
+              courant est que la même personne prépare et remet ; écrire son
+              adresse deux fois n'ajoute rien. */}
+          {mains.remiseParUnAutre ? (
+            <Texte
+              variante="type.body"
+              couleur="ink.soft"
+              ellipseSurNomPropre
+              testID={`remise-par-${fiche.business_id}`}
+            >
+              {t('terrain.remisePar', { par: mains.remiseParUnAutre })}
+            </Texte>
+          ) : null}
 
-          **La place n'est plus la seule.** L'onglet « salons » liste désormais
-          tous les commerces, quel que soit leur état, et porte le même
-          formulaire : un salon inscrit tout seul était hors d'atteinte du
-          support tant que la reprise ne vivait qu'ici. Celle-ci reste, parce
-          qu'un administrateur debout dans un salon a déjà sa fiche ouverte et
-          n'a pas à la rechercher par son nom. */}
       {etat === 'claimed' ? (
         reprise ? (
           <ReprendreLeCompte businessId={fiche.business_id} nomDuSalon={fiche.name} />
@@ -519,6 +597,8 @@ function LigneDeFiche({
           ) : null}
         </View>
       )}
+        </View>
+      ) : null}
     </View>
   );
 }

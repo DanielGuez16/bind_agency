@@ -19,6 +19,7 @@ import { Text } from 'react-native';
 
 import { I18nProvider } from '../src/i18n';
 import { StatusMessage } from '../src/components/StatusMessage';
+import { TableRow } from '../src/components/Admin';
 import { ReglesDesPaliers } from '../src/screens/ReglesDesPaliers';
 import { TitreAccentue } from '../src/components/TitreAccentue';
 
@@ -1034,18 +1035,54 @@ describe('les surfaces de la v1.1', () => {
     expect(dedans.shadowOpacity ?? dedans.boxShadow).toBeUndefined();
   });
 
-  it('la table d’administration ne peint aucune marque', () => {
-    // **L'ambre ne dit qu'une chose : où l'on est.** Une table de quinze lignes
-    // qui peint sa rangée choisie en `brand.50` met quinze occurrences
-    // possibles de la couleur de navigation sur un écran — et l'orange cesse
-    // alors de signifier « ici » pour signifier « une ligne parmi d'autres ».
-    // Le creux et le filet d'encre disent la même chose sans la dépenser.
-    //
-    // La règle porte sur la **table partagée** et non sur les écrans qui
-    // l'emploient : un lien d'action y garde son ambre, parce qu'un lien est
-    // un geste et non de l'ornement répété par rangée.
-    const table = readFileSync(join(RACINE, 'components', 'Admin.tsx'), 'utf-8');
-    expect(table.match(/brand\.[0-9]+/g) ?? []).toEqual([]);
+  it('la marque de la table ne peint que la rangée ouverte, et jamais les autres', async () => {
+    /**
+     * **Tranché « aucune marque », puis renversé par la v15 — et l'argument
+     * d'origine visait le bon défaut sur le mauvais objet.**
+     *
+     * La règle disait : une table de quinze lignes qui peint sa rangée
+     * choisie met « quinze occurrences possibles » de l'ambre sur un écran.
+     * C'était compter les rangées et non les rangées **ouvertes** : il n'y en
+     * a jamais qu'une. Ce qui use l'orange est l'aplat, qui ressemble à un
+     * bouton, pas le filet, qui est un repère.
+     *
+     * La v15 sépare les deux et c'est cette règle-ci qu'on tient désormais :
+     * un seul aplat de marque par écran et c'est toujours une décision ; la
+     * rangée ouverte porte un filet ambre et un fond crème.
+     *
+     * **Et on l'éprouve sur le rendu, non sur la source.** L'ancienne version
+     * cherchait `brand.\d+` dans le fichier : elle serait tombée sur une
+     * mention en commentaire et se taisait sur ce qui est réellement peint.
+     */
+    const aplati = (style: unknown): Record<string, unknown> =>
+      Array.isArray(style)
+        ? Object.assign({}, ...style.map(aplati))
+        : ((style ?? {}) as Record<string, unknown>);
+
+    const colonnes = [{ cle: 'nom', label: 'Nom', largeur: 120 }];
+    const vue = await render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="admin">
+          <>
+            <TableRow colonnes={colonnes} valeurs={{ nom: 'Ouverte' }} actif testID="ouverte" />
+            <TableRow colonnes={colonnes} valeurs={{ nom: 'Dormante' }} testID="dormante" />
+          </>
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+
+    const ouverte = aplati(vue.getByTestId('ouverte').props.style);
+    const dormante = aplati(vue.getByTestId('dormante').props.style);
+
+    // La rangée ouverte : crème et filet ambre, les deux jetons nommés.
+    expect(ouverte.backgroundColor).toBe(couleurs['brand.50']);
+    expect(ouverte.borderLeftColor).toBe(couleurs['brand.500']);
+
+    // **Et surtout : les autres n'ont rien.** C'est la moitié qui éprouve
+    // l'argument d'origine — une table qui peindrait toutes ses rangées
+    // rendrait bien quinze occurrences, et c'est cela qui reste interdit.
+    expect(dormante.backgroundColor).toBe('transparent');
+    expect(dormante.borderLeftColor).toBe('transparent');
   });
 
   it('aucun serrage négatif sous 22 points', () => {

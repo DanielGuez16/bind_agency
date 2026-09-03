@@ -16,7 +16,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 
 import { useRaccourcis } from '../shell/useRaccourcis';
 
-import { breakpoint, radius, useColors } from '../theme';
+import { breakpoint, radius, useColors, type ColorName } from '../theme';
 import { Texte } from './Texte';
 import { etatAccessible } from './etatAccessible';
 
@@ -24,9 +24,36 @@ export type Colonne = {
   cle: string;
   label: string;
   largeur: number;
-  /** Aligné à droite, en mono, avec la gouttière. */
+  /**
+   * Aligné à droite, avec la gouttière. **Plus en mono.**
+   *
+   * Le mono disait « donnée technique » ; dans une rangée il disait surtout
+   * « lis-moi caractère par caractère », ce qui est le contraire de ce qu'on
+   * fait d'une table qu'on survole. Les chiffres gardent leur alignement à
+   * droite et prennent des chiffres tabulaires, ce qui suffit à les faire
+   * colonne.
+   */
   chiffre?: boolean;
+  /**
+   * La cellule qui **nomme** la rangée. La première, sauf mention contraire.
+   *
+   * Un seul échelon de nom par rangée : deux cellules en 600 rendent deux
+   * lectures possibles de la même ligne, et l'œil hésite sur laquelle est
+   * l'objet.
+   */
+  nom?: boolean;
+  /**
+   * La valeur de cette colonne est un état, rendu en cartouche.
+   *
+   * La rangée reçoit alors sa nature dans `natures`, à côté de sa valeur : le
+   * libellé reste une chaîne traduite, et c'est l'appelant qui sait si l'état
+   * qu'il nomme vit, attend ou dort.
+   */
+  etat?: boolean;
 };
+
+/** Les chiffres d'une même colonne mesurent pareil, sans passer par le mono. */
+const TABULAIRE = { fontVariant: ['tabular-nums' as const] };
 
 const GOUTTIERE = 14;
 
@@ -60,7 +87,11 @@ export function TableHeader({ colonnes, testID }: { colonnes: Colonne[]; testID?
             paddingRight: GOUTTIERE,
           }}
         >
-          <Texte variante="type.caption" couleur="ink.mute" ellipseSurNomPropre>
+          {/* **Label, et c'est le premier des trois échelons.** La tête était
+              en `type.caption`, c'est-à-dire à la même graisse que ses propres
+              valeurs : une colonne dont le titre pèse autant que son contenu
+              ne se survole pas, elle se lit ligne à ligne. */}
+          <Texte variante="type.label" couleur="ink.mute" ellipseSurNomPropre>
             {colonne.label}
           </Texte>
         </View>
@@ -69,9 +100,61 @@ export function TableHeader({ colonnes, testID }: { colonnes: Colonne[]; testID?
   );
 }
 
+/**
+ * Les trois natures d'un état, et rien de plus.
+ *
+ * **Un état se lit à sa matière, pas à sa teinte.** Les cinq écrans écrivaient
+ * leurs états en texte simple, chacun avec sa couleur d'encre : « LIVE » en
+ * vert ici, « Activated » en encre là, et l'œil devait lire le mot pour savoir
+ * s'il était bon. Un cartouche se voit avant d'être lu.
+ *
+ * Trois natures et non un cartouche par état : `vivant` pour ce qui tourne,
+ * `attente` pour ce qui appelle un geste, `dormant` pour ce qui n'en appelle
+ * aucun. Un quatrième obligerait à décider ce qu'il veut dire, et c'est ainsi
+ * qu'on se retrouve avec sept couleurs qui n'en signifient plus qu'une.
+ */
+export type NatureDEtat = 'vivant' | 'attente' | 'dormant';
+
+export function Cartouche({
+  libelle,
+  nature,
+  testID,
+}: {
+  libelle: string;
+  nature: NatureDEtat;
+  testID?: string;
+}) {
+  const c = useColors();
+  // L'ambre du cartouche est **pâle**, jamais l'aplat de marque : celui-ci est
+  // réservé à l'unique décision de l'écran, et un état n'est pas une décision.
+  const matiere = {
+    vivant: { fond: 'status.success.surface', encre: 'status.success.text' },
+    attente: { fond: 'brand.100', encre: 'brand.900' },
+    dormant: { fond: 'bg.inset', encre: 'ink.mute' },
+  }[nature] as { fond: ColorName; encre: ColorName };
+
+  return (
+    <View
+      testID={testID}
+      style={{
+        alignSelf: 'flex-start',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: radius['radius.sm'],
+        backgroundColor: c[matiere.fond],
+      }}
+    >
+      <Texte variante="type.label" couleur={matiere.encre}>
+        {libelle}
+      </Texte>
+    </View>
+  );
+}
+
 export function TableRow({
   colonnes,
   valeurs,
+  natures,
   actif,
   onPress,
   fin,
@@ -79,6 +162,8 @@ export function TableRow({
 }: {
   colonnes: Colonne[];
   valeurs: Record<string, string>;
+  /** La nature de chaque cellule déclarée `etat`. */
+  natures?: Record<string, NatureDEtat>;
   actif?: boolean;
   onPress?: () => void;
   /**
@@ -108,7 +193,7 @@ export function TableRow({
    * donc une rangée sans bordure, sans fond et sans hauteur — et rien ne lève.
    * Seul le `Pressable` sait appeler la fonction pour connaître `pressed`.
    */
-  const cellules = colonnes.map((colonne) => (
+  const cellules = colonnes.map((colonne, index) => (
     <View
       key={colonne.cle}
       style={{
@@ -129,9 +214,29 @@ export function TableRow({
           ne se lit pas mieux qu'une donnée cassée, et les deux colonnes
           fautives ont été élargies là où elles sont déclarées. Ceci est le
           filet qui empêche la prochaine de casser la grille en silence. */}
-      <Texte variante={colonne.chiffre ? 'type.data' : 'type.caption'} ellipseSurNomPropre>
+      {colonne.etat && natures?.[colonne.cle] ? (
+        <Cartouche
+          libelle={valeurs[colonne.cle] ?? ''}
+          nature={natures[colonne.cle]}
+          testID={testID ? `${testID}-${colonne.cle}` : undefined}
+        />
+      ) : (
+      <>
+      {/* **Trois échelons, pas six.** La tête en label, le nom en 600, la
+          valeur en 400 — et rien d'autre dans une rangée. Chaque écran de
+          l'administration avait été réparé séparément, donc chacun avait fini
+          avec sa propre échelle ; c'est cette dérive-là que la grammaire
+          commune ferme, et elle ne peut se rouvrir qu'ici. */}
+      <Texte
+        variante={colonne.nom ?? index === 0 ? 'type.bodyStrong' : 'type.body'}
+        couleur={colonne.nom ?? index === 0 ? 'ink.default' : 'ink.soft'}
+        style={colonne.chiffre ? TABULAIRE : undefined}
+        ellipseSurNomPropre
+      >
         {valeurs[colonne.cle] ?? ''}
       </Texte>
+      </>
+      )}
     </View>
   ));
 
@@ -143,18 +248,22 @@ export function TableRow({
     borderBottomWidth: 1,
     borderBottomColor: c['line.default'],
     /**
-     * **La rangée choisie se dit en matière, pas en couleur.**
+     * **Un filet ambre et un fond crème, jamais un aplat.**
      *
-     * L'arbitrage porte une table de quinze lignes : peinte en ambre, la
-     * sélection y mettait onze occurrences de la couleur de marque sur un seul
-     * écran, et l'orange cessait de signifier « ici » pour signifier « une
-     * ligne parmi d'autres ». Le creux et le filet d'encre disent la même
-     * chose — celle-ci est ouverte — sans dépenser la seule couleur dont le
-     * produit se sert pour désigner où l'on est.
+     * Cette ligne portait un filet d'encre et un creux gris, sur l'argument
+     * qu'une sélection ambre mettrait onze occurrences de la couleur de marque
+     * sur une table de quinze lignes. L'argument visait le bon défaut et
+     * traitait le mauvais objet : ce qui use l'orange est l'**aplat**, qui
+     * ressemble à un bouton, pas le filet.
+     *
+     * La règle de la v15 sépare les deux. Un seul aplat orange par écran, et
+     * c'est toujours une décision ; le filet, lui, est un repère, il ne
+     * s'appuie pas, et il n'y en a jamais qu'un puisqu'une seule rangée est
+     * ouverte à la fois.
      */
-    backgroundColor: actif ? c['bg.inset'] : 'transparent',
+    backgroundColor: actif ? c['brand.50'] : 'transparent',
     borderLeftWidth: 3,
-    borderLeftColor: actif ? c['line.solo'] : 'transparent',
+    borderLeftColor: actif ? c['brand.500'] : 'transparent',
   };
 
   if (!onPress) {
