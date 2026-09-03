@@ -3074,54 +3074,45 @@ describe('la tournée se lit en table, et ses gestes vivent dans le panneau', ()
     expect(screen.getByTestId('remise-par-p2')).toBeTruthy();
   });
 
-  it('ouvrir une reprise depuis le terrain envoie aussi le motif à la navigation', async () => {
-    // **Le même fil qu'à l'écran des salons, sur un second appelant.** Le
-    // terrain n'a pas de colonne « déjà dedans » — une fiche assumée n'expose
-    // que « Take over this account » — mais l'ouverture doit atteindre
-    // `onEntrerEnReprise` de la même façon, avec le motif et la portée que le
-    // serveur vient de confirmer.
-    const onEntrerEnReprise = jest.fn();
+  it('ne propose aucune reprise de compte : ce n’est pas la place de ce mécanisme', async () => {
+    // **Ce test éprouvait l'inverse, et il avait raison à ce moment-là.** La
+    // reprise était offerte ici sur les fiches déjà assumées — donc l'accès de
+    // support, le même qu'à l'écran des salons. Mais posée au milieu du
+    // démarchage, elle se lisait comme une capacité du démarchage : « on prend
+    // le contrôle des salons qu'on visite ». Relevé en campagne, et c'est une
+    // lecture juste de ce que l'écran montrait.
+    //
+    // Elle reste sur l'écran des salons ; ici elle n'a plus rien à faire, et
+    // une fiche assumée ne propose donc plus aucune action : la remise a eu
+    // lieu, le gérant a son compte.
     await monter(
-      <TerrainScreen onEntrerEnReprise={onEntrerEnReprise} />,
-      clientDe({
-        '/admin/prospects': [ACTIVEE],
-        '/support-access/recent': { reprises_recentes_de_l_appelant: 0, fenetre_en_jours: 7 },
-        '/support-access': {
-          id: 'r1',
-          business_id: 'p1',
-          admin_name: 'Rebecca',
-          reason: 'Client says the reel never posted',
-          scope: ['catalogue'],
-          spontaneous: true,
-          started_at: '2026-09-03T10:00:00Z',
-          expires_at: '2026-09-03T11:00:00Z',
-          ended_at: null,
-          reprises_recentes_de_l_appelant: 1,
-          fenetre_en_jours: 7,
-        },
-      }),
+      <TerrainScreen />,
+      clientDe({ '/admin/prospects': [ACTIVEE] }),
       'merchant',
     );
     await waitFor(() => expect(screen.getByTestId('fiche-p1')).toBeTruthy());
 
     await fireEvent.press(screen.getByTestId('fiche-p1'));
-    await fireEvent.press(screen.getByTestId('reprendre-p1'));
-    await waitFor(() => expect(screen.getByTestId('champ-motif')).toBeTruthy());
 
-    await fireEvent.changeText(
-      screen.getByTestId('champ-motif'),
-      'Client says the reel never posted',
-    );
-    await fireEvent.press(screen.getByTestId('portee-catalogue'));
-    await fireEvent.press(screen.getByTestId('ouvrir-la-reprise'));
-
-    await waitFor(() => expect(onEntrerEnReprise).toHaveBeenCalledTimes(1));
-    expect(onEntrerEnReprise).toHaveBeenCalledWith(
-      'p1',
-      'Studio Lume',
-      expect.objectContaining({ reason: 'Client says the reel never posted', scope: ['catalogue'] }),
-    );
+    expect(screen.queryByTestId('reprendre-p1')).toBeNull();
+    // Et on ne lui réémet pas non plus un lien d'accueil : le compte existe.
+    expect(screen.queryByTestId('emettre-p1')).toBeNull();
   });
+
+  it('dit pourquoi cet écran existe, même une fois des fiches préparées', async () => {
+    // **La phrase n'existait que dans l'état vide.** Dès qu'une fiche était
+    // préparée, la seule explication du mécanisme s'en allait pour ne jamais
+    // revenir — quelqu'un qui arrive sur un écran déjà rempli n'avait donc
+    // aucun moyen de la lire.
+    await monter(
+      <TerrainScreen />,
+      clientDe({ '/admin/prospects': [ACTIVEE] }),
+      'merchant',
+    );
+
+    await waitFor(() => expect(screen.getByTestId('terrain-contexte')).toBeTruthy());
+  });
+
 });
 
 describe('un dossier qu’un arbitre a en main', () => {
