@@ -14,11 +14,13 @@
  * — sont exactement celles que des doubles rendent invisibles, parce qu'un
  * double répond ce qu'on lui fait dire.
  *
- * **Le parcours a changé d'écran en v4, pas de nature.** Le fil rend une carte
- * par salon : le cœur y désignerait un contenant de plusieurs prestations, donc
- * il vit sur la fiche, ligne par ligne. Ce qui reste sur le fil est la porte,
- * qui porte le compte — et le compte est justement ce qui traverse les deux
- * écrans et la base.
+ * **Le parcours a changé d'écran en v4, changé de nouveau en v5.** Le favori
+ * lui-même reste par prestation, ligne par ligne sur la fiche — c'est là que
+ * ce test l'enregistre. Le fil a depuis retrouvé son propre cœur, au niveau
+ * du salon : un raccourci qui en garde plusieurs d'un geste, éprouvé côté
+ * unitaire dans `le-mur-par-quartier.test.tsx`. Ce que ce fichier reste seul à
+ * garantir est la porte, qui porte le compte — et le compte est justement ce
+ * qui traverse les deux écrans et la base.
  */
 import { expect, test } from '@playwright/test';
 
@@ -42,10 +44,12 @@ test('le cœur enregistre, et la liste le relit', async ({ page }) => {
   const porte = fil.getByTestId('compte-des-favoris');
   const depart = (await porte.count()) ? Number(await porte.textContent()) : 0;
 
-  // Et aucune carte de salon ne porte de cœur : il a quitté le fil.
-  await expect(fil.locator('[data-testid$="-coeur"]')).toHaveCount(0);
+  // **Le cœur du salon existe depuis la v5**, mais ce n'est pas lui que ce
+  // test enregistre : il garde plusieurs prestations d'un geste, la ligne 62
+  // veut le contraire — un cœur pas encore posé, pris seul, sur la fiche.
+  await expect(fil.locator('[data-testid$="-coeur"]').first()).toBeVisible();
 
-  // On ouvre un salon, et c'est là que le cœur se pose.
+  // On ouvre un salon, et c'est là que le cœur d'**une** prestation se pose.
   await fil.locator('[data-testid*="-apercu-"]').first().click();
 
   const fiche = page.getByTestId('ecran-fiche');
