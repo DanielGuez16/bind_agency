@@ -21,6 +21,7 @@ import { ApiClient, ApiError, NetworkError, type CoffreDeJetons, type Jetons } f
 import { routes } from './routes';
 import type {
   AbonneDuPlan,
+  AnnuaireAdmin,
   Abonnement,
   AudienceDuCompte,
   CreateurAdmin,
@@ -952,7 +953,7 @@ export class Api {
   // ---- administration ----
 
   createursAdmin(recherche: string | null, signal?: AbortSignal) {
-    return this.client.request<CreateurAdmin[]>(routes.createursAdmin(), {
+    return this.client.request<AnnuaireAdmin>(routes.createursAdmin(), {
       query: { recherche: recherche || undefined },
       signal,
     });

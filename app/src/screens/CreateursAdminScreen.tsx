@@ -20,7 +20,7 @@
 import { useCallback, useState } from 'react';
 import { Linking, Pressable, View } from 'react-native';
 
-import { useApi, type CreateurAdmin } from '../api';
+import { useApi, type AnnuaireAdmin, type CreateurAdmin } from '../api';
 import {
   Icone,
   Photo,
@@ -55,9 +55,9 @@ export function CreateursAdminScreen() {
     return () => clearTimeout(delai);
   }, []);
 
-  const requete = useRequete<CreateurAdmin[]>(
+  const requete = useRequete<AnnuaireAdmin>(
     (signal) => api.createursAdmin(demande || null, signal),
-    { estVide: (liste) => liste.length === 0, dependances: [demande] },
+    { estVide: (annuaire) => annuaire.items.length === 0, dependances: [demande] },
   );
 
   return (
@@ -76,12 +76,16 @@ export function CreateursAdminScreen() {
         </View>
       }
     >
-      {(createurs) => (
+      {(annuaire) => (
         <View style={{ gap: 12 }}>
           <BarreDeRecherche valeur={recherche} onChange={differer} />
 
+          {/* **Le total, et non le compte des lignes rendues.** La liste
+              s'arrête à cent : écrire sa longueur ferait dire « 100 créateurs »
+              à un produit qui en a cent vingt-huit, et le plafond dirait qu'on
+              tronque sans dire de combien. */}
           <Texte variante="type.caption" couleur="ink.soft" testID="compte-createurs">
-            {t('admin.createursCompte', { n: String(createurs.length) })}
+            {t('admin.createursCompte', { n: String(annuaire.total) })}
           </Texte>
 
           <View
@@ -94,7 +98,7 @@ export function CreateursAdminScreen() {
             }}
           >
             <TableHeader colonnes={COLONNES(t)} testID="entete-createurs" />
-            {createurs.map((createur) => (
+            {annuaire.items.map((createur) => (
               <LigneDeCreateur key={createur.creator_id} createur={createur} locale={locale} />
             ))}
           </View>
