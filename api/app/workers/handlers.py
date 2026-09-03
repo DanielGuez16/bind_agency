@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
+import httpx
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -360,7 +361,15 @@ async def vider_la_boite_d_envoi(session: AsyncSession, *, account, provider) ->
     d'envoi injoignable ne doit pas faire échouer le balayage entier, sans quoi
     un message cassé bloquerait tous les autres derrière lui.
     """
-    resultat = await outbox.vider(session, email_sender=get_sender(), push_sender=get_push_sender())
+    # **Un client par passage, comme le fait déjà `get_provider()` côté web.**
+    # `get_sender()` refuse de partir sans lui dès que `EMAIL_PROVIDER=resend` :
+    # « un client HTTP est requis ». L'appel sans client levait donc à chaque
+    # passage — et cette exception, non rattrapée avant la correction de
+    # `runner._traiter`, arrêtait tout le passage plutôt que ce seul job.
+    async with httpx.AsyncClient() as client:
+        resultat = await outbox.vider(
+            session, email_sender=get_sender(client), push_sender=get_push_sender()
+        )
     if resultat.envoyes or resultat.ecartes or resultat.reportes:
         logger.info(
             "boîte d'envoi : %d partis, %d écartés, %d reportés",
