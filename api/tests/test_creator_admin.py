@@ -78,7 +78,7 @@ async def test_le_score_est_servi_et_le_neutre_reste_neutre(
     )
     assert reponse.status_code == 200, reponse.text
 
-    par_id = {ligne["creator_id"]: ligne for ligne in reponse.json()}
+    par_id = {ligne["creator_id"]: ligne for ligne in reponse.json()["items"]}
 
     # Celle qui a un historique porte un score, et il n'est pas nul.
     assert par_id[str(notee)]["reliability_score"] is not None
@@ -162,6 +162,79 @@ async def test_le_volume_vient_du_dernier_releve_et_la_route_repond(
     )
     assert reponse.status_code == 200, reponse.text
 
-    ligne = next(x for x in reponse.json() if x["creator_id"] == str(createur))
+    ligne = next(x for x in reponse.json()["items"] if x["creator_id"] == str(createur))
     assert ligne["audience_totale"] == 2_500
     assert ligne["reseaux"][0]["followers"] == 2_500
+
+
+@pytest.mark.anyio
+async def test_l_enveloppe_compte_au_dela_du_plafond(
+    session: AsyncSession, conn: AsyncConnection, client: AsyncClient
+) -> None:
+    """**Le total porte sur la recherche, la liste s'arrête au plafond.**
+
+    C'est le manque que l'annuaire des salons avait déjà réglé, reposé ici : une
+    liste bornée à cent sans total dit qu'elle tronque sans dire de combien, et
+    « 128 sur BIND » ne se dérive pas de cent lignes.
+
+    Le décor divergent est le dépassement. Sous le plafond, un service qui rend
+    `len(items)` comme total et un service qui compte vraiment donnent le même
+    nombre — il faut franchir la borne pour que les deux se séparent.
+    """
+    from app.routers.creator_admin import PLAFOND
+
+    for rang in range(PLAFOND + 3):
+        createur = await new_creator(conn)
+        await new_social_account(conn, createur, handle=f"deborde_{rang}")
+
+    jeton = await jeton_administrateur(session, client)
+    reponse = await client.get(
+        f"{PREFIX}/admin/creators", headers={"Authorization": f"Bearer {jeton}"}
+    )
+    assert reponse.status_code == 200, reponse.text
+
+    corps = reponse.json()
+    assert len(corps["items"]) == PLAFOND
+    assert corps["total"] >= PLAFOND + 3
+    assert corps["total"] > len(corps["items"])
+
+
+@pytest.mark.anyio
+async def test_la_mediane_ignore_les_scores_absents(
+    session: AsyncSession, conn: AsyncConnection, client: AsyncClient
+) -> None:
+    """**La médiane se calcule sur les scores qui existent, jamais sur tous.**
+
+    `null` signifie neutre et non zéro : compter les sans-historique comme des
+    zéros écraserait la médiane à chaque inscription, et le chiffre baisserait
+    précisément quand le produit grandit.
+
+    Le décor fait diverger les deux implémentations — une notée, deux sans
+    historique. Une médiane sur l'ensemble prendrait un zéro comme valeur
+    centrale ; celle qui ignore les absents rend le score de la seule notée. Et
+    `createurs_avec_score` est ce qui rend le nombre lisible : « 86 » sorti d'un
+    score n'est pas « 86 » sorti de cent.
+    """
+    notee = await new_creator(conn)
+    await new_social_account(conn, notee, handle="la_seule_notee")
+    for rang in range(2):
+        muette = await new_creator(conn)
+        await new_social_account(conn, muette, handle=f"sans_score_{rang}")
+
+    await reliability.enregistrer(
+        session, creator_id=notee, type_=ReliabilityEventType.PUBLISHED_ON_TIME
+    )
+    await session.commit()
+
+    jeton = await jeton_administrateur(session, client)
+    reponse = await client.get(
+        f"{PREFIX}/admin/creators", headers={"Authorization": f"Bearer {jeton}"}
+    )
+    corps = reponse.json()
+
+    assert corps["createurs_avec_score"] == 1
+    assert corps["total"] >= 3
+    # La médiane est celle de la notée, et elle est au-dessus de la base : un
+    # zéro dans le calcul l'aurait tirée vers le bas.
+    assert corps["fiabilite_mediane"] is not None
+    assert float(corps["fiabilite_mediane"]) > 70

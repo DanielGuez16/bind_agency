@@ -410,24 +410,38 @@ const ECRANS = [
     noeud: <CreateursAdminScreen />,
     role: 'admin' as Role,
     plein: {
-      '/admin/creators': [
-        {
-          creator_id: 'c1',
-          city: 'Miami',
-          reseaux: [
-            {
-              platform: 'instagram',
-              handle: 'lea.miami',
-              followers: 12400,
-              avatar_key: 'avatars/lea.jpg',
-              profil_url: 'https://instagram.com/lea.miami',
-            },
-          ],
-          audience_totale: 12400,
-        },
-      ],
+      '/admin/creators': {
+        items: [
+          {
+            creator_id: 'c1',
+            city: 'Miami',
+            reseaux: [
+              {
+                platform: 'instagram',
+                handle: 'lea.miami',
+                followers: 12400,
+                avatar_key: 'avatars/lea.jpg',
+                profil_url: 'https://instagram.com/lea.miami',
+              },
+            ],
+            audience_totale: 12400,
+          },
+        ],
+        total: 1,
+        arrivees_cette_semaine: 1,
+        fiabilite_mediane: '86.00',
+        createurs_avec_score: 1,
+      },
     },
-    vide: { '/admin/creators': [] },
+    vide: {
+      '/admin/creators': {
+        items: [],
+        total: 0,
+        arrivees_cette_semaine: 0,
+        fiabilite_mediane: null,
+        createurs_avec_score: 0,
+      },
+    },
   },
   {
     nom: 'commerces',
@@ -2749,10 +2763,18 @@ describe('le score de fiabilité vit sur l’annuaire admin, et nulle part aille
     await monter(
       <CreateursAdminScreen />,
       clientDe({
-        '/admin/creators': [
-          { creator_id: 'c1', city: 'Miami', reseaux: reseau('notee'), audience_totale: 12_400, reliability_score: '86.00' },
-          { creator_id: 'c2', city: 'Miami', reseaux: reseau('neuve'), audience_totale: 12_400, reliability_score: null },
-        ],
+        '/admin/creators': {
+          items: [
+            { creator_id: 'c1', city: 'Miami', reseaux: reseau('notee'), audience_totale: 12_400, reliability_score: '86.00' },
+            { creator_id: 'c2', city: 'Miami', reseaux: reseau('neuve'), audience_totale: 12_400, reliability_score: null },
+          ],
+          total: 2,
+          arrivees_cette_semaine: 1,
+          // La médiane porte sur **un** score : l'autre créatrice n'en a pas,
+          // et la compter comme zéro l'écraserait — c'est la règle du produit.
+          fiabilite_mediane: '86.00',
+          createurs_avec_score: 1,
+        },
       }),
       'admin',
     );
@@ -2772,9 +2794,15 @@ describe('le score de fiabilité vit sur l’annuaire admin, et nulle part aille
     await monter(
       <CreateursAdminScreen />,
       clientDe({
-        '/admin/creators': [
-          { creator_id: 'c1', city: 'Miami', reseaux: reseau('notee'), audience_totale: 12_400, reliability_score: '86.00' },
-        ],
+        '/admin/creators': {
+          items: [
+            { creator_id: 'c1', city: 'Miami', reseaux: reseau('notee'), audience_totale: 12_400, reliability_score: '86.00' },
+          ],
+          total: 1,
+          arrivees_cette_semaine: 0,
+          fiabilite_mediane: '86.00',
+          createurs_avec_score: 1,
+        },
       }),
       'admin',
     );

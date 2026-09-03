@@ -2038,3 +2038,27 @@ export type AbonneDuPlan = {
   status: string;
   since: string;
 };
+
+/**
+ * L'annuaire de l'administration, et les nombres qui situent ce qu'on y lit.
+ *
+ * **Les quatre décrivent la recherche courante**, pas la population. Un chiffre
+ * qui ne bougerait pas en tapant ne dirait rien de ce qu'on cherche — c'est
+ * l'arbitrage rendu sur l'annuaire des salons. Sans recherche, la recherche
+ * courante *est* la population.
+ */
+export type AnnuaireAdmin = {
+  /** Bornée à cent. `total` dit combien la recherche a réellement trouvé. */
+  items: CreateurAdmin[];
+  total: number;
+  arrivees_cette_semaine: number;
+  /**
+   * La médiane des scores **qui existent**, rendue en chaîne, nulle si aucun.
+   *
+   * Compter les sans-historique comme des zéros écraserait la médiane à chaque
+   * inscription : le chiffre baisserait quand le produit grandit.
+   */
+  fiabilite_mediane: string | null;
+  /** L'effectif de la médiane. « 86 » sorti de trois scores n'est pas « 86 » sorti de cent. */
+  createurs_avec_score: number;
+};
