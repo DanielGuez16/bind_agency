@@ -15,24 +15,37 @@
  * l'écran : le produit fonctionne sans notifications, il prévient seulement
  * moins bien. L'écran de réglages, lui, dit où le lever.
  *
- * **Rien sur un simulateur ni sur le web.** Expo n'y délivre pas de jeton
- * distant, et le demander lève. `Device.isDevice` est le seul test fiable.
+ * **Rien sur un simulateur ni sur le web sans clé VAPID.** Expo n'y délivre
+ * pas de jeton distant, et le demander lève. Cette phrase disait
+ * « `Device.isDevice` est le seul test fiable » et c'était faux : `expo-device`
+ * rend `isDevice: true` **en dur** sur tout navigateur, si bien que la garde ne
+ * fermait jamais sur le web. Une fenêtre « Autoriser les notifications ? »
+ * s'ouvrait donc juste après la connexion, sans qu'aucun écran ne l'annonce, et
+ * l'enregistrement échouait ensuite de toute façon faute de clé. Voir
+ * `pushDisponible.ts`, qui pose la vraie question.
  */
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
-import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 
 import type { Api, PlateformeDeTerminal } from '../api';
 import { refuseesSurCetAppareil } from './notificationsDeCetAppareil';
+import { pushDisponible } from './pushDisponible';
 
 /** Ce qu'on a pu faire. Rendu pour les tests ; l'app n'en affiche rien. */
 export type IssueDuJeton =
   | { issue: 'enregistre'; token: string }
   /** Refusée, ou jamais accordée. L'écran de réglages dit où la lever. */
   | { issue: 'refusee' }
-  /** Simulateur, navigateur : Expo n'y délivre pas de jeton distant. */
+  /**
+   * Simulateur, ou navigateur sans clé VAPID : aucun jeton distant n'est
+   * obtenable ici.
+   *
+   * **Distinct de `refusee`, et c'est ce qui décide de la phrase.** Rien n'a
+   * été demandé et il n'y a rien à lever dans des réglages : envoyer quelqu'un
+   * y chercher un interrupteur qui n'existe pas serait pire que se taire.
+   */
   | { issue: 'indisponible' }
   /**
    * L'appareil a demandé qu'on le laisse tranquille, dans les réglages.
@@ -58,8 +71,10 @@ function plateforme(): PlateformeDeTerminal {
  * monter un arbre pour vérifier une suite de conditions.
  */
 export async function enregistrerCeTerminal(api: Api): Promise<IssueDuJeton> {
-  // Un simulateur n'a pas de jeton distant, et le demander lève.
-  if (!Device.isDevice) return { issue: 'indisponible' };
+  // **Avant tout le reste, et surtout avant de demander quoi que ce soit.**
+  // Sur une plateforme qui ne peut pas rendre de jeton, la fenêtre
+  // d'autorisation dérangerait pour un enregistrement condamné d'avance.
+  if (!pushDisponible()) return { issue: 'indisponible' };
 
   // **Le refus de l'appareil se relit avant de repartir.** Sans cette lecture,
   // couper les notifications dans les réglages serait défait au lancement
@@ -96,7 +111,7 @@ export async function enregistrerCeTerminal(api: Api): Promise<IssueDuJeton> {
  * juste avant de le retirer.
  */
 export async function jetonDeCetAppareil(): Promise<string | null> {
-  if (!Device.isDevice) return null;
+  if (!pushDisponible()) return null;
   try {
     const { data } = await Notifications.getExpoPushTokenAsync();
     return data;

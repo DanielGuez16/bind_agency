@@ -1106,6 +1106,11 @@ export const es: Catalogue = {
     notificationsTitre: 'Notificaciones',
     notificationsSurCetAppareil: 'Avisarme en este dispositivo',
     notificationsPortee: 'Esto solo afecta al dispositivo que tienes en la mano. Para detener un teléfono perdido, cierra la sesión en él. Todavía no podemos listar tus dispositivos desde aquí.',
+    notificationsEchecRefusee:
+      'Tu dispositivo rechazó las notificaciones. Actívalas para BIND en los ajustes del sistema y vuelve a intentarlo.',
+    notificationsEchecIndisponible:
+      'Este navegador todavía no puede recibir notificaciones de BIND. No se ha activado nada, y no hay nada que cambiar en tus ajustes.',
+    notificationsEchecEnvoi: 'No hemos podido registrar este dispositivo. Inténtalo de nuevo en un momento.',
     langue: 'Idioma',
     langueEn: 'English',
     langueEs: 'Español',
