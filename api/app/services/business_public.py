@@ -141,6 +141,7 @@ class FichePublique:
     #: dérivés d'un pseudonyme.
     instagram_url: str | None
     tiktok_url: str | None
+    facebook_url: str | None
     website_url: str | None
     cover_photo_key: str | None
     #: La galerie, dans l'ordre choisi par le commerce. Distincte de la
@@ -322,6 +323,7 @@ async def fiche(
         phone=business.phone,
         instagram_url=business.instagram_url,
         tiktok_url=business.tiktok_url,
+        facebook_url=business.facebook_url,
         website_url=business.website_url,
         cover_photo_key=business.cover_photo_key,
         photos=tuple(

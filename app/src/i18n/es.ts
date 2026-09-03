@@ -1143,6 +1143,7 @@ export const es: Catalogue = {
     liensResume: '{{count}} de 3 rellenados',
     lienInstagram: 'Instagram',
     lienTiktok: 'TikTok',
+    lienFacebook: 'Facebook',
     lienSite: 'Sitio web',
     photosCompte: '{{count}} fotos',
     photosCompteUne: 'Una foto',

@@ -632,6 +632,7 @@ export type FichePublique = {
    */
   instagram_url: string | null;
   tiktok_url: string | null;
+  facebook_url: string | null;
   website_url: string | null;
   cover_photo_key: string | null;
   /** La galerie, dans l'ordre choisi par le commerce. Elle montre le lieu. */
@@ -812,6 +813,20 @@ export type ReservationDuCreateur = {
   /** L'heure s'affiche dans le fuseau du commerce, pas dans celui du téléphone. */
   business_timezone: string;
   business_cover_photo_key: string | null;
+  /**
+   * Où le salon se montre ailleurs.
+   *
+   * **À ne pas confondre avec `platform` ci-dessous**, et c'est tout l'objet :
+   * `platform` est le réseau de la *contrepartie*, là où la créatrice va
+   * publier. Ces liens-ci sont les comptes du salon. Les deux s'affichent avec
+   * des logos qui se ressemblent et ne disent pas la même chose — le glyphe de
+   * la carte n'a jamais été cliquable parce qu'il ne mène nulle part : une
+   * plateforme n'est pas une adresse.
+   */
+  business_instagram_url: string | null;
+  business_tiktok_url: string | null;
+  business_facebook_url: string | null;
+  business_website_url: string | null;
   item_name: string;
   item_photo_key: string | null;
   duration_minutes: number | null;

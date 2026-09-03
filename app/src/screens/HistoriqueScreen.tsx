@@ -38,6 +38,7 @@ import { useI18n, type SupportedLocale } from '../i18n';
 import { formatDateTime, formatMois, formatQuantieme, repereDuCreneau } from '../format';
 import { glypheDePlateforme } from './obstacle';
 import { AnnulerLaReservation } from './reservations/AnnulerLaReservation';
+import { LesLiensDuSalon } from './fiche/LesLiensDuSalon';
 import { Ecran } from './Ecran';
 import { useRequete } from './useRequete';
 
@@ -645,6 +646,25 @@ function CarteDeReservation({
           composant se tait de lui-même sur les états terminaux — il n'y a pas
           de condition à écrire ici, et en écrire une la ferait diverger du
           diagramme. */}
+      {/* **Les comptes du salon, et non le réseau de la contrepartie.** Le
+          glyphe en tête de carte dit où la créatrice publiera ; il n'a jamais
+          été cliquable, et c'est juste — une plateforme n'est pas une adresse.
+          Ce qui manquait est ici : les liens que le salon a renseignés, pour
+          aller voir à quoi il ressemble avant de s'engager. Les deux coexistent
+          parce qu'ils répondent à deux questions différentes.
+
+          Le même composant que la fiche : deux rendus des mêmes liens
+          finiraient par diverger sur ce qu'ils affichent. */}
+      <LesLiensDuSalon
+        liens={{
+          instagram_url: reservation.business_instagram_url,
+          tiktok_url: reservation.business_tiktok_url,
+          facebook_url: reservation.business_facebook_url,
+          website_url: reservation.business_website_url,
+        }}
+        testID={`liens-du-salon-${reservation.booking_id}`}
+      />
+
       <AnnulerLaReservation reservation={reservation} onAnnulee={onRelire} />
     </Pressable>
   );

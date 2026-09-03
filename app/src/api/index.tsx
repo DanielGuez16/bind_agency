@@ -892,6 +892,7 @@ export class Api {
       menu_url: string | null;
       instagram_url: string | null;
       tiktok_url: string | null;
+      facebook_url: string | null;
       website_url: string | null;
     }>(
       routes.commerce(businessId),
@@ -1119,7 +1120,12 @@ export class Api {
    */
   definirLesLiensPublics(
     businessId: string,
-    liens: { instagram_url: string | null; tiktok_url: string | null; website_url: string | null },
+    liens: {
+      instagram_url: string | null;
+      tiktok_url: string | null;
+      facebook_url: string | null;
+      website_url: string | null;
+    },
   ) {
     return this.client.request<unknown>(routes.modifierLeCommerce(businessId), {
       methode: 'PATCH',

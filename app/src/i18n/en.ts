@@ -1292,6 +1292,7 @@ export const en = {
     liensResume: '{{count}} of 3 filled in',
     lienInstagram: 'Instagram',
     lienTiktok: 'TikTok',
+    lienFacebook: 'Facebook',
     lienSite: 'Website',
     photosCompte: '{{count}} photos',
     photosCompteUne: 'One photo',

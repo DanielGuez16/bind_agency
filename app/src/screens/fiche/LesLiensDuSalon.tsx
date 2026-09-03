@@ -21,7 +21,12 @@ export function LesLiensDuSalon({
   liens,
   testID = 'liens-du-salon',
 }: {
-  liens: { instagram_url: string | null; tiktok_url: string | null; website_url: string | null };
+  liens: {
+    instagram_url: string | null;
+    tiktok_url: string | null;
+    facebook_url: string | null;
+    website_url: string | null;
+  };
   testID?: string;
 }) {
   const { t } = useI18n();
@@ -41,6 +46,19 @@ export function LesLiensDuSalon({
       url: liens.tiktok_url,
       icone: 'tiktok',
       libelle: t('lieu.lienTiktok'),
+    });
+  }
+  if (liens.facebook_url) {
+    // **`sortie` et non un glyphe Facebook, faute d'en avoir un.**
+    // `primitives.json` n'en porte pas, et sa garde existe précisément pour
+    // que les tracés ne soient pas retapés de mémoire — en inventer un ici
+    // serait le défaut qu'elle attrape. Le mot « Facebook » à côté porte le
+    // sens ; le jour où Design fournit le glyphe, seule cette ligne change.
+    lignes.push({
+      cle: 'facebook',
+      url: liens.facebook_url,
+      icone: 'sortie',
+      libelle: t('lieu.lienFacebook'),
     });
   }
   if (liens.website_url) {

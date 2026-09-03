@@ -136,6 +136,7 @@ async def create_business(
         menu_url=payload.menu_url,
         instagram_url=payload.instagram_url,
         tiktok_url=payload.tiktok_url,
+        facebook_url=payload.facebook_url,
         website_url=payload.website_url,
         status=BusinessStatus.ONBOARDING,
     )
@@ -203,6 +204,7 @@ async def update_business(
         # qui croit avoir enregistré.
         "instagram_url",
         "tiktok_url",
+        "facebook_url",
         "website_url",
     ):
         if name in fields:

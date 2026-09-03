@@ -68,6 +68,7 @@ async def lire_le_commerce(session: AsyncSession, business: Business) -> Busines
         menu_url=business.menu_url,
         instagram_url=business.instagram_url,
         tiktok_url=business.tiktok_url,
+        facebook_url=business.facebook_url,
         website_url=business.website_url,
         status=business.status,
         grace_ends_at=business.grace_ends_at,
