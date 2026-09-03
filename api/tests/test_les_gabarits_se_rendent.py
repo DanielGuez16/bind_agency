@@ -237,17 +237,18 @@ def test_le_html_echappe_ce_que_le_commerce_a_ecrit() -> None:
     assert "&lt;script&gt;" in html
 
 
-def test_l_adresse_postale_est_optionnelle(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Vide par défaut, la ligne d'adresse ne s'affiche pas du tout — jamais un
-    repère vide qui se lirait comme une adresse manquante."""
-    from app.core.config import get_settings
+@pytest.mark.parametrize("cle", CLES_DES_SEIZE)
+def test_le_pied_ne_porte_que_deux_lignes(cle: str) -> None:
+    """Pourquoi on reçoit ceci, puis les liens — jamais une adresse.
 
+    Design portait une troisième ligne comme un repère à remplir avant
+    l'envoi, pas comme une exigence : c'était son repli faute de vérification
+    juridique. La vérification faite, elle l'a retirée de la planche. Compter
+    les `<div>` du pied plutôt que chercher un mot précis : une ligne vide ou
+    reformulée resterait une troisième ligne que ce test doit attraper.
+    """
     valeurs = _valeurs_completes()
+    html = email_render.rendre_html(cle, Locale.EN, sujet="x", valeurs=valeurs)
 
-    monkeypatch.setattr(get_settings(), "email_postal_address", "")
-    sans = email_render.rendre_html("favorite.available", Locale.EN, sujet="x", valeurs=valeurs)
-    assert "BIND AGENCY" not in sans
-
-    monkeypatch.setattr(get_settings(), "email_postal_address", "BIND AGENCY · Miami, FL")
-    avec = email_render.rendre_html("favorite.available", Locale.EN, sujet="x", valeurs=valeurs)
-    assert "BIND AGENCY" in avec
+    pied = html.rsplit("line-height:19px;", 1)[1]
+    assert pied.count("<div") == 2, f"{cle} : {pied.count('<div')} ligne(s) au pied"
