@@ -38,6 +38,7 @@ import { urlImage } from './FilScreen';
 import { elevationDeCarte, elevationFlottante, radius, useTheme } from '../theme';
 import { Ecran } from './Ecran';
 import { useGabarit } from '../shell/gabarit';
+import { LesLiensDuSalon } from './fiche/LesLiensDuSalon';
 import { OuEstLeLieu } from './fiche/OuEstLeLieu';
 import { EcartAuSeuil } from './PaliersScreen';
 import { glypheDePlateforme, nomDePlateforme } from './obstacle';
@@ -272,6 +273,15 @@ export function FicheScreen({
               ) : null}
               <Etiquette texte={t(`categories.${fiche.category}`)} testID="categorie" />
             </View>
+
+            {/* **Où le salon se montre ailleurs, avec son identité.** Le
+                composant existait, testé, et n'était monté nulle part : le
+                salon renseignait ses liens, le serveur les servait sur cette
+                fiche, et personne ne les lisait. Il vit ici parce que c'est
+                ce qu'on regarde avant de s'engager — voir à quoi ressemble le
+                compte du salon dit si l'association convient — et il rend
+                `null` quand rien n'est renseigné. */}
+            <LesLiensDuSalon liens={fiche} />
           </View>
 
           {/* **La carte devient une ligne nommée, entre l'identité et les
