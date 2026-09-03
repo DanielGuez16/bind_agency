@@ -1476,10 +1476,17 @@ export const en = {
     reemettre: 'New link',
     revoquer: 'Cancel link',
     etat: {
-      preparee: 'Prepared',
-      'lien-ouvert': 'Link open',
-      'lien-expire': 'Link expired',
-      assumee: 'Taken over',
+      // **Les cinq valeurs que le serveur sert, à la lettre.** Ce bloc en
+      // portait quatre, en français et sur d'autres noms — `preparee`,
+      // `lien-ouvert`, `lien-expire`, `assumee` — hérités d'avant que
+      // `EtatDeLaTournee` se fixe. Aucune ne correspondait, donc **aucun état
+      // ne se traduisait** : la carte écrivait sa clé brute à l'écran, et on ne
+      // s'en est aperçu que sur celle qu'on regardait.
+      prepared: 'Prepared',
+      never_opened: 'Link never opened',
+      opened_not_claimed: 'Opened, not taken over',
+      blocked_on_commitment: 'Stopped at the commitment',
+      claimed: 'Taken over',
     },
   },
   onglets: {

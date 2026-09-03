@@ -1329,10 +1329,11 @@ export const es: Catalogue = {
     reemettre: 'Nuevo enlace',
     revoquer: 'Anular enlace',
     etat: {
-      preparee: 'Preparada',
-      'lien-ouvert': 'Enlace abierto',
-      'lien-expire': 'Enlace caducado',
-      assumee: 'Asumida',
+      prepared: 'Preparada',
+      never_opened: 'Enlace nunca abierto',
+      opened_not_claimed: 'Abierto, sin asumir',
+      blocked_on_commitment: 'Detenido en el compromiso',
+      claimed: 'Asumida',
     },
   },
   onglets: {
