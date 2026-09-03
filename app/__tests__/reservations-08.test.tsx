@@ -604,3 +604,74 @@ describe('le titre est la prestation, et le format ouvre la carte', () => {
     );
   });
 });
+
+describe('l’historique se continue au-delà de la première page', () => {
+  it('demande chaque suite au curseur de la dernière ligne reçue, et les empile', async () => {
+    // **Le même défaut de fond que « My posts ».** L'écran s'arrêtait à la
+    // page par défaut du serveur : au-delà de la cinquantième réservation,
+    // l'historique cessait d'en être un sans que rien ne le dise.
+    //
+    // **Deux pages pleines, donc deux appuis, et c'est ce qui fait diverger
+    // les deux implémentations.** Avec un seul appui, prendre le curseur sur
+    // la première page ou sur l'ensemble chargé donne la même valeur : la
+    // mutation survit. C'est au second appui qu'un curseur figé sur la
+    // première page redemanderait la page déjà lue, en boucle.
+    const demandes: string[] = [];
+    const page = (n: number) =>
+      Array.from({ length: 50 }, (_, i) =>
+        reservation({
+          booking_id: `p${n}-${i}`,
+          created_at: `2026-0${n}-${String((i % 28) + 1).padStart(2, '0')}T09:00:00Z`,
+        }),
+      );
+    const pages = [page(8), page(7), [reservation({ booking_id: 'fin', created_at: '2026-06-01T09:00:00Z' })]];
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: async (url) => {
+        const items = pages[demandes.length] ?? [];
+        demandes.push(String(url));
+        return { ok: true, status: 200, json: async () => ({ items, compteurs: {} }) } as Response;
+      },
+    });
+    await render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="creator">
+          <ApiProvider client={api}>
+            <HistoriqueScreen onOuvrir={() => {}} ongletDemande="en-cours" />
+          </ApiProvider>
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+    await waitFor(() => expect(screen.getByTestId('voir-plus-historique')).toBeTruthy());
+
+    await fireEvent.press(screen.getByTestId('voir-plus-historique'));
+    await waitFor(() => expect(screen.getByTestId('reservation-p7-0')).toBeTruthy());
+    expect(demandes[1]).toContain(encodeURIComponent(pages[0][49].created_at));
+
+    // **Le second appui, celui qui compte.** Le curseur doit avoir avancé
+    // jusqu'au bout de la SECONDE page, pas être resté sur la première.
+    await fireEvent.press(screen.getByTestId('voir-plus-historique'));
+    await waitFor(() => expect(screen.getByTestId('reservation-fin')).toBeTruthy());
+    expect(demandes[2]).toContain(encodeURIComponent(pages[1][49].created_at));
+    expect(demandes[2]).not.toContain(encodeURIComponent(pages[0][49].created_at));
+
+    // Les trois pages sont là : la suite s'ajoute, elle ne remplace pas.
+    expect(screen.getByTestId('reservation-p8-0')).toBeTruthy();
+    // Et la dernière n'était pas pleine : plus rien à proposer.
+    expect(screen.queryByTestId('voir-plus-historique')).toBeNull();
+    // **Un délai explicite, parce que ce test est lourd par nature.** Trois
+    // pages font cent une lignes, chacune montée sous une `Apparition` — la
+    // pagination ne se prouve pas sur moins, puisqu'une page « pleine » vaut
+    // cinquante. Le défaut n'est donc pas le test qui attend, c'est ce qu'il
+    // rend, et le plafond par défaut de cinq secondes le rendait tributaire
+    // de la charge de la machine.
+  }, 20_000);
+
+  it('et ne propose rien quand la première page n’est pas pleine', async () => {
+    await monter([reservation({ booking_id: 'seule' })], 'en', 'en-cours');
+    await waitFor(() => expect(screen.getByTestId('ecran-historique')).toBeTruthy());
+
+    expect(screen.queryByTestId('voir-plus-historique')).toBeNull();
+  });
+});
