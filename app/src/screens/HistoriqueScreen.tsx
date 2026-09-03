@@ -263,10 +263,20 @@ function indexDOnglet(cle: string | undefined): number {
 
 export function HistoriqueScreen({
   onOuvrir,
+  onOuvrirLeCommerce,
   ongletDemande,
   onOngletApplique,
 }: {
   onOuvrir: (reservation: ReservationDuCreateur) => void;
+  /**
+   * Ouvre la fiche du salon.
+   *
+   * **Elle n'était atteignable de nulle part depuis ici.** Le nom du salon
+   * était écrit et mort ; le mécanisme existait pourtant, et sert déjà au fil
+   * et aux favoris. Optionnelle : la pile du commerce monte cet écran sans
+   * fiche à ouvrir.
+   */
+  onOuvrirLeCommerce?: (businessId: string) => void;
   /**
    * L'onglet sur lequel s'ouvrir, quand on arrive d'ailleurs.
    *
@@ -371,6 +381,7 @@ export function HistoriqueScreen({
                 reservation={reservation}
                 onglet={ONGLETS[index].cle}
                 onOuvrir={onOuvrir}
+                onOuvrirLeCommerce={onOuvrirLeCommerce}
                 onRelire={requete.recharger}
               />
             </Apparition>
@@ -474,11 +485,13 @@ function CarteDeReservation({
   reservation,
   onglet,
   onOuvrir,
+  onOuvrirLeCommerce,
   onRelire,
 }: {
   reservation: ReservationDuCreateur;
   onglet: string;
   onOuvrir: (reservation: ReservationDuCreateur) => void;
+  onOuvrirLeCommerce?: (businessId: string) => void;
   /** Relit la liste : une réservation annulée quitte l'onglet « à venir ». */
   onRelire: () => void;
 }) {
@@ -614,14 +627,40 @@ function CarteDeReservation({
                 })
               : reservation.item_name}
           </Texte>
-          <Texte
-            variante="type.body"
-            couleur="ink.soft"
-            ellipseSurNomPropre
-            testID={`quand-${reservation.booking_id}`}
-          >
-            {attribution}
-          </Texte>
+          {/* **Le nom du salon menait nulle part.** Il était écrit et mort,
+              alors que le mécanisme existe et sert déjà au fil et aux favoris.
+              C'est la ligne entière qui s'appuie et non le seul nom : sur
+              « à venir » il est enchâssé dans une phrase traduite, et
+              découper une traduction pour n'en rendre qu'un fragment
+              cliquable casserait à la première langue qui met le salon
+              ailleurs dans la phrase. */}
+          {onOuvrirLeCommerce ? (
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel={reservation.business_name}
+              onPress={() => onOuvrirLeCommerce(reservation.business_id)}
+              testID={`ouvrir-le-salon-${reservation.booking_id}`}
+              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            >
+              <Texte
+                variante="type.body"
+                couleur="brand.700"
+                ellipseSurNomPropre
+                testID={`quand-${reservation.booking_id}`}
+              >
+                {attribution}
+              </Texte>
+            </Pressable>
+          ) : (
+            <Texte
+              variante="type.body"
+              couleur="ink.soft"
+              ellipseSurNomPropre
+              testID={`quand-${reservation.booking_id}`}
+            >
+              {attribution}
+            </Texte>
+          )}
         </View>
         {agit ? (
           <Button

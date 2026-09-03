@@ -545,6 +545,14 @@ export function PileDesReservations() {
             // qu'immédiatement après la confirmation : fermer l'application le
             // faisait perdre jusqu'au rendez-vous, alors que c'est la seule
             // chose à montrer au comptoir.
+            // **Vers la fiche, par l'onglet qui la porte.** `Fiche` vit dans
+            // la pile du fil et nulle part ailleurs ; la dupliquer ici
+            // amènerait aussi `Creneaux`, donc tout le parcours de
+            // réservation dans un onglet qui n'en est pas un. Le saut
+            // d'onglet est celui que `onReserve` fait déjà en sens inverse.
+            onOuvrirLeCommerce={(businessId) =>
+              navigation.navigate('parcours', { screen: 'Fiche', params: { businessId } })
+            }
             onOuvrir={(reservation) => {
               const cible = destination(reservation);
               if (cible === 'code') {
