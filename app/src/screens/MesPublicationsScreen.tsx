@@ -27,7 +27,7 @@
 import { useEffect, useState } from 'react';
 import { Linking, Pressable, View } from 'react-native';
 
-import { useApi, type ReservationDuCreateur } from '../api';
+import { useApi, type BookingStatus, type ReservationDuCreateur } from '../api';
 import { EmptyState, Icone, MediaFallback, Photo, SkeletonLignes, Texte } from '../components';
 import { formatDate } from '../format';
 import { useI18n } from '../i18n';
@@ -38,10 +38,39 @@ import { useRequete } from './useRequete';
 /** Le côté de la vignette. */
 const VIGNETTE = 56;
 
+/**
+ * Combien de réservations on demande par page.
+ *
+ * **Le filtre serveur ne remplace pas la pagination, il la rend utile.** Sans
+ * lui, cinquante lignes pouvaient ne contenir aucune publication ; avec lui
+ * elles n'en contiennent que des candidates. Mais une créatrice active en aura
+ * plus de cinquante, et c'est le second défaut — celui qui ne se voyait pas en
+ * démonstration parce qu'il faut un vrai historique pour l'atteindre.
+ */
+const PAGE = 50;
+
 /** Les réservations dont la contrepartie a été acceptée. */
 export function publications(items: ReservationDuCreateur[]): ReservationDuCreateur[] {
   return items.filter((item) => item.contrepartie?.status === 'approved');
 }
+
+/**
+ * Les réservations à demander : celles qui ont été consommées.
+ *
+ * **Le tri du serveur est celui de la prise de rendez-vous, pas celui de la
+ * publication.** Une publication est datée de plusieurs semaines en arrière ;
+ * les réservations à venir, elles, viennent d'être prises. Sans filtre, la
+ * page des cinquante plus récentes est donc pleine de rendez-vous futurs et ne
+ * contient aucune publication — mesuré sur le jeu de démonstration : quinze
+ * publications, toutes au-delà de la deux-cent-vingtième ligne, donc invisibles
+ * sur une page de cinquante **et** sur une page de deux cents.
+ *
+ * `consumed` est le plus petit ensemble qui contienne toutes les
+ * publications : une contrepartie n'est approuvée qu'après le passage au
+ * comptoir. Vérifié en base — aucune contrepartie approuvée ne porte un autre
+ * statut de réservation.
+ */
+const STATUTS: BookingStatus[] = ['consumed'];
 
 /**
  * L'image de la publication, quand elle est archivée.
@@ -179,14 +208,74 @@ function Publication({ item }: { item: ReservationDuCreateur }) {
   );
 }
 
+/**
+ * Une page lue, et ce qu'elle laisse derrière elle.
+ *
+ * **Le curseur porte sur la réservation, pas sur la publication.** Le serveur
+ * pagine sur `created_at`, la colonne de son tri ; c'est donc la dernière
+ * ligne **reçue** qui ouvre la page suivante, et non la dernière retenue. Les
+ * confondre sauterait toutes les réservations consommées sans publication qui
+ * se trouvent entre les deux.
+ */
+type Page = { retenues: ReservationDuCreateur[]; curseur: string | null; pleine: boolean };
+
+function pageDe(items: ReservationDuCreateur[]): Page {
+  return {
+    retenues: publications(items),
+    // **`null` sur une page vide, et non « la dernière de rien ».** Une page
+    // sans ligne n'ouvre rien : elle dit qu'on est au bout.
+    curseur: items.length > 0 ? items[items.length - 1].created_at : null,
+    // **Pleine veut dire « il y en a peut-être d'autres », jamais « il y en
+    // a ».** Le serveur ne dit pas combien de publications existent — ses
+    // compteurs portent sur les réservations, pas sur les contreparties. On ne
+    // promet donc pas de total : on propose de continuer tant que la dernière
+    // page était pleine, ce qui est la seule chose qu'on sache.
+    pleine: items.length >= PAGE,
+  };
+}
+
 export function MesPublicationsScreen({ onRetour }: { onRetour: () => void }) {
   const { api } = useApi();
   const { t } = useI18n();
 
-  const requete = useRequete<ReservationDuCreateur[]>(
-    async (signal) => publications((await api.mesReservations({}, signal)).items),
-    { estVide: (liste) => liste.length === 0 },
+  const requete = useRequete<Page>(
+    async (signal) =>
+      pageDe((await api.mesReservations({ statuts: STATUTS, limite: PAGE }, signal)).items),
+    { estVide: (page) => page.retenues.length === 0 },
   );
+
+  /**
+   * Les pages suivantes, à côté de la première.
+   *
+   * Recharger la requête entière pour une page de plus ferait clignoter
+   * l'écran au complet alors que seul le bas s'allonge — c'est la forme que
+   * l'annuaire du commerce emploie déjà, à une différence près : là-bas la
+   * pagination est un décalage numérique, ici c'est un curseur, parce que la
+   * route l'a voulu ainsi et le dit dans sa propre documentation.
+   */
+  const [suite, setSuite] = useState<Page[]>([]);
+  const [enCours, setEnCours] = useState(false);
+
+  const derniere = suite.length > 0 ? suite[suite.length - 1] : null;
+  const premiere = requete.etat === 'pret' ? requete.donnees : null;
+
+  // **On repart de zéro quand la première page change.** Sans cela, une suite
+  // chargée avant un rechargement resterait collée sous la nouvelle tête.
+  useEffect(() => {
+    setSuite([]);
+  }, [premiere]);
+
+  async function charger(curseur: string) {
+    setEnCours(true);
+    try {
+      const page = pageDe(
+        (await api.mesReservations({ statuts: STATUTS, limite: PAGE, avant: curseur })).items,
+      );
+      setSuite((avant) => [...avant, page]);
+    } finally {
+      setEnCours(false);
+    }
+  }
 
   return (
     <Ecran
@@ -203,13 +292,41 @@ export function MesPublicationsScreen({ onRetour }: { onRetour: () => void }) {
         />
       }
     >
-      {(liste) => (
-        <View style={{ gap: 12 }} testID="liste-des-publications">
-          {liste.map((item) => (
-            <Publication key={item.booking_id} item={item} />
-          ))}
-        </View>
-      )}
+      {(page) => {
+        const liste = [page, ...suite].flatMap((p) => p.retenues);
+        // Le curseur de la dernière page reçue, et « pleine » lu sur elle
+        // aussi : c'est elle qui dit s'il reste quelque chose derrière.
+        const bout = derniere ?? page;
+        return (
+          <View style={{ gap: 12 }} testID="liste-des-publications">
+            {liste.map((item) => (
+              <Publication key={item.booking_id} item={item} />
+            ))}
+
+            {/* **Rien à proposer quand la dernière page n'était pas pleine.**
+                Un bouton qui ne ramène jamais rien apprend à ne plus
+                l'appuyer, et c'est la fin de liste qu'il ferait douter. */}
+            {bout.pleine && bout.curseur !== null ? (
+              <Pressable
+                testID="voir-plus-publications"
+                accessibilityRole="button"
+                disabled={enCours}
+                onPress={() => void charger(bout.curseur!)}
+                style={({ pressed }) => ({
+                  opacity: pressed || enCours ? 0.7 : 1,
+                  minHeight: 44,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                })}
+              >
+                <Texte variante="type.label" couleur="brand.700">
+                  {t(enCours ? 'annuaire.chargement' : 'annuaire.voirPlus')}
+                </Texte>
+              </Pressable>
+            ) : null}
+          </View>
+        );
+      }}
     </Ecran>
   );
 }
