@@ -58,6 +58,15 @@
         ]
       }
     },
+    "/api/v1/admin/creators": {
+      "get": {
+        "operationId": "list_creators_api_v1_admin_creators_get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/admin/jobs/exhausted": {
       "get": {
         "operationId": "list_exhausted_api_v1_admin_jobs_exhausted_get",
@@ -96,6 +105,15 @@
         "operationId": "list_plans_api_v1_admin_plans_get",
         "responses": [
           "200"
+        ]
+      }
+    },
+    "/api/v1/admin/plans/{plan_id}/businesses": {
+      "get": {
+        "operationId": "list_subscribers_api_v1_admin_plans__plan_id__businesses_get",
+        "responses": [
+          "200",
+          "422"
         ]
       }
     },

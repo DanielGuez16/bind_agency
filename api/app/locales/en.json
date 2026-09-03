@@ -17,6 +17,8 @@
   "booking.when": " on {quand}",
   "collaboration.approved.body": "Nice work. {business} accepted your post for {item}.",
   "collaboration.approved.subject": "Your post was approved",
+  "collaboration.closed_no_fault.body": "Hi {creator},\n\nWe have closed your collaboration for {item} at {business}. Nothing is held against you: after several attempts the requirement was not clear enough, and that is on us.\n\nYour reliability score is untouched, and you can book again whenever you like.\n\n— BIND",
+  "collaboration.closed_no_fault.subject": "Your collaboration with {business} is closed",
   "collaboration.opened.body": "Hi {creator},\n\nYou have redeemed {item} at {business}. Now publish a {format} and send us the proof before {deadline}.\n\n{requirements}\nOpen the app to submit your proof.\n",
   "collaboration.opened.subject": "Your collaboration with {business} has started",
   "collaboration.reminder.body": "Hi {creator},\n\nYour proof for {item} at {business} is due on {deadline}. Stories disappear after 24 hours, so send it while your post is still online.\n",

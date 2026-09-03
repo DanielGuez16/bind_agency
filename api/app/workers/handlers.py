@@ -39,6 +39,7 @@ from app.services import (
     tracking,
 )
 from app.services import metrics as metrics_service
+from app.workers.scheduler import BALAYAGES
 
 logger = logging.getLogger(__name__)
 
@@ -387,17 +388,21 @@ TRAITEMENTS = {
 
 
 #: Types dont la cible n'est pas une ligne : ce sont des balayages globaux.
-SANS_CIBLE = frozenset(
-    {
-        JobType.BOOKING_HOLD_SWEEP,
-        JobType.COLLABORATION_DEADLINE_SWEEP,
-        JobType.COLLABORATION_REMINDER_SWEEP,
-        JobType.LINK_CLICK_PURGE_SWEEP,
-        JobType.SUBSCRIPTION_GRACE_SWEEP,
-        JobType.OUTBOX_SWEEP,
-        JobType.FAVORITE_AVAILABILITY_SWEEP,
-    }
-)
+#:
+#: **Dérivé de `scheduler.BALAYAGES`, jamais recopié.** Les deux listes disaient
+#: la même chose et une seule a été tenue à jour : `ACCOUNT_DELETION_SWEEP`
+#: manquait ici. Le balayage retombait donc sur `session.get(SocialAccount,
+#: SENTINELLE)`, qui rend `None`, et l'exécuteur prend une cible absente pour une
+#: cible disparue — il appelait `deplanifier(target_id=SENTINELLE)`.
+#:
+#: Or les huit balayages **partagent** cette sentinelle. Un seul passage effaçait
+#: donc les huit, le planificateur les recréait, et le suivant les effaçait de
+#: nouveau : la file globale se détruisait à chaque tour sans que rien ne le
+#: dise, puisque tout était recréé entre-temps.
+#:
+#: Une liste recopiée à côté d'une autre finit toujours par en diverger. Celle-ci
+#: ne peut plus.
+SANS_CIBLE = frozenset(BALAYAGES)
 
 
 async def cible(session: AsyncSession, job: Job) -> SocialAccount | None:

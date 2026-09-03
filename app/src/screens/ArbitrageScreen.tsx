@@ -30,7 +30,15 @@
  * qui boucle sur beaucoup de dossiers n'appelle pas un arbitrage de plus, il
  * appelle une exigence réécrite. Au pied et non en tête : la question ne se
  * pose qu'après le travail, et en haut elle repousserait la file.
- */
+ *
+ * **« Contrepartie » est le mot du produit, pas celui de l'écran.** Le titre
+ * disait « Counterparts under review », et un administrateur qui ouvre cet
+ * onglet ne cherche pas une contrepartie : il cherche une publication qu'un
+ * salon et une créatrice n'ont pas su trancher entre eux. Le mot juste est
+ * celui de la chose examinée — une publication —, et l'état est « en revue ».
+ *
+ * Le mot « arbitrage » reste dans le code et dans l'onglet : c'est le geste,
+ * et il est exact. Ce qui changeait est le nom de ce qu'on regarde. */
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -51,6 +59,7 @@ import {
   TableRow,
   Texte,
   TextField,
+  TierBadge,
   Toolbar,
   type Colonne,
 } from '../components';
@@ -198,7 +207,25 @@ function TableDArbitrage({
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [selection, setSelection] = useState<string[]>([]);
   const [format, setFormat] = useState<string | null>(null);
-  const [memeMotif, setMemeMotif] = useState(false);
+  /**
+   * La forme retenue, ou toutes.
+   *
+   * **Deux axes indépendants, et non un interrupteur à côté d'une liste.**
+   * « Même motif » était un booléen posé près des formats : les deux se
+   * cumulaient sans que rien ne le dise, et « Tous » ne remettait à zéro que le
+   * format — l'interrupteur restait allumé sous une étiquette qui annonçait
+   * l'inverse.
+   *
+   * Chaque axe a donc son « toutes », et chacun est exclusif chez lui. Ils se
+   * combinent toujours, mais cette fois l'écran le montre.
+   *
+   * **Et « motifs différents » apparaît**, que `motDeLaForme` calculait depuis
+   * toujours sans qu'aucun filtre l'offre. C'est pourtant la décision opposée :
+   * trois refus pour le même motif disent que la demande n'a jamais été
+   * comprise, trois motifs différents disent l'inverse. L'arbitre ne pouvait
+   * isoler que la première moitié.
+   */
+  const [forme, setForme] = useState<'meme' | 'melange' | null>(null);
   const [enCours, setEnCours] = useState(false);
 
   // Filtré à l'écran, sur ce qui est déjà chargé : la file d'arbitrage tient
@@ -209,7 +236,7 @@ function TableDArbitrage({
     // **Le filtre porte sur la forme, pas sur le nombre.** C'est la seule
     // distinction qui change l'arbitre à convoquer, et la file d'un jour chargé
     // mélange les deux sans qu'on puisse les séparer de l'œil.
-    if (memeMotif && motDeLaForme(formeDuMalentendu(ligne)) !== 'meme') return false;
+    if (forme && motDeLaForme(formeDuMalentendu(ligne)) !== forme) return false;
     return true;
   });
 
@@ -274,23 +301,13 @@ function TableDArbitrage({
             }
             testID="compteur-de-file"
           />
-          {/* Un filtre par format. Trois dossiers ne se trient pas, trente
-              si — et c'est la file d'un jour chargé. */}
+          {/* **Premier axe : le format.** Trois dossiers ne se trient pas,
+              trente si — et c'est la file d'un jour chargé. */}
           <Chip
-            label={t('admin.filtreTous')}
+            label={t('admin.filtreTousFormats')}
             onPress={() => setFormat(null)}
             selected={format === null}
             testID="filtre-tous"
-          />
-          {/* **La forme du malentendu, en filtre.** Une file de trente dossiers
-              mêle ceux que le produit a ratés et ceux où la créatrice n'a pas
-              suivi : ce ne sont pas les mêmes décisions, et les séparer d'un
-              appui vaut mieux que de les lire un par un. */}
-          <Chip
-            label={t('admin.filtreMemeMotif')}
-            onPress={() => setMemeMotif((avant) => !avant)}
-            selected={memeMotif}
-            testID="filtre-meme-motif"
           />
           {/* **Le mot du jeton, pas la clé en capitales.** `palier.toUpperCase()`
               rendait « STORY », « POST », « REEL » — juste en anglais par
@@ -307,6 +324,29 @@ function TableDArbitrage({
               testID={`filtre-${palier}`}
             />
           ))}
+
+          {/* **Second axe : la forme du malentendu.** Une file de trente
+              dossiers mêle ceux que le produit a ratés et ceux où la créatrice
+              n'a pas suivi : ce ne sont pas les mêmes décisions, et les séparer
+              d'un appui vaut mieux que de les lire un par un. */}
+          <Chip
+            label={t('admin.filtreToutesFormes')}
+            onPress={() => setForme(null)}
+            selected={forme === null}
+            testID="filtre-toutes-formes"
+          />
+          <Chip
+            label={t('admin.filtreMemeMotif')}
+            onPress={() => setForme('meme')}
+            selected={forme === 'meme'}
+            testID="filtre-meme-motif"
+          />
+          <Chip
+            label={t('admin.filtreMotifsDifferents')}
+            onPress={() => setForme('melange')}
+            selected={forme === 'melange'}
+            testID="filtre-motifs-differents"
+          />
         </Toolbar>
 
         <TableHeader colonnes={COLONNES} testID="entete-de-file" />
@@ -358,9 +398,23 @@ function TableDArbitrage({
               commerce: ligne.business_name,
               createur: nomDuCreateur(ligne, t, '—'),
               prestation: ligne.item_name,
-              palier: ligne.required_format.toUpperCase(),
               tentatives: colonneDesMotifs(ligne, t),
               echeance: quandRestant(ligne.deadline_at),
+            }}
+            rendus={{
+              // **Le badge à trois marqueurs, pas la clé en capitales.** La
+              // colonne rendait `required_format.toUpperCase()` — un mot brut
+              // qui portait le bon texte par coïncidence de casse, et qui
+              // aurait dit « POST » en espagnol au lieu de « PUBLICACIÓN ».
+              // `TierBadge` est déjà la matière du produit pour ce palier ; la
+              // planche v15 dessine exactement ce badge ici.
+              palier: (
+                <TierBadge
+                  tier={ligne.required_format}
+                  size="sm"
+                  testID={`palier-${ligne.collaboration_id}`}
+                />
+              ),
             }}
           />
             </View>
@@ -635,7 +689,13 @@ function Dossier({ ligne, onTranche }: { ligne: LigneDeFile; onTranche: () => vo
                 key={`${tentative.demandee_le}-${rang}`}
                 style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}
               >
-                <Texte variante="type.data" couleur="ink.mute">
+                {/* **Un rang n'est pas un identifiant.** Il était en mono,
+                    c'est-à-dire dans la famille qui dit « lis-moi caractère par
+                    caractère » ; sur « 1, 2, 3 » cela ne sert à rien et cela
+                    coûte une quatrième police dans un panneau qui en porte déjà
+                    trois. Le panneau ne garde de mono que l'identifiant du
+                    dossier, qui se recopie. */}
+                <Texte variante="type.body" couleur="ink.mute">
                   {rang + 1}
                 </Texte>
                 {/* **Un motif passé n'avertit pas, il raconte.** Il portait

@@ -28,19 +28,21 @@
  * faux est pire qu'un total absent, surtout sur le seul écran du produit qui
  * affiche de l'argent.
  */
+import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { useApi, type PlanAdministrateur } from '../api';
+import { useApi, type AbonneDuPlan, type PlanAdministrateur } from '../api';
 import {
   EmptyState,
   Jauge,
+  DetailPanel,
   SkeletonLignes,
   TableHeader,
   TableRow,
   Texte,
   type Colonne,
 } from '../components';
-import { formatMoney, formatNumber } from '../format';
+import { formatDate, formatMoney, formatNumber } from '../format';
 import { useI18n, type SupportedLocale } from '../i18n';
 import { Ecran } from './Ecran';
 import { dureeLisible, partsParCategorie } from './plans/duree';
@@ -57,11 +59,19 @@ export function PlansScreen() {
     cache: { cle: 'plans', ageMax: AGES.configuration },
   });
 
+  // Le plan dont on regarde les abonnés. Un seul à la fois : deux panneaux
+  // ouverts feraient comparer deux listes sur un écran qui compare des lignes.
+  const [ouvert, setOuvert] = useState<string | null>(null);
+
   const colonnes: Colonne[] = [
     { cle: 'name', label: t('admin.plansTitre'), largeur: 200 },
     { cle: 'intervalle', label: t('admin.plansIntervalle'), largeur: 100 },
     { cle: 'prix', label: t('admin.plansPrix'), largeur: 110, chiffre: true },
-    { cle: 'abonnes', label: t('admin.plansAbonnes'), largeur: 90, chiffre: true },
+    // **130 et non 90.** La cellule ne porte pas toujours un nombre : un plan
+    // que personne n'a pris dit « Not taken yet », qui se cassait sur trois
+    // lignes. La colonne est dimensionnée sur son contenu le plus long, pas sur
+    // le plus fréquent.
+    { cle: 'abonnes', label: t('admin.plansAbonnes'), largeur: 130, chiffre: true },
     { cle: 'actifs', label: t('admin.plansActifs'), largeur: 90, chiffre: true },
     // **La colonne qui manquait le plus.** Sept mois contre onze à prix double
     // dit que le second n'est pas trop cher, et aucun total ne le disait.
@@ -108,6 +118,11 @@ export function PlansScreen() {
                   key={plan.plan_id}
                   testID={`plan-${plan.plan_id}`}
                   colonnes={colonnes}
+                  // **Le chiffre mène à ce qu'il recouvre.** « Douze abonnés »
+                  // décidait d'un prix sans qu'on puisse regarder qui sont les
+                  // douze : douze salons d'un même quartier et douze répartis
+                  // sur la ville ne disent pas la même chose du prix.
+                  onPress={() => setOuvert(plan.plan_id === ouvert ? null : plan.plan_id)}
                   valeurs={{
                     name: plan.is_active ? plan.name : `${plan.name} · ${t('admin.plansInactif')}`,
                     intervalle:
@@ -143,6 +158,8 @@ export function PlansScreen() {
                 }}
               />
             </View>
+
+            {ouvert ? <AbonnesDuPlan planId={ouvert} /> : null}
 
             {/* **Qui prend chaque plan.** Un prix unique pour un salon
                 d'ongles et un musée n'est pas un prix, c'est une moyenne — et
@@ -256,9 +273,10 @@ function QuiPrendCePlan({ plan }: { plan: PlanAdministrateur }) {
           </View>
           <View style={{ width: 76 }}>
             <Texte
-              variante="type.dataLabel"
+              variante="type.body"
               couleur={part.abonnes === 0 ? 'ink.mute' : 'ink.default'}
               align="right"
+              style={{ fontVariant: ['tabular-nums'] }}
             >
               {part.abonnes === part.actifs
                 ? formatNumber(part.abonnes, locale)
@@ -349,5 +367,76 @@ function Totaux({ totaux }: { totaux: Totaux }) {
         </Texte>
       </View>
     </View>
+  );
+}
+
+
+/**
+ * Les salons qui paient un plan, ouverts depuis sa ligne.
+ *
+ * **Tous statuts confondus, et c'est le point.** Un salon parti a autant à dire
+ * sur un prix qu'un salon resté : ne montrer que les actifs ferait lire « douze
+ * abonnés » sur un plan qui en a perdu huit, et c'est ce chiffre-là qui
+ * manquerait pour décider.
+ *
+ * **Aucun montant ici.** Le prix est sur la ligne du plan, une ligne plus haut ;
+ * le répéter par abonné en ferait un tableau de facturation, ce que cet écran
+ * n'est pas.
+ */
+function AbonnesDuPlan({ planId }: { planId: string }) {
+  const { api } = useApi();
+  const { t, locale } = useI18n();
+  const [abonnes, setAbonnes] = useState<AbonneDuPlan[] | null>(null);
+
+  const charger = useCallback(async () => {
+    setAbonnes(await api.abonnesDuPlan(planId).catch(() => []));
+  }, [api, planId]);
+
+  useEffect(() => {
+    setAbonnes(null);
+    void charger();
+  }, [charger]);
+
+  const colonnes: Colonne[] = [
+    { cle: 'nom', label: t('admin.abonnesColonneNom'), largeur: 220 },
+    { cle: 'quartier', label: t('admin.abonnesColonneQuartier'), largeur: 140 },
+    { cle: 'etat', label: t('admin.abonnesColonneEtat'), largeur: 120 },
+    // La date reste en sans : mono est réservé au code et au décompte.
+    { cle: 'depuis', label: t('admin.abonnesColonneDepuis'), largeur: 120 },
+  ];
+
+  return (
+    <DetailPanel
+      titre={t('admin.abonnesTitre')}
+      identifiant={`plan_${planId.slice(0, 8)}`}
+      testID="abonnes-du-plan"
+    >
+      <View style={{ padding: 12 }}>
+        {abonnes === null ? (
+          <SkeletonLignes combien={3} testID="squelette-abonnes" />
+        ) : abonnes.length === 0 ? (
+          <Texte variante="type.caption" couleur="ink.soft" testID="abonnes-vide">
+            {t('admin.abonnesVide')}
+          </Texte>
+        ) : (
+          <View>
+            <TableHeader colonnes={colonnes} />
+            {abonnes.map((abonne) => (
+              <TableRow
+                key={abonne.business_id}
+                testID={`abonne-${abonne.business_id}`}
+                colonnes={colonnes}
+                valeurs={{
+                  nom: abonne.name,
+                  quartier: abonne.neighborhood ? t(`quartiers.${abonne.neighborhood}`) : '',
+                  etat: t(`admin.abonnementEtat_${abonne.status}`),
+                  depuis: formatDate(abonne.since, locale, 'UTC'),
+                }}
+              />
+            ))}
+          </View>
+        )}
+      </View>
+    </DetailPanel>
   );
 }

@@ -1980,3 +1980,116 @@ export type BandeDeDecisions = {
   timezone: string;
   jours: JourDeDecisions[];
 };
+
+/** Un réseau rattaché, tel que l'administration le lit. */
+export type ReseauDuCreateur = {
+  platform: Platform;
+  handle: string | null;
+  /** Nul quand aucun relevé n'existe. Zéro serait un chiffre, et faux. */
+  followers: number | null;
+  /** La photo par sa clé, servie par `GET /media/{cle}`. */
+  avatar_key: string | null;
+  profil_url: string | null;
+};
+
+/**
+ * Une créatrice vue par l'administration.
+ *
+ * **Pas d'état civil.** La règle vient de l'annuaire du commerce : le
+ * pseudonyme est l'identité de ces écrans, et le nom civil arrive à la
+ * réservation, quand une créatrice a choisi ce salon.
+ *
+ * **Le score, lui, est ici — et cette ligne disait le contraire.** Elle
+ * affirmait qu'« un classement de personnes par note ne devient pas acceptable
+ * parce qu'un administrateur le lit ». L'argument portait sur le *classement*
+ * et la conclusion l'a étendu à la *donnée* : cet annuaire n'ordonne pas par
+ * score, il l'affiche sur la ligne d'une personne qu'on est venu chercher par
+ * son pseudonyme. Ce que la règle protège reste entier — **un commerce ne voit
+ * jamais ce nombre**, et le palier accessible lui suffit puisqu'un score
+ * dégradé plafonne mécaniquement.
+ */
+/**
+ * Le palier le plus exigeant qu'elle ouvre, n'importe où sur le produit.
+ *
+ * **Distinct de `PalierAccessibleIci`, et le nom le dit.** Celui-là se
+ * calcule contre ce qu'**un** salon offre ; celui-ci contre tous les paliers
+ * actifs, parce qu'un administrateur n'a pas de salon pour restreindre la
+ * question. Les deux répondent à des questions différentes — les confondre
+ * ferait lire « ce qu'elle ouvre ici » sur un écran qui n'a pas de « ici ».
+ */
+export type PalierAccessibleGlobalement = {
+  tier_id: string;
+  platform: Platform;
+  content_format: ContentFormat;
+};
+
+export type CreateurAdmin = {
+  creator_id: string;
+  city: string | null;
+  reseaux: ReseauDuCreateur[];
+  audience_totale: number;
+  /**
+   * Le score de fiabilité, **et il n'existe que sur cet écran**.
+   *
+   * Un commerce ne le voit jamais : ce qui rend ce silence tenable est que le
+   * palier accessible *est* le signal, puisqu'un score dégradé plafonne
+   * mécaniquement. L'administration arbitre des dossiers, et lui refuser le
+   * seul chiffre qui dit si une créatrice tient ses engagements reviendrait à
+   * lui faire trancher sans le savoir.
+   *
+   * **Nul veut dire neutre, jamais zéro** — la règle du moteur de paliers vaut
+   * à l'affichage : une créatrice sans historique n'a pas un mauvais score,
+   * elle n'en a pas.
+   */
+  reliability_score: string | null;
+  /**
+   * Nul quand elle n'ouvre aucun palier — aucun compte vérifié, aucun relevé
+   * récent, ou aucun format à sa portée. Coûtait trois requêtes par créatrice
+   * évaluée une par une ; le serveur l'évalue désormais pour la population
+   * entière en trois requêtes, pas trois cents.
+   */
+  tier: PalierAccessibleGlobalement | null;
+};
+
+/** Un salon abonné à un plan. Le statut est celui de l'abonnement, pas du salon. */
+export type AbonneDuPlan = {
+  business_id: string;
+  name: string;
+  neighborhood: Neighborhood | null;
+  category: BusinessCategory;
+  status: string;
+  since: string;
+};
+
+/**
+ * L'annuaire de l'administration, et les nombres qui situent ce qu'on y lit.
+ *
+ * **Les quatre décrivent la recherche courante**, pas la population. Un chiffre
+ * qui ne bougerait pas en tapant ne dirait rien de ce qu'on cherche — c'est
+ * l'arbitrage rendu sur l'annuaire des salons. Sans recherche, la recherche
+ * courante *est* la population.
+ */
+export type AnnuaireAdmin = {
+  /** Bornée à cent. `total` dit combien la recherche a réellement trouvé. */
+  items: CreateurAdmin[];
+  total: number;
+  arrivees_cette_semaine: number;
+  /**
+   * La médiane des scores **qui existent**, rendue en chaîne, nulle si aucun.
+   *
+   * Compter les sans-historique comme des zéros écraserait la médiane à chaque
+   * inscription : le chiffre baisserait quand le produit grandit.
+   */
+  fiabilite_mediane: string | null;
+  /** L'effectif de la médiane. « 86 » sorti de trois scores n'est pas « 86 » sorti de cent. */
+  createurs_avec_score: number;
+  /**
+   * Combien, sur cette recherche, ouvrent au moins un palier.
+   *
+   * Sur la même population que les quatre autres — avant le plafond de la
+   * liste — pour que les cinq nombres de tête bougent ensemble sur une
+   * recherche. Un total qui change sans que celui-ci bouge ferait douter
+   * lequel des deux ment.
+   */
+  peut_reserver: number;
+};

@@ -95,7 +95,7 @@ const CHEMINS: Record<Exclude<NomIcone, 'instagram'>, string> = {
   coeur:
     'M12 20C6.2 15.4 4 12.7 4 10.1A4.4 4.4 0 0112 7.6A4.4 4.4 0 0120 10.1C20 12.7 17.8 15.4 12 20Z',
   // Le disque et son manche, dans le même chemin que le reste du jeu.
-  loupe: 'M10.8 18.1a7.3 7.3 0 100-14.6 7.3 7.3 0 000 14.6zM16.1 16.1l4.4 4.4',
+  loupe: 'M11 19a8 8 0 100-16 8 8 0 000 16zM16.8 16.8L21 21',
   // Cadran et aiguilles, en un seul tracé fermé puis rouvert.
   horloge: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7.5V12l3.2 2',
   lieu: 'M12 21.5c4.4-4.6 6.6-8.2 6.6-11a6.6 6.6 0 10-13.2 0c0 2.8 2.2 6.4 6.6 11zM12 12.6a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z',
@@ -127,7 +127,7 @@ const CHEMINS: Record<Exclude<NomIcone, 'instagram'>, string> = {
   // Un triangle et une barre. La forme du triangle porte l'alerte à elle
   // seule, ce qu'aucun rond ne fait : c'est ce qui reste quand la couleur est
   // partie.
-  alerte: 'M12 3.8L21.7 20.4H2.3zM12 9.8v4.6M12 17.3h.01',
+  alerte: 'M12 3.5L21.5 20H2.5z M12 9.8v4',
   carte: 'M6 3.5h12v17H6zM9 8h6M9 12h6M9 16h4',
   // Un cadre échancré et une flèche qui en sort. L'échancrure est ce qui fait
   // lire « sortir » plutôt que « agrandir ».
@@ -160,6 +160,23 @@ function Instagram({ trait, taille, epaisseur }: { trait: string; taille: number
     </>
   );
 }
+
+/**
+ * Les glyphes dont la primitive porte un second élément, **rempli**.
+ *
+ * **Troisième champ perdu par le même geste.** La primitive de
+ * l'avertissement pose son point du bas en `extra`, un cercle rempli, avec sa
+ * raison écrite : « sans ce glyphe, un avertissement est indistinguable d'un
+ * bloc neutre ». Le produit l'avait retapé en `M12 17.3h.01` — un segment
+ * dégénéré qui, avec un bout rond, *ressemble* à un point sans en être un, et
+ * qui rate le repère de 16,5 d'un demi-point.
+ *
+ * Après la rotation du retour et l'épaisseur de la coche, c'est la même
+ * famille : on copie `d` et on laisse le reste de l'objet.
+ */
+const POINT_REMPLI: Partial<Record<NomIcone, { cx: number; cy: number; r: number }>> = {
+  alerte: { cx: 12, cy: 16.5, r: 1.1 },
+};
 
 /**
  * Les glyphes qui portent une rotation, **et elle vient des primitives**.
@@ -262,6 +279,14 @@ export function Icone({
         strokeLinejoin="round"
       />
       )}
+      {POINT_REMPLI[nom] ? (
+        <Circle
+          cx={POINT_REMPLI[nom]!.cx}
+          cy={POINT_REMPLI[nom]!.cy}
+          r={POINT_REMPLI[nom]!.r}
+          fill={trait}
+        />
+      ) : null}
     </Svg>
   );
 }

@@ -52,6 +52,7 @@ import { PrestationsDuPalierScreen } from '../screens/PrestationsDuPalierScreen'
 import { ReglesScreen } from '../screens/ReglesScreen';
 import { PlansScreen } from '../screens/PlansScreen';
 import { CommercesScreen } from '../screens/CommercesScreen';
+import { CreateursAdminScreen } from '../screens/CreateursAdminScreen';
 import { TerrainScreen } from '../screens/TerrainScreen';
 import { PreuveScreen } from '../screens/PreuveScreen';
 import { MesPublicationsScreen } from '../screens/MesPublicationsScreen';
@@ -1040,6 +1041,11 @@ function OngletsAdmin() {
         name="commerces"
         component={CommercesScreen}
         options={onglet(t('onglets.commerces'), 'lieu')}
+      />
+      <Onglets.Screen
+        name="createurs"
+        component={CreateursAdminScreen}
+        options={onglet(t('onglets.createurs'), 'personne')}
       />
       <Onglets.Screen
         name="plans"

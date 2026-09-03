@@ -55,6 +55,22 @@ function epaisseursDuProduit(): Record<string, number> {
   );
 }
 
+/**
+ * Les seconds éléments remplis déclarés par le produit.
+ *
+ * Lus dans la source, comme les rotations et les épaisseurs : c'est ce que le
+ * produit **dessine** qu'on compare, jamais un tableau recopié dans le test.
+ */
+function pointsRemplisDuProduit(): Record<string, { cx: number; cy: number; r: number }> {
+  const bloc = /const POINT_REMPLI[^=]*=\s*\{(.*?)\n\};/s.exec(SOURCE);
+  if (!bloc) return {};
+  return Object.fromEntries(
+    [...bloc[1].matchAll(/(\w+):\s*\{\s*cx:\s*([\d.]+),\s*cy:\s*([\d.]+),\s*r:\s*([\d.]+)\s*\}/g)].map(
+      (m) => [m[1], { cx: Number(m[2]), cy: Number(m[3]), r: Number(m[4]) }],
+    ),
+  );
+}
+
 /** Les degrés que la primitive prescrit, ou zéro. */
 function rotationAttendue(clef: string): number {
   const brut = (PRIMITIVES[clef] as { transform?: string }).transform;
@@ -72,6 +88,13 @@ const CORRESPONDANCE: [string, string][] = [
   ['coche', 'coche'],
   ['retour', 'retour'],
   ['fleche', 'fleche'],
+  // **Ajoutés après coup, et c'est ce qui les rendait invisibles.** La table
+  // ne portait que les glyphes qu'on avait sous les yeux le jour de son
+  // écriture ; ces deux-là existaient dans les primitives depuis le début et
+  // avaient dérivé sans que rien ne le dise. Une garde ne couvre que ce qu'on
+  // pense à y inscrire — d'où le test de volume plus bas.
+  ['loupe', 'recherche'],
+  ['alerte', 'avertissement'],
 ];
 
 /** Les tracés déclarés par `Icone.tsx`, par nom. */
@@ -107,6 +130,34 @@ describe('les glyphes sont copiés, jamais retapés', () => {
     // diffère font deux glyphes différents — c'est le cas de `fleche` et
     // `retour`, dont le `d` est le même.
     expect(rotationsDuProduit()[nom] ?? 0).toBe(rotationAttendue(clef));
+  });
+
+  it('le second élément rempli est celui de la primitive', () => {
+    /**
+     * **Troisième champ de l'objet perdu par le même geste.**
+     *
+     * La primitive de l'avertissement porte son point du bas en `extra`, un
+     * cercle **rempli**, avec sa raison : « sans ce glyphe, un avertissement
+     * est indistinguable d'un bloc neutre ». Le produit l'avait retapé en
+     * `M12 17.3h.01` — un segment dégénéré qui ressemble à un point avec un
+     * bout rond, et qui rate le repère d'un demi-point.
+     *
+     * Ce qu'on compare est donc la **géométrie déclarée**, pas la ressemblance
+     * à l'œil : c'est exactement le partage que cette garde existe pour tenir.
+     */
+    for (const [nom, clef] of CORRESPONDANCE) {
+      const extra = (PRIMITIVES[clef] as { extra?: string }).extra;
+      if (!extra) continue;
+      const attendu = /cx="([\d.]+)"\s+cy="([\d.]+)"\s+r="([\d.]+)"/.exec(extra);
+      expect(attendu).not.toBeNull();
+      const rendu = pointsRemplisDuProduit()[nom];
+      expect({ nom, ...rendu }).toEqual({
+        nom,
+        cx: Number(attendu![1]),
+        cy: Number(attendu![2]),
+        r: Number(attendu![3]),
+      });
+    }
   });
 
   it('le trait et le cadre sont ceux des primitives, pour tous', () => {

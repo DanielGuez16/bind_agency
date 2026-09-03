@@ -29,6 +29,7 @@ import { PlansScreen } from '../src/screens/PlansScreen';
 import { NOTE_MAXIMUM, PublicationsScreen } from '../src/screens/PublicationsScreen';
 import { ReportingScreen } from '../src/screens/ReportingScreen';
 import { CommercesScreen } from '../src/screens/CommercesScreen';
+import { CreateursAdminScreen } from '../src/screens/CreateursAdminScreen';
 import { TerrainScreen } from '../src/screens/TerrainScreen';
 import { ECRANS_COMMERCE } from '../test-support/registre-ecrans';
 
@@ -405,6 +406,48 @@ const ECRANS = [
   {
     // La liste des salons du support. Elle vit dans le registre commerce avec
     // les autres écrans d'administration — arbitrage, plans, terrain.
+    nom: 'createurs',
+    noeud: <CreateursAdminScreen />,
+    role: 'admin' as Role,
+    plein: {
+      '/admin/creators': {
+        items: [
+          {
+            creator_id: 'c1',
+            city: 'Miami',
+            reseaux: [
+              {
+                platform: 'instagram',
+                handle: 'lea.miami',
+                followers: 12400,
+                avatar_key: 'avatars/lea.jpg',
+                profil_url: 'https://instagram.com/lea.miami',
+              },
+            ],
+            audience_totale: 12400,
+            reliability_score: '86.00',
+            tier: { tier_id: 'p1', platform: 'instagram', content_format: 'post' },
+          },
+        ],
+        total: 1,
+        arrivees_cette_semaine: 1,
+        fiabilite_mediane: '86.00',
+        createurs_avec_score: 1,
+        peut_reserver: 1,
+      },
+    },
+    vide: {
+      '/admin/creators': {
+        items: [],
+        total: 0,
+        arrivees_cette_semaine: 0,
+        fiabilite_mediane: null,
+        createurs_avec_score: 0,
+        peut_reserver: 0,
+      },
+    },
+  },
+  {
     nom: 'commerces',
     noeud: <CommercesScreen />,
     role: 'admin' as Role,
@@ -974,6 +1017,7 @@ describe('quatre états', () => {
       annuaire: 'AnnuaireScreen.tsx',
       terrain: 'TerrainScreen.tsx',
       commerces: 'CommercesScreen.tsx',
+      createurs: 'CreateursAdminScreen.tsx',
       catalogue: 'CatalogueScreen.tsx',
       horaires: 'HorairesScreen.tsx',
       lieu: 'LieuScreen.tsx',
@@ -2694,6 +2738,259 @@ describe('le mode terrain dit son avancement sans l’écrire', () => {
     // feraient de la progression une décoration.
     expect(segment(1)).toBe(eteint);
     expect(segment(2)).toBe(eteint);
+  });
+});
+
+describe('le score de fiabilité vit sur l’annuaire admin, et nulle part ailleurs', () => {
+  const reseau = (handle: string) => [
+    {
+      platform: 'instagram',
+      handle,
+      followers: 12_400,
+      avatar_key: null,
+      profil_url: `https://instagram.com/${handle}`,
+    },
+  ];
+
+  it('écrit le score de celle qui en a un, et « aucun relevé » pour l’autre', async () => {
+    /**
+     * **Deux créatrices qui divergent sur le seul champ éprouvé.**
+     *
+     * Avec une seule, un écran qui écrirait toujours « No record » et un écran
+     * qui écrirait toujours un nombre rendraient le même verdict. Le couple est
+     * exactement celui que la règle distingue : `null` signifie **neutre**,
+     * jamais zéro — la condition de score est ignorée, pas échouée.
+     *
+     * Écrire « 0 » classerait la créatrice la plus récente au dernier rang
+     * d'une colonne de notes, et c'est un arbitre qui la lirait.
+     */
+    await monter(
+      <CreateursAdminScreen />,
+      clientDe({
+        '/admin/creators': {
+          items: [
+            { creator_id: 'c1', city: 'Miami', reseaux: reseau('notee'), audience_totale: 12_400, reliability_score: '86.00' },
+            { creator_id: 'c2', city: 'Miami', reseaux: reseau('neuve'), audience_totale: 12_400, reliability_score: null },
+          ],
+          total: 2,
+          arrivees_cette_semaine: 1,
+          // La médiane porte sur **un** score : l'autre créatrice n'en a pas,
+          // et la compter comme zéro l'écraserait — c'est la règle du produit.
+          fiabilite_mediane: '86.00',
+          createurs_avec_score: 1,
+          peut_reserver: 0,
+        },
+      }),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
+
+    expect(screen.getByTestId('createur-c1')).toHaveTextContent(/86/);
+    expect(screen.getByTestId('createur-c2')).toHaveTextContent(
+      new RegExp(en.admin.createursSansScore),
+    );
+    // Et surtout pas un zéro, qui se lirait comme la pire note de la liste.
+    expect(screen.getByTestId('createur-c2')).not.toHaveTextContent(/\b0\b/);
+  });
+
+  it('dit pourquoi le chiffre vit ici, parce que c’est une promesse', async () => {
+    // Une colonne de notes sur des personnes appelle immédiatement « qui
+    // d'autre la voit ». La réponse est personne, et elle se dit à l'écran.
+    await monter(
+      <CreateursAdminScreen />,
+      clientDe({
+        '/admin/creators': {
+          items: [
+            { creator_id: 'c1', city: 'Miami', reseaux: reseau('notee'), audience_totale: 12_400, reliability_score: '86.00' },
+          ],
+          total: 1,
+          arrivees_cette_semaine: 0,
+          fiabilite_mediane: '86.00',
+          createurs_avec_score: 1,
+          peut_reserver: 0,
+        },
+      }),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('fiabilite-vit-ici')).toBeTruthy());
+    expect(screen.getByTestId('fiabilite-vit-ici')).toHaveTextContent(/never sees this number/);
+  });
+
+  it('rend le palier en badge, et « none yet » pour qui n’en ouvre aucun', async () => {
+    /**
+     * **Deux créatrices qui divergent sur le seul champ éprouvé, encore.**
+     *
+     * L'une ouvre un palier — `tier` non nul — l'autre aucun. Une
+     * implémentation qui écrirait toujours le badge, ou toujours « none yet »,
+     * rendrait le même verdict sur une seule créatrice ; il en faut deux qui
+     * divergent pour que l'assertion prouve quelque chose.
+     */
+    await monter(
+      <CreateursAdminScreen />,
+      clientDe({
+        '/admin/creators': {
+          items: [
+            {
+              creator_id: 'c1',
+              city: 'Miami',
+              reseaux: reseau('ouvre'),
+              audience_totale: 12_400,
+              reliability_score: '86.00',
+              tier: { tier_id: 't1', platform: 'instagram', content_format: 'reel' },
+            },
+            {
+              creator_id: 'c2',
+              city: 'Miami',
+              reseaux: reseau('ferme'),
+              audience_totale: 100,
+              reliability_score: null,
+              tier: null,
+            },
+          ],
+          total: 2,
+          arrivees_cette_semaine: 0,
+          fiabilite_mediane: '86.00',
+          createurs_avec_score: 1,
+          peut_reserver: 1,
+        },
+      }),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
+
+    expect(screen.getByTestId('tier-c1')).toHaveTextContent('REEL');
+    expect(screen.getByTestId('tier-c2')).toHaveTextContent(en.admin.createursSansPalier);
+    expect(screen.getByTestId('tier-c2')).not.toHaveTextContent('REEL');
+  });
+
+  it('écrit les cinq nombres de tête sur la population, pas sur la page', async () => {
+    /**
+     * **Le total dépasse ce que la liste rend, et c'est le décor qui compte.**
+     *
+     * Avec `total === items.length`, un écran qui lirait `items.length` et un
+     * écran qui lit `annuaire.total` rendraient le même chiffre. Il faut que
+     * la recherche ait trouvé plus que ce que le plafond laisse passer pour
+     * que les deux se séparent — c'est exactement l'arbitrage déjà rendu sur
+     * l'annuaire des salons, repris ici.
+     */
+    await monter(
+      <CreateursAdminScreen />,
+      clientDe({
+        '/admin/creators': {
+          items: [
+            {
+              creator_id: 'c1',
+              city: 'Miami',
+              reseaux: reseau('une_seule_ligne'),
+              audience_totale: 12_400,
+              reliability_score: '86.00',
+              tier: { tier_id: 't1', platform: 'instagram', content_format: 'post' },
+            },
+          ],
+          total: 128,
+          arrivees_cette_semaine: 3,
+          fiabilite_mediane: '86.00',
+          createurs_avec_score: 90,
+          peut_reserver: 41,
+        },
+      }),
+      'admin',
+    );
+    await waitFor(() => expect(screen.getByTestId('chiffres-createurs')).toBeTruthy());
+
+    expect(screen.getByTestId('chiffre-total')).toHaveTextContent(/128/);
+    expect(screen.getByTestId('chiffre-peut-reserver')).toHaveTextContent(/41/);
+    expect(screen.getByTestId('chiffre-arrivees')).toHaveTextContent(/3/);
+    expect(screen.getByTestId('chiffre-fiabilite-mediane')).toHaveTextContent(/86/);
+
+    // Le plafond a un remède, comme sur Salons : narrow, pas scroll.
+    expect(screen.getByTestId('plafond-createurs')).toHaveTextContent(/1/);
+  });
+});
+
+describe('la tournée se lit en table, et ses gestes vivent dans le panneau', () => {
+  /**
+   * **Deux fiches qui divergent sur tout ce que la table sert à comparer.**
+   *
+   * Une seule fiche ne prouverait rien : une implémentation qui écrirait la
+   * même voie, le même état et la même attente sur toutes les lignes rendrait
+   * exactement le même verdict. Il faut donc une fiche remise en main et
+   * activée, et une fiche envoyée par lien et jamais ouverte — c'est le couple
+   * dont l'écart est la seule raison d'être de cet écran.
+   */
+  const ACTIVEE = {
+    ...FICHE_PREPAREE,
+    business_id: 'p1',
+    name: 'Studio Lume',
+    status: 'active' as const,
+    prepared_at: '2026-08-10T12:00:00Z',
+    issued_at: '2026-08-10T12:00:00Z',
+    used_at: '2026-08-10T16:00:00Z',
+    channel: 'qr' as const,
+    etat: 'claimed' as const,
+    prepared_by: 'amelie@bind.agency',
+    remis_par: 'amelie@bind.agency',
+  };
+  const JAMAIS_OUVERTE = {
+    ...FICHE_PREPAREE,
+    business_id: 'p2',
+    name: 'Aurora Brow Bar',
+    prepared_at: '2026-08-09T12:00:00Z',
+    issued_at: '2026-08-09T12:00:00Z',
+    used_at: null,
+    channel: 'email' as const,
+    etat: 'never_opened' as const,
+    prepared_by: 'amelie@bind.agency',
+    remis_par: 'theo@bind.agency',
+  };
+
+  it('donne à chaque fiche sa voie, son état et son attente, et elles diffèrent', async () => {
+    await monter(
+      <TerrainScreen />,
+      clientDe({ '/admin/prospects': [ACTIVEE, JAMAIS_OUVERTE] }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('fiche-p1')).toBeTruthy());
+
+    // La voie de remise sépare les deux, et c'est l'écart que l'écran mesure.
+    expect(screen.getByTestId('fiche-p1')).toHaveTextContent(/In person/);
+    expect(screen.getByTestId('fiche-p2')).toHaveTextContent(/By email/);
+
+    // **L'état est un cartouche, pas un mot dans une cellule.** Le testID est
+    // celui que `TableRow` compose pour une colonne déclarée `etat`.
+    expect(screen.getByTestId('fiche-p1-etat')).toHaveTextContent('Taken over');
+    expect(screen.getByTestId('fiche-p2-etat')).toHaveTextContent('Link never opened');
+
+    // L'attente d'une fiche activée est une durée close ; celle d'une fiche
+    // qui court se dit autrement. Les confondre ferait lire « 4 h » sur une
+    // fiche que personne n'a jamais ouverte.
+    expect(screen.getByTestId('fiche-p1')).toHaveTextContent(/4 h/);
+    expect(screen.getByTestId('fiche-p2')).toHaveTextContent(/so far/);
+  });
+
+  it('n’expose aucun geste dans la rangée, et les rend tous en l’ouvrant', async () => {
+    await monter(
+      <TerrainScreen />,
+      clientDe({ '/admin/prospects': [JAMAIS_OUVERTE] }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('fiche-p2')).toBeTruthy());
+
+    // **Fermée, la table ne porte que des faits.** Trois boutons par ligne
+    // feraient d'une table de comparaison une table de décision.
+    expect(screen.queryByTestId('emettre-p2')).toBeNull();
+    expect(screen.queryByTestId('revoquer-p2')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('fiche-p2'));
+
+    // Ouverte, elle porte les mêmes gestes qu'avant la table — aucun n'a été
+    // perdu au passage, ce qui est la seule chose qu'une recomposition doit
+    // garantir.
+    expect(screen.getByTestId('panneau-p2')).toBeTruthy();
+    expect(screen.getByTestId('emettre-p2')).toBeTruthy();
+    expect(screen.getByTestId('revoquer-p2')).toBeTruthy();
+    // La seconde main paraît, parce que c'en est une autre.
+    expect(screen.getByTestId('remise-par-p2')).toBeTruthy();
   });
 });
 

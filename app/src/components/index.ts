@@ -79,6 +79,9 @@ export {
 } from './PickupCode';
 export { DayPicker, SlotPicker, type Creneau, type Jour } from './SlotPicker';
 export {
+  BandeDeChiffres,
+  Cartouche,
+  Chiffre,
   DecisionBar,
   DetailPanel,
   KeyHint,
@@ -87,4 +90,5 @@ export {
   Toolbar,
   type Colonne,
   type Decision,
+  type NatureDEtat,
 } from './Admin';

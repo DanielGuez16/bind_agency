@@ -102,3 +102,84 @@ services:
       # de tournée reste vide, ce qui a été le cas jusqu'ici.
       - key: HANDOVER_BASE_URL
         sync: false
+
+  # --------------------------------------------------------------------------
+  # Le service de fond
+  # --------------------------------------------------------------------------
+  #
+  # **Séparé du web, et c'est la seule forme qui marche.** Rien n'exécutait la
+  # file : les emails se déposaient dans la boîte d'envoi et personne ne la
+  # vidait. Une inscription écrivait donc une ligne en base et n'envoyait rien.
+  #
+  # **`boucle` et non `run`.** `run` fait un passage puis rend la main — c'est
+  # ce qu'il faut à un cron, et exactement ce qu'un service de fond ne supporte
+  # pas : il redémarrerait sans fin, et Render finirait par le déclarer mort.
+  # `boucle` replanifie et exécute toutes les trente secondes, et survit à une
+  # erreur de passage plutôt que de s'arrêter jusqu'au prochain déploiement.
+  #
+  # **Les mêmes variables que le web, moins celles qui ne le regardent pas.**
+  # Pas de `CORS_ORIGINS` — il ne répond à personne. Pas de
+  # `SEED_DATABASE_NAME` — il ne sème pas. Mais `EMAIL_PROVIDER` et sa clé, qui
+  # sont sa raison d'être.
+  - type: worker
+    name: bind-worker-demo
+    runtime: docker
+    plan: starter
+    region: oregon
+    rootDir: api
+    dockerfilePath: ./Dockerfile
+    branch: main
+    autoDeployTrigger: commit
+
+    envVars:
+      # **Ce qui fait de ce service un worker.** L'image décide sur cette
+      # variable plutôt que sur une commande passée au conteneur : une surcharge
+      # de commande vit dans le tableau de bord, pas dans l'image, et un service
+      # créé à la main n'en a aucune. Elle se copie avec les autres variables,
+      # ce qu'on fait déjà.
+      - key: SERVICE_ROLE
+        value: worker
+
+      - key: ENVIRONMENT
+        value: demo
+
+      - key: SOCIAL_PROVIDER
+        value: demo
+      - key: BILLING_PROVIDER
+        value: log
+      - key: GEOCODING_PROVIDER
+        value: manual
+
+      # **Ici, et pas `log`.** C'est ce service qui envoie ; le laisser en
+      # journal reviendrait à déployer un facteur qui lit les lettres à voix
+      # haute. La clé vient du tableau de bord.
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: EMAIL_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+
+      - key: OBJECT_STORE_PROVIDER
+        value: s3
+      - key: OBJECT_STORE_REGION
+        value: auto
+      - key: OBJECT_STORE_BUCKET_PUBLIC
+        sync: false
+      - key: OBJECT_STORE_BUCKET_PRIVE
+        sync: false
+      - key: OBJECT_STORE_ENDPOINT
+        sync: false
+      - key: OBJECT_STORE_ACCESS_KEY
+        sync: false
+      - key: OBJECT_STORE_SECRET_KEY
+        sync: false
+
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: HANDOVER_BASE_URL
+        sync: false

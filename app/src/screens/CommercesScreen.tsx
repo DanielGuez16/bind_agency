@@ -39,6 +39,7 @@ import {
   TextField,
   Texte,
   type Colonne,
+  type NatureDEtat,
 } from '../components';
 import { formatNumber } from '../format';
 import { formatDate } from '../format';
@@ -66,6 +67,14 @@ export const PLAFOND = 100;
 const LARGEUR_ACTION = 104;
 
 /** Le libellé d'un état, quel qu'il soit. */
+/** Ce que chaque état appelle : rien, un geste, ou rien encore. */
+const NATURE_DE_L_ETAT: Record<string, NatureDEtat> = {
+  draft: 'attente',
+  onboarding: 'attente',
+  active: 'vivant',
+  suspended: 'dormant',
+};
+
 const ETATS: Record<string, string> = {
   draft: 'admin.commerceDraft',
   onboarding: 'admin.commerceOnboarding',
@@ -87,11 +96,22 @@ const ETATS: Record<string, string> = {
 const COLONNES = (t: (cle: string) => string): Colonne[] => [
   { cle: 'nom', label: t('admin.commercesColonneNom'), largeur: 300 },
   { cle: 'quartier', label: t('admin.commercesColonneQuartier'), largeur: 170 },
-  { cle: 'etat', label: t('admin.commercesColonneEtat'), largeur: 150 },
+  { cle: 'etat', label: t('admin.commercesColonneEtat'), largeur: 150, etat: true },
   /* **La date d'inscription, pas celle de mise en ligne.** Ici on cherche un
      salon, on ne juge pas son activité : c'est l'ancienneté du dossier qui aide
      à reconnaître le bon parmi cent homonymes. */
-  { cle: 'inscrit', label: t('admin.commercesColonneInscrit'), largeur: 110, chiffre: true },
+  // **La date n'est pas un chiffre, et `chiffre` la mettait en mono.** La
+  // colonne était déclarée `chiffre: true` pour l'aligner à droite ; l'effet de
+  // bord est que `TableRow` la rend en `type.data`, c'est-à-dire dans la
+  // famille monospace. Une date en mono à côté de trois colonnes en sans, c'est
+  // la police non homogène qu'on voit sans savoir la nommer — et c'est la règle
+  // typographique du dépôt prise à revers : mono pour un code ou un décompte,
+  // jamais pour une date.
+  // **140 et non 110.** `formatDate` rend une date « moyenne » — « Sep 2, 2026 »
+  // — que 110 points ne portent pas : elle se cassait en « Sep 2, » au-dessus de
+  // « 2026 », et la rangée prenait deux hauteurs. Élargir vaut mieux
+  // qu'ellipser : une date coupée ne se lit pas mieux qu'une date cassée.
+  { cle: 'inscrit', label: t('admin.commercesColonneInscrit'), largeur: 140 },
   { cle: 'action', label: '', largeur: LARGEUR_ACTION },
 ];
 
@@ -256,6 +276,14 @@ function Rangee({
           // l'endroit d'où l'administration regarde.
           inscrit: formatDate(commerce.created_at, locale, 'UTC'),
         }}
+        /* **Trois natures pour quatre états, et le quatrième n'en a pas
+           besoin.** `active` tourne, `suspended` dort, et les deux états
+           d'avant la mise en ligne — la fiche préparée que personne n'assume,
+           et le compte qui n'a pas fini de se décrire — attendent tous les
+           deux un geste. Leur donner deux couleurs distinctes demanderait à
+           l'œil de retenir laquelle veut dire quoi, alors que la colonne dit
+           déjà le mot. */
+        natures={{ etat: NATURE_DE_L_ETAT[commerce.status] ?? 'dormant' }}
         fin={
           <View style={{ width: LARGEUR_ACTION, alignItems: 'flex-end' }}>
             {commerce.reprise_en_cours ? (
@@ -264,7 +292,7 @@ function Rangee({
                  change pas ce que je peux faire, et l'afficher inviterait à se
                  demander pourquoi lui plutôt que moi. */
               <Texte
-                variante="type.dataLabel"
+                variante="type.label"
                 couleur="status.success.text"
                 testID={`reprise-en-cours-${commerce.business_id}`}
               >
