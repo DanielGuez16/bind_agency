@@ -8,7 +8,12 @@
  * pour toutes les créatrices, y compris celles de la démonstration — donc un
  * annuaire qui n'avait rien à montrer même le jour où on déciderait de montrer.
  *
- * **Quatre champs, et la bio est le seul qui décide.** Le prénom et le nom ne
+ * **Cinq champs, et deux décident.** La bio est la ligne où une créatrice
+ * dit ce qu'elle fait plutôt que ce qu'elle est ; les centres d'intérêt disent
+ * la même chose sous une forme que le salon peut filtrer, ce qu'une phrase
+ * libre ne permet pas.
+ *
+ * **Le reste ne paraît nulle part devant un salon.** Le prénom et le nom ne
  * paraissent nulle part devant un salon — l'annuaire titre le pseudonyme, et
  * l'état civil n'arrive qu'à la réservation. La ville situe. La bio est la
  * seule ligne où une créatrice dit ce qu'elle fait plutôt que ce qu'elle est,
@@ -22,9 +27,11 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { useApi, type MonProfilDeclare as Profil } from '../../api';
+import { useApi, type CentreDInteret, type MonProfilDeclare as Profil } from '../../api';
 import { Button, SkeletonLignes, StatusMessage, TextField, Texte } from '../../components';
 import { useI18n } from '../../i18n';
+import { ChoixDesInterets } from '../interets/ChoixDesInterets';
+import { INTERETS_MAXIMUM } from '../interets/liste';
 import { useRequete } from '../useRequete';
 
 /**
@@ -62,6 +69,13 @@ export function aEnvoyer(saisi: Profil): Profil {
     last_name: nettoyer(saisi.last_name),
     city: nettoyer(saisi.city),
     bio: nettoyer(saisi.bio),
+    // **La liste vide part en `null`, jamais en `[]`.** Le serveur ramène
+    // déjà l'une à l'autre — le validateur du schéma le fait — mais compter
+    // dessus laisserait l'écran croire avoir écrit `[]` là où la base porte
+    // `null`, et le bouton d'enregistrement resterait offert après un
+    // enregistrement réussi. C'est le défaut que `nettoyer` évite déjà aux
+    // quatre champs texte, appliqué au cinquième.
+    interests: (saisi.interests ?? []).length === 0 ? null : (saisi.interests ?? []),
   };
 }
 
@@ -118,6 +132,25 @@ export function SectionDeMonProfil() {
   );
 }
 
+/**
+ * Deux listes d'intérêts portent-elles la même chose.
+ *
+ * **Dans l'ordre, et c'est voulu.** L'ordre est celui des gestes de la
+ * créatrice, le serveur le conserve, et le rendre indifférent ferait passer
+ * un réarrangement pour « rien n'a changé » alors que ce qu'elle relira au
+ * prochain chargement aurait bougé.
+ */
+export function memesInterets(
+  a: CentreDInteret[] | null,
+  b: CentreDInteret[] | null,
+): boolean {
+  const gauche = a ?? [];
+  const droite = b ?? [];
+  return (
+    gauche.length === droite.length && gauche.every((valeur, rang) => valeur === droite[rang])
+  );
+}
+
 export function MonProfilDeclare({
   profil,
   onChange,
@@ -137,7 +170,11 @@ export function MonProfilDeclare({
     propre.first_name !== profil.first_name ||
     propre.last_name !== profil.last_name ||
     propre.city !== profil.city ||
-    propre.bio !== profil.bio;
+    propre.bio !== profil.bio ||
+    // Comparée par son contenu et dans l'ordre : deux tableaux distincts ne
+    // sont jamais `===`, et s'arrêter à l'identité rendrait le bouton offert
+    // en permanence dès que l'écran est monté.
+    !memesInterets(propre.interests, profil.interests);
 
   async function enregistrer() {
     setEchec(null);
@@ -197,6 +234,23 @@ export function MonProfilDeclare({
         maxLength={BIO_MAXIMUM}
         testID="champ-bio"
       />
+
+      {/* **Après la bio, et non avant.** La bio est la phrase qu'on écrit ;
+          les intérêts sont ce qu'on en retient pour filtrer. Les proposer en
+          premier ferait cocher avant de réfléchir, et la bio finirait par les
+          répéter. */}
+      <View style={{ gap: 6 }}>
+        <Texte variante="type.label">{t('profil.declareInterets')}</Texte>
+        <ChoixDesInterets
+          choisis={saisi.interests ?? []}
+          onChange={(suivants) =>
+            setSaisi((avant) => ({ ...avant, interests: suivants }))
+          }
+          maximum={INTERETS_MAXIMUM}
+          aide={t('profil.declareInteretsAide')}
+          testID="champ-interets"
+        />
+      </View>
 
       {echec ? <StatusMessage level="danger" body={echec} testID="echec-du-profil" /> : null}
 

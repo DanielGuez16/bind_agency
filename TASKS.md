@@ -4133,3 +4133,33 @@ barrière avant le réseau, et c'est là qu'il faut la poser.
       ouverte, avec le motif et la portée pour une reprise qu'on vient
       d'ouvrir. 6 tests neufs, 6 mutations vérifiées — chacune restaurée avant
       la suivante, rien laissé en place.*
+
+- [x] **Les centres d'intérêt, et les trois filtres qui n'avaient pas d'appelant**
+      *Une liste fermée de dix valeurs sur `creator_profile.interests`, pour la
+      même raison que les quartiers : c'est un axe de navigation, et « ongles »
+      face à « nail art » ne se compteraient pas ensemble. Plus fine que
+      `BusinessCategory`, volontairement — la catégorie dit ce qu'un commerce
+      **est**, `beauty` couvrant le coloriste et la prothésiste ongulaire sous
+      la même étiquette ; l'intérêt dit ce qu'une créatrice **veut faire**.*
+
+      ***Colonne nullable, aucune reprise rétroactive.** Personne inscrit avant
+      ce champ n'a rien choisi, et lui attribuer un intérêt à la migration
+      inventerait une donnée. Le « au moins un » ne vaut donc qu'à l'écriture,
+      pas à l'existence de la ligne — la règle de `bio`. Trois au plus, sinon
+      celle qui coche tout n'est plus filtrable. La liste vide n'existe pas :
+      le schéma la ramène à `NULL`, sinon « je n'ai rien déclaré » aurait deux
+      écritures et le filtre devrait connaître les deux.*
+
+      ***Et les trois filtres d'annuaire déjà servis sont enfin appelables.**
+      `palier`, `reseau` et `distance_max_metres` étaient déclarés par la
+      route, appliqués par `_retenue` et éprouvés — sept tests — depuis
+      l'origine ; `annuaireDesCreateurs` n'envoyait que `limite` et `decalage`.
+      Un filtre sans appelant ne rougit nulle part. La pagination repart de
+      zéro quand un filtre bouge : sans cela les pages déjà chargées restaient
+      collées sous une première page filtrée, sous un total qui ne les
+      comptait plus.*
+
+      *L'anonymisation efface les intérêts — la garde de complétude du test l'a
+      exigée d'elle-même, sans qu'on y pense. Les cinq créatrices du semis
+      déclarent ce que leur bio disait déjà. 6 tests neufs, 4 mutations
+      vérifiées, chacune restaurée avant la suivante.*

@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.dependencies import CurrentBusiness, SessionDep, require_role
 from app.core.errors import ErrorCode
-from app.models.enums import ContentFormat, Platform, UserRole
+from app.models.enums import CentreDInteret, ContentFormat, Platform, UserRole
 from app.schemas.directory import AnnuaireRead, CreateurVuRead
 from app.schemas.reporting import PorteeLocaleRead
 from app.services import directory as service
@@ -33,6 +33,7 @@ async def read_directory(
     palier: Annotated[list[ContentFormat] | None, Query()] = None,
     reseau: Annotated[Platform | None, Query()] = None,
     distance_max_metres: Annotated[int | None, Query(ge=0)] = None,
+    interet: Annotated[list[CentreDInteret] | None, Query()] = None,
 ) -> AnnuaireRead:
     """**Sans abonnement, rien ne part.**
 
@@ -71,6 +72,7 @@ async def read_directory(
             paliers=frozenset(palier or ()),
             reseau=reseau,
             distance_max_metres=distance_max_metres,
+            interets=frozenset(interet or ()),
         ),
         limite=limite,
         decalage=decalage,

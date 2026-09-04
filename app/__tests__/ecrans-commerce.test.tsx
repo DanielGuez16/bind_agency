@@ -294,6 +294,12 @@ const CREATEUR_DE_L_ANNUAIRE = {
   last_name: 'Moreau',
   city: 'Miami',
   bio: 'Nails and skin, Wynwood.',
+  // Servi par `CreateurVuRead` comme une liste, jamais absent. Le décor le
+  // porte donc aussi : un montage sans lui éprouverait une forme que le
+  // serveur n'envoie pas, et laisserait passer une fiche qui tombe sur la
+  // vraie réponse. C'est exactement ce qui est arrivé ici, et seule la suite
+  // complète l'a dit — la fiche lit ce champ depuis qu'elle le montre.
+  interets: ['ongles', 'soin_du_visage'],
   comptes: [
     {
       platform: 'instagram',

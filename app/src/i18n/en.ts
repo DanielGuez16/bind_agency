@@ -152,6 +152,15 @@ export const en = {
     titre: 'Creators on BIND',
     sousTitre: 'Everyone you can reach from here. Sorted by access first, then by distance.',
     trieePar: 'Sorted by access, then distance',
+    filtres: 'Filters',
+    filtresAucun: 'Showing everyone in your radius',
+    filtresPoses: '{combien} active',
+    filtrePalier: 'Format they can book',
+    filtreReseau: 'Network',
+    filtreInterets: 'What they cover',
+    filtreInteretsAide:
+      'Creators who declared none are left out while this is set, the same way an unknown distance is.',
+    filtreDistance: 'Limit the distance',
     affichees: '{{combien}} of {{total}}',
     voirPlus: 'See more',
     chargement: 'Loading…',
@@ -229,6 +238,9 @@ export const en = {
     declareBio: 'Bio',
     declareBioPlaceholder: 'Nails and skin, mostly Wynwood and Little Havana.',
     declareBioAide: 'What you shoot, and where. A couple of lines is plenty.',
+    declareInterets: 'What you cover',
+    declareInteretsAide:
+      'Up to three. Businesses filter their directory on these, so pick what you actually shoot.',
     declareIllisible: 'We could not load your profile just now.',
     publicationOuvrir: 'Open the post for {{prestation}}',
     favoris: 'Favourites',
@@ -1537,6 +1549,38 @@ export const en = {
     museum: 'Museum',
     family_activity: 'Family activity',
     other: 'Other',
+  },
+  /**
+   * Les centres d'intérêt, une fois pour toutes.
+   *
+   * Même règle que les catégories juste au dessus : un bloc partagé, parce
+   * que la créatrice qui les déclare et le salon qui filtre dessus doivent
+   * lire exactement le même mot. Deux traductions du même intérêt se
+   * liraient comme deux intérêts.
+   */
+  /**
+   * Les réseaux par leur nom.
+   *
+   * **Des noms propres, donc identiques dans les deux langues** — et pourtant
+   * ici, parce qu'une chaîne écrite en dur dans un écran est une chaîne que
+   * personne ne retrouve le jour où elle doit changer. `lienInstagram` faisait
+   * déjà exactement cela, à un endroit.
+   */
+  reseaux: {
+    instagram: 'Instagram',
+    tiktok: 'TikTok',
+  },
+  interets: {
+    coiffure: 'Hair',
+    ongles: 'Nails',
+    soin_du_visage: 'Facials',
+    massage_et_spa: 'Massage & spa',
+    maquillage: 'Makeup',
+    restaurant: 'Restaurant',
+    cafe_et_brunch: 'Café & brunch',
+    fitness: 'Fitness',
+    culture: 'Culture',
+    famille: 'Family',
   },
   creationCommerce: {
     titre: 'Create your business',

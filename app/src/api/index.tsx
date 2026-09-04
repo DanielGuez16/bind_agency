@@ -66,6 +66,12 @@ import type {
   VerificationDuCompte,
   VueDesPaliers,
   AnnuaireDuCommerce,
+  CentreDInteret,
+  ContentFormat,
+  // `Platform` est déjà celui de React Native dans ce fichier : sans alias,
+  // le réseau social se ferait passer pour la plateforme d'exécution, et le
+  // typage l'accepterait à moitié.
+  Platform as Reseau,
   CommerceDeLUtilisateur,
   CreateurDeLAnnuaire,
   MonProfilDeclare,
@@ -895,11 +901,35 @@ export class Api {
    */
   annuaireDesCreateurs(
     businessId: string,
-    options: { limite?: number; decalage?: number } = {},
+    options: {
+      limite?: number;
+      decalage?: number;
+      /**
+       * Les quatre filtres, servis par la route depuis l'origine et jamais
+       * envoyés jusqu'ici : `palier`, `reseau` et `distance_max_metres`
+       * étaient déclarés, appliqués et éprouvés côté serveur, mais aucun
+       * appel du client ne les portait. Un filtre qui n'a pas d'appelant ne
+       * se voit pas manquer.
+       *
+       * Un tableau vide n'écrit aucun paramètre — `vide veut dire tous` est
+       * la règle du serveur, et ne rien envoyer la dit exactement.
+       */
+      paliers?: ContentFormat[];
+      reseau?: Reseau | null;
+      distanceMaxMetres?: number | null;
+      interets?: CentreDInteret[];
+    } = {},
     signal?: AbortSignal,
   ) {
     return this.client.request<AnnuaireDuCommerce>(routes.annuaireDesCreateurs(businessId), {
-      query: { limite: options.limite, decalage: options.decalage },
+      query: {
+        limite: options.limite,
+        decalage: options.decalage,
+        palier: options.paliers,
+        reseau: options.reseau,
+        distance_max_metres: options.distanceMaxMetres,
+        interet: options.interets,
+      },
       signal,
     });
   }

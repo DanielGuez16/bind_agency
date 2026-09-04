@@ -11,6 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, CreatedAt, UUIDPrimaryKey, enum_column
 from app.models.enums import (
+    CentreDInteret,
     Locale,
     Platform,
     SocialAccountStatus,
@@ -136,6 +137,19 @@ class CreatorProfile(CreatedAt, Base):
     )
     bio: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
 
+    #: **Ce qu'elle veut couvrir, entre une et trois valeurs — ou rien.**
+    #: Nullable, et sans reprise des lignes existantes : aucune créatrice
+    #: inscrite avant ce champ n'a choisi quoi que ce soit, et lui attribuer un
+    #: intérêt à la migration inventerait une donnée qu'elle n'a pas donnée. Le
+    #: « au moins un » ne vaut donc qu'au moment où elle remplit le champ, pas
+    #: à l'existence de la ligne — c'est la même règle que `bio`, qui est nulle
+    #: pour tout le monde tant que personne ne l'écrit.
+    #:
+    #: La liste vide n'existe pas : le schéma la ramène à `NULL`, sinon
+    #: « je n'ai rien déclaré » aurait deux écritures et le filtre devrait
+    #: connaître les deux.
+    interests: Mapped[list[str] | None] = mapped_column(sa.ARRAY(sa.Text), nullable=True)
+
     reliability_score: Mapped[Decimal | None] = mapped_column(
         sa.Numeric(5, 2),
         nullable=True,
@@ -162,6 +176,23 @@ class CreatorProfile(CreatedAt, Base):
 
     __table_args__ = (
         sa.CheckConstraint("completed_collabs_count >= 0", name="completed_collabs_count_positive"),
+        # Trois au plus, parce que c'est un axe de navigation : celle qui
+        # coche tout n'est plus filtrable, et le salon qui cherche une
+        # spécialiste la trouverait partout. Zéro ne s'écrit pas — c'est NULL.
+        sa.CheckConstraint(
+            "interests IS NULL OR (cardinality(interests) BETWEEN 1 AND 3)",
+            name="interets_entre_un_et_trois",
+        ),
+        # Et rien qui ne soit une valeur connue. La liste est doublée ici parce
+        # qu'une validation Pydantic ne survit pas à un INSERT écrit à la main,
+        # et qu'une valeur inventée traverserait tout l'annuaire sans jamais
+        # correspondre à un filtre — donc sans jamais se voir.
+        sa.CheckConstraint(
+            "interests IS NULL OR interests <@ ARRAY["
+            + ", ".join(f"'{i.value}'" for i in CentreDInteret)
+            + "]::text[]",
+            name="interets_connus",
+        ),
         sa.Index("ix_creator_profile_geo", "geo", postgresql_using="gist"),
     )
 

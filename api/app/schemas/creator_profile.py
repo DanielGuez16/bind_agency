@@ -4,6 +4,8 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator
 
+from app.models.enums import CentreDInteret
+
 #: Une chaîne vide ou blanche vaut « pas renseigné ». Le validateur la ramène à
 #: `None` plutôt que de la refuser : effacer un champ en envoyant `""` est un
 #: geste naturel, et le rejeter obligerait l'app à traduire avant d'envoyer.
@@ -25,10 +27,36 @@ class CreatorProfileUpdate(BaseModel):
     city: Annotated[Texte, StringConstraints(max_length=120)] | None = None
     bio: Annotated[Texte, StringConstraints(max_length=1_000)] | None = None
 
+    #: **Entre un et trois, ou rien.** `None` veut dire « pas envoyé, ne touche
+    #: pas », comme partout ailleurs dans ce schéma. La liste vide est le geste
+    #: par lequel on efface, et le validateur la ramène à `None` : c'est déjà
+    #: ce que la chaîne vide fait aux champs texte juste au-dessus, et cela
+    #: évite que « je n'ai rien déclaré » ait deux écritures en base.
+    interests: list[CentreDInteret] | None = None
+
     @field_validator("first_name", "last_name", "city", "bio")
     @classmethod
     def _vide_vaut_absent(cls, valeur: str | None) -> str | None:
         return valeur or None
+
+    @field_validator("interests")
+    @classmethod
+    def _un_a_trois_sans_doublon(
+        cls, valeurs: list[CentreDInteret] | None
+    ) -> list[CentreDInteret] | None:
+        """Déduplique, puis borne à trois. Le vide vaut « pas renseigné ».
+
+        La déduplication passe avant le compte, et non l'inverse : quatre
+        valeurs dont deux identiques sont trois choix, pas une faute. Refuser
+        là obligerait l'écran à dédupliquer avant d'envoyer pour obtenir le
+        même résultat.
+        """
+        if valeurs is None:
+            return None
+        uniques = list(dict.fromkeys(valeurs))
+        if len(uniques) > 3:
+            raise ValueError("trois centres d'intérêt au plus")
+        return uniques or None
 
 
 class CreatorProfileRead(BaseModel):
@@ -45,6 +73,7 @@ class CreatorProfileRead(BaseModel):
     last_name: str | None
     city: str | None
     bio: str | None
+    interests: list[str] | None
     reliability_score: float | None
     completed_collabs_count: int
     is_new_creator: bool

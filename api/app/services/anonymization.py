@@ -143,6 +143,9 @@ async def _strip_creator_profile(session: AsyncSession, user_id: uuid.UUID) -> N
     profile.bio = None
     profile.city = None
     profile.geo = None
+    # Déclaratif, donc identifiant : trois intérêts et un quartier suffisent
+    # souvent à désigner une personne. Ils partent avec le reste.
+    profile.interests = None
     profile.anonymized_at = datetime.now(UTC)
 
 
