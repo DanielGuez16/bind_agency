@@ -14,7 +14,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from app.core.config import get_settings
-from app.models import AuditLog, Booking, Tier, TierOffer
+from app.models import AuditLog, Booking, ConfigurationChange, Tier, TierOffer
 from app.models.enums import ActorKind, BookingStatus, ContentFormat, Platform, UserRole
 from tests.factories import new_creator, new_social_account
 
@@ -428,7 +428,7 @@ async def test_le_retrait_est_journalise(client: AsyncClient, conn: AsyncConnect
 # --------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("verbe", ["get", "post"])
+@pytest.mark.parametrize("verbe", ["get", "post", "patch"])
 async def test_un_membre_de_a_n_atteint_pas_les_offres_de_b(
     client: AsyncClient, verbe: str
 ) -> None:
@@ -439,10 +439,14 @@ async def test_un_membre_de_a_n_atteint_pas_les_offres_de_b(
 
     chemin = f"{PREFIX}/business/{business_b}/tier-offers"
     appel = getattr(client, verbe)
+    # Le PATCH vise une offre : l'identifiant est quelconque, l'appartenance est
+    # refusée avant qu'on le cherche — c'est justement ce qu'on éprouve.
+    if verbe == "patch":
+        chemin = f"{chemin}/{uuid.uuid4()}"
     response = (
-        await appel(chemin, json={}, headers=membre_a["headers"])
-        if verbe == "post"
-        else await appel(chemin, headers=membre_a["headers"])
+        await appel(chemin, headers=membre_a["headers"])
+        if verbe == "get"
+        else await appel(chemin, json={}, headers=membre_a["headers"])
     )
 
     assert response.status_code == 403
@@ -573,3 +577,175 @@ async def test_un_membre_d_un_autre_commerce_n_y_accede_pas(client: AsyncClient)
     )
 
     assert reponse.status_code in (403, 404), reponse.text
+
+
+# --------------------------------------------------------------------------
+# les critères de publication
+#
+# **Ils existaient en base et dans toutes les lectures sans chemin d'écriture.**
+# `TierOfferCreate` était en `extra="forbid"` sans les champs, il n'y avait pas
+# d'`Update`, et le semis ne les posait pas : `required_mention` valait donc
+# `NULL` sur chaque ligne de chaque environnement. Toute l'interface qui
+# l'affiche est gardée par `required_mention ? … : null` — elle ne se rendait
+# jamais, et le défaut se lisait à l'écran comme « le badge est peu clair ».
+# --------------------------------------------------------------------------
+
+
+async def test_les_criteres_se_posent_a_la_creation(
+    client: AsyncClient, conn: AsyncConnection
+) -> None:
+    membre = await compte(client)
+    business_id = await commerce(client, membre)
+    cree = await item(client, membre, business_id)
+
+    reponse = await client.post(
+        f"{PREFIX}/business/{business_id}/tier-offers",
+        json={
+            "tier_id": str(await palier(conn)),
+            "catalog_item_id": cree["id"],
+            "required_mention": "@maison.rivage",
+            "required_geotag": True,
+        },
+        headers=membre["headers"],
+    )
+
+    assert reponse.status_code == 201, reponse.text
+    assert reponse.json()["required_mention"] == "@maison.rivage"
+    assert reponse.json()["required_geotag"] is True
+
+
+async def test_les_criteres_se_corrigent_et_se_relisent(
+    client: AsyncClient, conn: AsyncConnection
+) -> None:
+    """**Le test qui aurait manqué le défaut s'il ne relisait pas.**
+
+    Écrire et croire sur parole rendrait le même verdict avec un service qui
+    accepte le champ et le jette — c'est exactement ce que faisait le produit
+    avant, et ce qu'aucun test ne disait.
+    """
+    membre = await compte(client)
+    business_id = await commerce(client, membre)
+    cree = await item(client, membre, business_id)
+    offre = (await offrir(client, membre, business_id, await palier(conn), cree["id"])).json()
+    assert offre["required_mention"] is None
+
+    corrige = await client.patch(
+        f"{PREFIX}/business/{business_id}/tier-offers/{offre['id']}",
+        json={"required_mention": "@maison.rivage", "required_geotag": True},
+        headers=membre["headers"],
+    )
+    assert corrige.status_code == 200, corrige.text
+
+    relu = await client.get(
+        f"{PREFIX}/business/{business_id}/tier-offers", headers=membre["headers"]
+    )
+    (ligne,) = [o for o in relu.json() if o["id"] == offre["id"]]
+    assert ligne["required_mention"] == "@maison.rivage"
+    assert ligne["required_geotag"] is True
+
+
+async def test_une_mention_vide_vaut_absence(client: AsyncClient, conn: AsyncConnection) -> None:
+    """Effacer le champ à l'écran envoie `""`, et `""` n'est pas une mention.
+
+    Sans cette normalisation l'affichage — gardé par `required_mention ? …` —
+    rendrait une ligne « citez : » suivie de rien.
+    """
+    membre = await compte(client)
+    business_id = await commerce(client, membre)
+    cree = await item(client, membre, business_id)
+    offre = (await offrir(client, membre, business_id, await palier(conn), cree["id"])).json()
+
+    await client.patch(
+        f"{PREFIX}/business/{business_id}/tier-offers/{offre['id']}",
+        json={"required_mention": "@maison.rivage"},
+        headers=membre["headers"],
+    )
+    vide = await client.patch(
+        f"{PREFIX}/business/{business_id}/tier-offers/{offre['id']}",
+        json={"required_mention": "   "},
+        headers=membre["headers"],
+    )
+
+    assert vide.status_code == 200, vide.text
+    assert vide.json()["required_mention"] is None
+
+
+async def test_la_correction_est_journalisee_avec_son_auteur(
+    client: AsyncClient, conn: AsyncConnection
+) -> None:
+    """Une **valeur** qui change, donc le journal de configuration.
+
+    Pas celui d'audit : il garde les bascules de l'offre, et mêler les deux
+    rendrait « a retiré l'offre » et « a corrigé le pseudonyme » illisibles l'un
+    à côté de l'autre. Ce qu'on relira ici est « qui a écrit quoi à la place de
+    quoi », que `record_transition` ne sait pas dire.
+    """
+    membre = await compte(client)
+    business_id = await commerce(client, membre)
+    cree = await item(client, membre, business_id)
+    offre = (await offrir(client, membre, business_id, await palier(conn), cree["id"])).json()
+
+    await client.patch(
+        f"{PREFIX}/business/{business_id}/tier-offers/{offre['id']}",
+        json={"required_mention": "@maison.rivage"},
+        headers=membre["headers"],
+    )
+
+    (ligne,) = (
+        await conn.execute(
+            sa.select(ConfigurationChange.__table__).where(
+                ConfigurationChange.entity_type == "tier_offer"
+            )
+        )
+    ).all()
+    assert ligne.entity_id == uuid.UUID(offre["id"])
+    assert ligne.field == "required_mention"
+    assert (ligne.value_before, ligne.value_after) == (None, "@maison.rivage")
+    assert ligne.actor_user_id == uuid.UUID(membre["user_id"])
+
+
+async def test_reecrire_la_meme_valeur_ne_journalise_rien(
+    client: AsyncClient, conn: AsyncConnection
+) -> None:
+    """Renvoyer la même valeur n'est pas une modification.
+
+    L'écran enregistre un formulaire entier ; sans cette règle, ouvrir et
+    valider sans rien changer écrirait une ligne d'histoire qui ment.
+    """
+    membre = await compte(client)
+    business_id = await commerce(client, membre)
+    cree = await item(client, membre, business_id)
+    offre = (await offrir(client, membre, business_id, await palier(conn), cree["id"])).json()
+    chemin = f"{PREFIX}/business/{business_id}/tier-offers/{offre['id']}"
+
+    await client.patch(chemin, json={"required_mention": "@rivage"}, headers=membre["headers"])
+    await client.patch(chemin, json={"required_mention": "@rivage"}, headers=membre["headers"])
+
+    lignes = (
+        await conn.execute(
+            sa.select(ConfigurationChange.__table__).where(
+                ConfigurationChange.entity_type == "tier_offer"
+            )
+        )
+    ).all()
+    assert len(lignes) == 1, "la seconde écriture, identique, a laissé une trace"
+
+
+async def test_un_champ_inconnu_est_refuse(client: AsyncClient, conn: AsyncConnection) -> None:
+    """`extra="forbid"` : le palier et la prestation ne se déplacent pas.
+
+    Les déplacer laisserait les contreparties déjà nées pointer sur une
+    composition qui n'a plus jamais existé.
+    """
+    membre = await compte(client)
+    business_id = await commerce(client, membre)
+    cree = await item(client, membre, business_id)
+    offre = (await offrir(client, membre, business_id, await palier(conn), cree["id"])).json()
+
+    reponse = await client.patch(
+        f"{PREFIX}/business/{business_id}/tier-offers/{offre['id']}",
+        json={"tier_id": str(uuid.uuid4())},
+        headers=membre["headers"],
+    )
+
+    assert reponse.status_code == 422, reponse.text

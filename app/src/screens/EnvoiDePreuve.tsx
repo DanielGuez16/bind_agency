@@ -69,6 +69,7 @@ const LONGUEUR_DE_L_ADRESSE = 1000;
 import { Linking, View } from 'react-native';
 
 import * as ImagePicker from 'expo-image-picker';
+import { VideoView, useVideoPlayer } from 'expo-video';
 
 import { useApi, type Collaboration } from '../api';
 import { Button, Photo, StatusMessage, TextField, Texte, vibration } from '../components';
@@ -86,9 +87,17 @@ const APERCU = 300;
  * un aller-retour à chaque ouverture d'écran. Le risque est qu'ils divergent ;
  * un test compare les deux valeurs.
  */
-export const POIDS_MAXIMAL = 8 * 1024 * 1024;
+/**
+ * Le plafond, **recopié du serveur** (`proof_upload_max_bytes`).
+ *
+ * Relevé à quinze mégaoctets avec l'arrivée de la vidéo : huit refusaient la
+ * quasi-totalité des reels, c'est-à-dire le format même que le brief demande.
+ * C'est la taille que le compartiment est vérifié accepter au déploiement —
+ * pas un chiffre choisi au jugé.
+ */
+export const POIDS_MAXIMAL = 15 * 1024 * 1024;
 
-type Choisi = { uri: string; taille: number | null };
+type Choisi = { uri: string; taille: number | null; estUneVideo: boolean };
 
 /**
  * Le seuil au-delà duquel l'échéance change la conduite, et non le ton.
@@ -130,6 +139,37 @@ type Etat =
    * les confondre accuserait la créatrice d'un silence de la plateforme.
    */
   | { etat: 'rendu'; media: Choisi; verifiee: boolean | null; raisons: string[] };
+
+/**
+ * L'aperçu d'une vidéo choisie.
+ *
+ * **Il n'existait pas, et `Photo` rendait un cadre vide.** Un choix qui ne
+ * s'affiche pas se lit comme un choix qui n'a pas pris : la créatrice
+ * recommence, ou envoie autre chose. `expo-video` était déjà dans les
+ * dépendances sans un seul appelant.
+ *
+ * Muet et en boucle : c'est une vérification de ce qu'on s'apprête à envoyer,
+ * pas une lecture. Du son qui démarre seul dans un salon serait une surprise
+ * désagréable, et les commandes natives inviteraient à regarder plutôt qu'à
+ * vérifier.
+ */
+function ApercuVideo({ uri }: { uri: string }) {
+  const lecteur = useVideoPlayer(uri, (instance) => {
+    instance.loop = true;
+    instance.muted = true;
+    instance.play();
+  });
+
+  return (
+    <VideoView
+      player={lecteur}
+      style={{ height: APERCU, borderRadius: radius['radius.lg'] }}
+      contentFit="contain"
+      nativeControls={false}
+      testID="apercu-du-choix"
+    />
+  );
+}
 
 export function EnvoiDePreuve({
   collaborationId,
@@ -197,15 +237,30 @@ export function EnvoiDePreuve({
       return;
     }
 
-    setVue({ etat: 'choisi', media: { uri: actif.uri, taille: actif.fileSize ?? null } });
+    setVue({
+      etat: 'choisi',
+      media: {
+        uri: actif.uri,
+        taille: actif.fileSize ?? null,
+        // `type` vient du sélecteur ; l'absence se lit comme une image, qui
+        // est le cas de tous les choix d'avant la vidéo.
+        estUneVideo: actif.type === 'video',
+      },
+    });
   }
 
   async function depuisLaGalerie() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) return refuser('parcours.preuvePermissionGalerie');
     retenir(
+      // **La vidéo est acceptée, et son absence n'était pas anodine.** Deux
+      // des trois `ContentFormat` du produit sont vidéo par nature — un reel
+      // toujours, une story le plus souvent. Restreint aux images, ce
+      // sélecteur ne laissait déposer que la capture d'écran d'une vidéo,
+      // c'est-à-dire le niveau de preuve le plus faible pour le format où
+      // l'on aurait pu avoir le média lui-même.
       await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
+        mediaTypes: ['images', 'videos'],
         quality: 0.9,
       }),
     );
@@ -214,7 +269,13 @@ export function EnvoiDePreuve({
   async function parLAppareilPhoto() {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) return refuser('parcours.preuvePermissionCamera');
-    retenir(await ImagePicker.launchCameraAsync({ quality: 0.9 }));
+    // **`mediaTypes` explicite, alors qu'il était implicite.** Sans lui la
+    // caméra retombe sur les images seules : le sélecteur aurait accepté une
+    // vidéo et pas l'appareil photo, ce qui est le genre d'écart qu'on ne
+    // découvre qu'en filmant.
+    retenir(
+      await ImagePicker.launchCameraAsync({ mediaTypes: ['images', 'videos'], quality: 0.9 }),
+    );
   }
 
   /**
@@ -259,7 +320,7 @@ export function EnvoiDePreuve({
   }
 
   async function deposerEtSoumettre(
-    capture: { uri: string; taille: number | null },
+    capture: Choisi,
     progression: (part: number) => void,
   ) {
     const { screenshot_key } = await api.televerserUneCapture(capture.uri, progression);
@@ -296,13 +357,21 @@ export function EnvoiDePreuve({
           et le respect du mouvement réduit ; sans lui, chaque écran refaisait
           ces trois choses de son côté, et aucun ne les refaisait pareil. */}
       {media ? (
-        <Photo
-          uri={media.uri}
-          hauteur={APERCU}
-          cadrage="contain"
-          style={{ borderRadius: radius['radius.lg'] }}
-          testID="apercu-du-choix"
-        />
+        media.estUneVideo ? (
+          // **Une vidéo ne s'affiche pas dans `Photo`.** Elle y rendait un
+          // cadre vide, ce qui se lit comme un choix qui n'a pas pris — et la
+          // créatrice renvoie alors autre chose. `expo-video` était déjà
+          // installé et n'avait aucun appelant.
+          <ApercuVideo uri={media.uri} />
+        ) : (
+          <Photo
+            uri={media.uri}
+            hauteur={APERCU}
+            cadrage="contain"
+            style={{ borderRadius: radius['radius.lg'] }}
+            testID="apercu-du-choix"
+          />
+        )
       ) : null}
       {/* **Tranché : l'aperçu ne recadre jamais.** Une capture avec les barres
           système est une preuve valable — ce qui compte est qu'on voie la
@@ -365,7 +434,7 @@ export function EnvoiDePreuve({
       {envoiDeFichier.interrompu ? (
         <StatusMessage
           level="neutral"
-          body={t('composition.photoEnvoiInterrompu')}
+          body={t('parcours.preuveEnvoiInterrompu')}
           testID="envoi-interrompu"
         />
       ) : null}
@@ -488,6 +557,20 @@ export function EnvoiDePreuve({
 
       <Texte variante="type.caption" couleur="ink.soft">
         {t('parcours.preuveCommentFaire')}
+      </Texte>
+
+      {/* **Ce qui sera refusé, dit avant de choisir.** Le poids n'existait que
+          dans le message d'erreur : on l'apprenait après avoir choisi, parfois
+          après avoir attendu l'envoi sur le réseau d'un salon. Le dire ici ne
+          coûte qu'une ligne et évite le seul aller-retour que cet écran
+          impose.
+
+          Aucune durée ni ratio annoncés — parce qu'il n'y en a aucun. Le
+          produit n'a qu'une contrainte objective, le poids, éprouvée des deux
+          côtés ; en inventer une seconde ici la rendrait vraie à l'écran et
+          fausse au serveur. */}
+      <Texte variante="type.caption" couleur="ink.soft" testID="preuve-contraintes">
+        {t('parcours.preuveContraintes', { poids: Math.round(POIDS_MAXIMAL / (1024 * 1024)) })}
       </Texte>
 
       <Button

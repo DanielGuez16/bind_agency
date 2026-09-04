@@ -71,15 +71,20 @@ const NON_RENDUS: Record<string, string> = {
   'EtatDeLaComposition.jours_ouverts': 'a-instruire',
   // --- a-instruire : servis, et la grille v3 ne les lit plus ---
   //
-  // **Trois champs que le contrat commerce-scopé a rendus redondants.** La
+  // **Deux champs que le contrat commerce-scopé a rendus redondants.** La
   // grille montre le palier accessible **chez ce salon** (`palier_accessible`)
   // et le volume du réseau porté par la carte ; `paliers_ouverts` répétait le
-  // premier en liste, et `audience_totale` le second en cumul. La bio, elle,
-  // n'a jamais eu de place sur une vignette — et c'est du texte libre, dont on
-  // a déjà vu qu'il peut porter un pseudonyme que la paroi payante retient
-  // ailleurs. Les trois sont candidats au retrait de la réponse ; d'ici là,
-  // leur absence de lecteur est écrite plutôt que subie.
-  'CreateurDeLAnnuaire.bio': 'a-instruire',
+  // premier en liste, et `audience_totale` le second en cumul. Les deux sont
+  // candidats au retrait de la réponse ; d'ici là, leur absence de lecteur est
+  // écrite plutôt que subie.
+  //
+  // **La bio est sortie de cette table le 2026-09-04, et l'objection qui l'y
+  // tenait n'a pas disparu.** Elle disait : du texte libre peut porter un
+  // pseudonyme que la paroi payante retient ailleurs, donc l'afficher offre un
+  // contournement. C'est vrai, et c'est un coût accepté — la rangée ne disait
+  // que le pseudonyme, la ville et la distance, de quoi reconnaître mais pas
+  // de quoi choisir, et c'est ce que l'annuaire est censé permettre. Le
+  // renversement est daté et argumenté dans `DECISIONS.md`.
   'CreateurDeLAnnuaire.paliers_ouverts': 'a-instruire',
   'CreateurDeLAnnuaire.audience_totale': 'a-instruire',
   // --- a-instruire : servi, et l'écran refuse délibérément de le lire ---

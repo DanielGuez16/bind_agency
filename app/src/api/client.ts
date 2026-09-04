@@ -21,7 +21,7 @@
  * il rend des données ou lève. Ce qu'on fait d'un `authentication_required` est
  * une décision d'application, pas de transport.
  */
-import { champsEnCause, errorCodeFromResponse } from '../i18n/errors';
+import { champsEnCause, codesEnCause, errorCodeFromResponse } from '../i18n/errors';
 import { routes } from './routes';
 
 export const DELAI_MS = 15_000;
@@ -40,14 +40,29 @@ export class ApiError extends Error {
    * seul refus du produit dont la cause est connue et n'était pas dite.
    */
   readonly champs: string[];
+  /**
+   * Les codes que le serveur porte sur ces champs, quand il en porte.
+   *
+   * **Ils manquaient, et six messages en dépendaient.** `passwords.py` lève
+   * `password_too_short` ; le handler 422 gardait `loc` et `type` et jetait le
+   * reste, si bien que l'écran ne pouvait que nommer le champ. Les phrases qui
+   * disent quoi corriger existaient dans les deux catalogues sans lecteur.
+   */
+  readonly codes: string[];
 
-  constructor(status: number, code: string | null, champs: string[] = []) {
+  constructor(
+    status: number,
+    code: string | null,
+    champs: string[] = [],
+    codes: string[] = [],
+  ) {
     // Le message technique ne s'affiche pas : il sert aux traces et aux tests.
     super(`api ${status}${code ? ` ${code}` : ''}`);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
     this.champs = champs;
+    this.codes = codes;
   }
 }
 
@@ -472,7 +487,12 @@ export class ApiClient {
       // Une erreur sans corps JSON reste une erreur : le code sera nul et
       // l'écran affichera le message générique.
     }
-    return new ApiError(reponse.status, errorCodeFromResponse(corps), champsEnCause(corps));
+    return new ApiError(
+      reponse.status,
+      errorCodeFromResponse(corps),
+      champsEnCause(corps),
+      codesEnCause(corps),
+    );
   }
 
   /** Une seule rotation vivante à la fois, partagée. */

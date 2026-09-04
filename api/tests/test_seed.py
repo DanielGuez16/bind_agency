@@ -718,6 +718,31 @@ async def test_aucune_offre_ne_porte_un_parent(seed_conn: AsyncConnection) -> No
     assert combien == 0
 
 
+async def test_des_prestations_offertes_portent_une_description(
+    seed_conn: AsyncConnection,
+) -> None:
+    """La description doit atteindre une prestation **qu'on peut réserver**.
+
+    **Compter les descriptions du catalogue ne prouverait rien**, et c'est le
+    piège que ce test évite : il en existait déjà une avant ce semis, portée par
+    un item *parent* — lequel n'est jamais placé dans une offre, garde
+    `test_aucune_offre_ne_porte_un_parent`. Une créatrice ne pouvait donc en voir
+    aucune, alors que le compte brut disait « une ».
+
+    On joint donc jusqu'à `TierOffer` : c'est la seule chose que la fiche rend.
+    """
+    combien = await seed_conn.scalar(
+        sa.select(sa.func.count(sa.distinct(CatalogItem.id)))
+        .select_from(CatalogItem)
+        .join(TierOffer, TierOffer.catalog_item_id == CatalogItem.id)
+        .where(
+            CatalogItem.description.is_not(None),
+            CatalogItem.requires_booking.is_(True),
+        )
+    )
+    assert combien >= 3
+
+
 async def test_aucune_offre_sur_un_palier_inactif(seed_conn: AsyncConnection) -> None:
     inactifs = sa.select(Tier.id).where(Tier.is_active.is_(False))
     combien = await seed_conn.scalar(
