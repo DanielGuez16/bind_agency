@@ -126,7 +126,13 @@ type SessionValue = EtatDeSession & {
    */
   jetonDAcces: string | null;
   connecter: (email: string, motDePasse: string) => Promise<void>;
-  inscrire: (email: string, motDePasse: string, role: RoleInscriptible) => Promise<void>;
+  inscrire: (
+    email: string,
+    motDePasse: string,
+    role: RoleInscriptible,
+    /** Le portail d'âge : une date ISO, refusée au serveur si elle ne passe pas. */
+    dateDeNaissance: string,
+  ) => Promise<void>;
   /**
    * Vrai entre l'inscription et le premier geste.
    *
@@ -278,10 +284,10 @@ export function SessionProvider({
   const [vientDeSInscrire, setVientDeSInscrire] = useState(false);
 
   const inscrire = useCallback(
-    async (email: string, motDePasse: string, role: RoleInscriptible) => {
+    async (email: string, motDePasse: string, role: RoleInscriptible, dateDeNaissance: string) => {
       await client.request('/api/v1/auth/register', {
         methode: 'POST',
-        corps: { email, password: motDePasse, role },
+        corps: { email, password: motDePasse, role, date_of_birth: dateDeNaissance },
         publique: true,
       });
       // L'inscription ne rend pas de jetons : on enchaîne sur une connexion,

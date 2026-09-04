@@ -44,6 +44,7 @@ const CHAMPS_NOMMES: Record<string, string> = {
   reason: 'champs.reason',
   motif: 'champs.reason',
   starts_at: 'champs.starts_at',
+  date_of_birth: 'champs.date_of_birth',
 };
 
 /**

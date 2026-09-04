@@ -30,6 +30,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApi } from '../api';
 import { Apparition, Button, Marque, StatusMessage, TextField, Texte } from '../components';
 import { useI18n } from '../i18n';
+import { DATE_VIDE, DateDeNaissance, dateIso, type SaisieDeDate } from './auth/DateDeNaissance';
 import { useSession, type MotifDeSortie, type RoleInscriptible } from '../session';
 import { radius, spacing, useColors, useTheme } from '../theme';
 import { useGabarit } from '../shell/gabarit';
@@ -87,6 +88,13 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
    */
   const [confirmation, setConfirmation] = useState('');
   const [role, setRole] = useState<RoleInscriptible>('creator');
+  /**
+   * La date de naissance, **à l'inscription seulement**.
+   *
+   * Elle ne se redemande pas à la connexion : le compte l'a déjà, et la
+   * reposer ferait croire qu'elle se vérifie à chaque entrée.
+   */
+  const [naissance, setNaissance] = useState<SaisieDeDate>(DATE_VIDE);
   const [envoi, setEnvoi] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
 
@@ -94,7 +102,11 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
     setEnvoi(true);
     setEchec(null);
     try {
-      if (inscription) await inscrire(email.trim(), motDePasse, role);
+      if (inscription) {
+        // `complet` garantit que la date est formée : le `?? ''` n'est là que
+        // pour le type, il n'est jamais atteint quand le bouton est offert.
+        await inscrire(email.trim(), motDePasse, role, dateIso(naissance) ?? '');
+      }
       else await connecter(email.trim(), motDePasse);
     } catch (erreur) {
       // Le catalogue traduit : `invalid_credentials` dit « identifiants
@@ -116,8 +128,18 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
   // À l'inscription, la confirmation fait partie de « complet » : le bouton
   // reste fermé tant que les deux saisies diffèrent, plutôt que de créer un
   // compte dont le mot de passe n'est pas celui qu'on croit avoir tapé.
+  /**
+   * **La date compte dans « complet », mais jamais dans un reproche.** Le
+   * bouton reste fermé tant qu'elle n'est pas formée — comme pour la
+   * confirmation du mot de passe — et rien n'écrit pourquoi : dire « il vous
+   * manque la date » avant qu'elle soit tapée en entier serait un reproche
+   * avant d'avoir rien fait, la même raison qui retient la jauge.
+   */
+  const dateFormee = dateIso(naissance) !== null;
   const complet =
-    email.includes('@') && reste === 0 && (!inscription || confirmation === motDePasse);
+    email.includes('@') &&
+    reste === 0 &&
+    (!inscription || (confirmation === motDePasse && dateFormee));
 
   if (inscription && etape === 'choix') {
     // **L'accueil occupe l'écran.** Il ne s'inscrit pas dans le conteneur
@@ -240,6 +262,14 @@ export function AuthScreen({ motif }: { motif: MotifDeSortie | null }) {
               helpText={discordent ? t('auth.confirmationDiscordante') : undefined}
               testID="champ-confirmation"
             />
+          ) : null}
+
+          {/* **Le portail d'âge, à l'inscription seulement.** Voir
+              `DateDeNaissance` : c'est le seul champ du formulaire dont l'aide
+              ne dit pas sa contrainte, et c'est délibéré — un portail qui
+              annonce la règle apprend quoi taper à qui n'a pas l'âge. */}
+          {inscription ? (
+            <DateDeNaissance valeur={naissance} onChange={setNaissance} />
           ) : null}
 
           {/* La jauge dit ce qui manque, en clair. Elle n'apparaît qu'une fois
