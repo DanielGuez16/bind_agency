@@ -813,6 +813,13 @@
           "204",
           "422"
         ]
+      },
+      "patch": {
+        "operationId": "update_offer_api_v1_business__business_id__tier_offers__offer_id__patch",
+        "responses": [
+          "200",
+          "422"
+        ]
       }
     },
     "/api/v1/business/{business_id}/tier-offers/{offer_id}/activation": {

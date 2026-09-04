@@ -21,8 +21,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Booking, Business, CatalogItem, Tier, TierOffer
 from app.models.enums import TierOfferState
-from app.schemas.tier_offers import TierOfferCreate
-from app.services import business_menu
+from app.schemas.tier_offers import TierOfferCreate, TierOfferUpdate
+from app.services import business_menu, config_journal
 from app.services.audit import Actor, AuditedEntity, record_transition
 
 
@@ -187,7 +187,13 @@ async def create_offer(
     # que tout le monde emprunte — et la règle ne se déclencherait jamais.
     await _exiger_une_carte(session, business_id=business_id, item=item)
 
-    offer = TierOffer(business_id=business_id, tier_id=tier.id, catalog_item_id=item.id)
+    offer = TierOffer(
+        business_id=business_id,
+        tier_id=tier.id,
+        catalog_item_id=item.id,
+        required_mention=_mention_propre(payload.required_mention),
+        required_geotag=payload.required_geotag,
+    )
 
     try:
         # `add` est à l'intérieur du bloc : `begin_nested` vide les objets en
@@ -255,6 +261,72 @@ async def set_active(
         actor=actor,
     )
     return True
+
+
+def _mention_propre(valeur: str | None) -> str | None:
+    """Une mention vide est une absence de mention, pas une chaîne vide.
+
+    L'écran envoie ce que la personne a tapé, et effacer un champ y laisse `""`.
+    Sans cette normalisation, la contrepartie recopierait une chaîne vide, et
+    l'affichage — gardé par `required_mention ? … : null` — la traiterait comme
+    présente : une ligne « citez : » suivie de rien. Le même geste est fait sur
+    les liens publics du salon, côté écran ; ici il est au service, parce que
+    c'est le service qui écrit.
+    """
+    if valeur is None:
+        return None
+    nettoye = valeur.strip()
+    return nettoye or None
+
+
+async def update_offer(
+    session: AsyncSession, *, offer: TierOffer, payload: TierOfferUpdate, actor: Actor
+) -> TierOffer:
+    """Corrige les critères de publication d'une offre. **Sans rétroactivité.**
+
+    Les contreparties déjà nées gardent les critères recopiés à leur création —
+    `SPEC.md` §2.5 : « recopiés sur la contrepartie à sa création et figés là ».
+    Une créatrice qui a consommé hier a lu une consigne ; la changer sous elle
+    ferait tomber sa publication pour un motif qui n'existait pas au moment où
+    elle a publié.
+
+    **Le journal est celui de la configuration, pas celui de l'audit.** Une
+    mention est une valeur qui change, et ce qu'on voudra relire est « qui a
+    écrit quoi à la place de quoi » — ce que `record_transition` ne sait pas
+    dire. L'audit garde les bascules de l'offre, qui sont un autre sujet.
+    """
+    champs = payload.model_dump(exclude_unset=True)
+    if "required_mention" in champs:
+        champs["required_mention"] = _mention_propre(champs["required_mention"])
+
+    # L'ancienne valeur se lit **avant** l'écriture, sinon le journal enregistre
+    # deux fois la nouvelle et ne dit plus rien de ce qui a changé.
+    modifies: dict[str, tuple[object, object]] = {}
+
+    # `required_mention` accepte `None` : c'est ainsi qu'on retire une mention.
+    if "required_mention" in champs:
+        modifies["required_mention"] = (offer.required_mention, champs["required_mention"])
+        offer.required_mention = champs["required_mention"]
+
+    # `required_geotag` ne l'accepte pas — la colonne est non nullable, et
+    # « pas de lieu » s'écrit `false`. Un `null` explicite est donc ignoré
+    # plutôt que d'aller heurter la base avec une erreur qui ne dirait rien.
+    if champs.get("required_geotag") is not None:
+        modifies["required_geotag"] = (offer.required_geotag, champs["required_geotag"])
+        offer.required_geotag = champs["required_geotag"]
+
+    await session.flush()
+
+    if modifies:
+        await config_journal.enregistrer(
+            session,
+            entity_type=config_journal.TIER_OFFER,
+            entity_id=offer.id,
+            champs=modifies,
+            actor=actor,
+        )
+
+    return offer
 
 
 async def delete_offer(session: AsyncSession, *, offer: TierOffer) -> None:

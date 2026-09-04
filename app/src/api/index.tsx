@@ -895,6 +895,8 @@ export class Api {
       tiktok_url: string | null;
       facebook_url: string | null;
       website_url: string | null;
+      /** Le pseudonyme, distinct de l'adresse au-dessus. Voir `LiensPublics`. */
+      instagram_handle: string | null;
     }>(
       routes.commerce(businessId),
       {
@@ -1126,6 +1128,8 @@ export class Api {
       tiktok_url: string | null;
       facebook_url: string | null;
       website_url: string | null;
+      /** Le pseudonyme, distinct de l'adresse au-dessus. Voir `LiensPublics`. */
+      instagram_handle: string | null;
     },
   ) {
     return this.client.request<unknown>(routes.modifierLeCommerce(businessId), {
@@ -1304,6 +1308,23 @@ export class Api {
     return this.client.request<OffreDePalier>(routes.offresDePalier(businessId), {
       methode: 'POST',
       corps: { tier_id: tierId, catalog_item_id: catalogItemId },
+    });
+  }
+
+  /**
+   * Corrige les critères de publication d'une offre déjà composée.
+   *
+   * **Seulement les critères** : déplacer le palier ou la prestation n'est pas
+   * une correction, c'est une autre offre. Le serveur refuse le reste.
+   */
+  modifierUneOffre(
+    businessId: string,
+    offreId: string,
+    champs: { required_mention?: string | null; required_geotag?: boolean },
+  ) {
+    return this.client.request<OffreDePalier>(routes.uneOffreDePalier(businessId, offreId), {
+      methode: 'PATCH',
+      corps: champs,
     });
   }
 
