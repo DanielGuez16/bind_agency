@@ -27,6 +27,30 @@ export type BusinessCategory =
   | 'family_activity'
   | 'other';
 
+/**
+ * Ce qu'une créatrice déclare vouloir couvrir : entre un et trois, ou rien.
+ *
+ * **Une liste fermée, pour la même raison que les quartiers.** C'est un axe de
+ * navigation — le salon filtre son annuaire dessus — et « ongles » face à
+ * « nail art » ne se compteraient pas ensemble.
+ *
+ * **Plus fine que `BusinessCategory`, volontairement.** La catégorie dit ce
+ * qu'un commerce *est* : `beauty` couvre le coloriste et la prothésiste
+ * ongulaire sous la même étiquette. L'intérêt dit ce qu'une créatrice *veut
+ * faire*, et les confondre ramènerait le filtre à l'axe qui existe déjà.
+ */
+export type CentreDInteret =
+  | 'coiffure'
+  | 'ongles'
+  | 'soin_du_visage'
+  | 'massage_et_spa'
+  | 'maquillage'
+  | 'restaurant'
+  | 'cafe_et_brunch'
+  | 'fitness'
+  | 'culture'
+  | 'famille';
+
 export type BookingStatus =
   | 'held'
   /** La créatrice a confirmé, le salon n'a pas encore tranché. */
@@ -1737,7 +1761,7 @@ export type PalierAccessibleIci = {
 /**
  * Ce qu'une créatrice déclare d'elle-même, et qu'elle seule peut écrire.
  *
- * **Quatre champs, et le type s'arrête là.** La réponse du serveur en porte
+ * **Cinq champs, et le type s'arrête là.** La réponse du serveur en porte
  * quatre autres — score de fiabilité, compte de collaborations, nouveauté,
  * instant d'anonymisation — qui sont des faits calculés, pas des déclarations.
  * L'écran de saisie n'en a rien à faire, et les déclarer ici obligerait à
@@ -1752,6 +1776,14 @@ export type MonProfilDeclare = {
   last_name: string | null;
   city: string | null;
   bio: string | null;
+  /**
+   * Entre un et trois, ou rien.
+   *
+   * **`null` et la liste vide ne coexistent pas** : le serveur ramène le vide
+   * à `null`, pour que « je n'ai rien déclaré » n'ait qu'une écriture. L'écran
+   * envoie donc `null` quand la créatrice retire tout, jamais `[]`.
+   */
+  interests: CentreDInteret[] | null;
 };
 
 export type CreateurDeLAnnuaire = {
@@ -1765,6 +1797,14 @@ export type CreateurDeLAnnuaire = {
    */
   city: string | null;
   bio: string | null;
+  /**
+   * Ce qu'elle a déclaré vouloir couvrir. Vide tant qu'elle n'a rien déclaré,
+   * ce qui est le cas de la majorité tant que l'écran de saisie est neuf.
+   *
+   * **La carte les montre parce que le filtre trie dessus** : un tri qui ne
+   * dit pas sur quoi il a trié se lit comme une liste tronquée au hasard.
+   */
+  interets: CentreDInteret[];
   comptes: CompteVuParLeCommerce[];
   paliers_ouverts: ContentFormat[];
   /**

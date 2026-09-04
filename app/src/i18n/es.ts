@@ -220,6 +220,9 @@ export const es: Catalogue = {
     declareBio: 'Biografía',
     declareBioPlaceholder: 'Uñas y piel, sobre todo en Wynwood y Little Havana.',
     declareBioAide: 'Qué grabas y dónde. Con dos líneas basta.',
+    declareInterets: 'Lo que cubres',
+    declareInteretsAide:
+      'Hasta tres. Los comercios filtran su directorio con esto, así que elige lo que grabas de verdad.',
     declareIllisible: 'No pudimos cargar tu perfil ahora mismo.',
     publicationOuvrir: 'Abrir la publicación de {{prestation}}',
     favoris: 'Favoritos',
@@ -1360,6 +1363,18 @@ export const es: Catalogue = {
     museum: 'Museo',
     family_activity: 'Actividad familiar',
     other: 'Otro',
+  },
+  interets: {
+    coiffure: 'Peluquería',
+    ongles: 'Uñas',
+    soin_du_visage: 'Faciales',
+    massage_et_spa: 'Masaje y spa',
+    maquillage: 'Maquillaje',
+    restaurant: 'Restaurante',
+    cafe_et_brunch: 'Café y brunch',
+    fitness: 'Fitness',
+    culture: 'Cultura',
+    famille: 'Familia',
   },
   creationCommerce: {
     titre: 'Crea tu negocio',
