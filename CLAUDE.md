@@ -68,10 +68,6 @@ npm install
 npx expo start
 ```
 
-**`make demo-seed` seul, jamais `demo-migrate` puis un semis.** Le semis efface
-d'abord et migre ensuite ; migrer avant lui inverse l'ordre, et l'écriture qui
-échoue sur un schéma en retard laisse la base distante à moitié écrite.
-
 ---
 
 ## Règles non négociables
