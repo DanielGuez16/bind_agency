@@ -39,6 +39,7 @@ import { useSession } from '../session';
 import { size, useColors, useTheme } from '../theme';
 import { AbonnementScreen } from '../screens/AbonnementScreen';
 import { AnnuaireScreen } from '../screens/AnnuaireScreen';
+import { CreatriceScreen } from '../screens/CreatriceScreen';
 import { ArbitrageScreen } from '../screens/ArbitrageScreen';
 import { AudienceScreen } from '../screens/AudienceScreen';
 import { FavorisScreen } from '../screens/FavorisScreen';
@@ -174,6 +175,8 @@ export type PileReglagesParams = {
 export type PileAnnuaireParams = {
   Annuaire: undefined;
   Abonnement: undefined;
+  /** La fiche d'une créatrice, où la rangée de l'annuaire mène. */
+  Creatrice: { creatorId: string };
 };
 
 export type PileConfigurationParams = {
@@ -826,8 +829,18 @@ function PileDeLAnnuaire({
           <AnnuaireScreen
             businessId={businessId}
             onVoirLAbonnement={() => navigation.navigate('Abonnement')}
+            onOuvrirLaCreatrice={(creatorId) => navigation.navigate('Creatrice', { creatorId })}
             onRetour={onRetour}
             retourVers={retourVers}
+          />
+        )}
+      </PileAnnuaire.Screen>
+      <PileAnnuaire.Screen name="Creatrice">
+        {({ navigation, route }) => (
+          <CreatriceScreen
+            businessId={businessId}
+            creatorId={route.params.creatorId}
+            onRetour={() => navigation.goBack()}
           />
         )}
       </PileAnnuaire.Screen>

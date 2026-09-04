@@ -935,6 +935,24 @@ export class Api {
   }
 
   /**
+   * Une créatrice de l'annuaire, ouverte depuis sa rangée.
+   *
+   * **Le même type que la liste**, et c'est voulu : la fiche rend exactement
+   * la même forme, champ pour champ. Un type parallèle finirait par ne plus
+   * s'accorder avec celui de la rangée, et le désaccord se lirait à l'écran
+   * comme un volume qui change en ouvrant la fiche.
+   *
+   * Le 404 n'y est pas distingué du hors-rayon : le serveur rend la même
+   * réponse aux deux, pour ne pas dire qui existe ailleurs.
+   */
+  creatriceDeLAnnuaire(businessId: string, creatorId: string, signal?: AbortSignal) {
+    return this.client.request<CreateurDeLAnnuaire>(
+      routes.creatriceDeLAnnuaire(businessId, creatorId),
+      { signal },
+    );
+  }
+
+  /**
    * Le commerce lui-même, dans ce que le lieu en compose.
    *
    * Le type est étroit exprès : la route rend la fiche entière, et déclarer

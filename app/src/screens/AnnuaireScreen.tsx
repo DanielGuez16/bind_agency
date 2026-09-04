@@ -43,7 +43,6 @@ import {
   EmptyState,
   Filet,
   Icone,
-  LienExterne,
   PiluleDeProfil,
   SkeletonLignes,
   StatusMessage,
@@ -92,6 +91,7 @@ export function AnnuaireScreen({
   onRetour,
   retourVers,
   onVoirLAbonnement,
+  onOuvrirLaCreatrice,
 }: {
   businessId: string;
   onRetour?: () => void;
@@ -108,6 +108,13 @@ export function AnnuaireScreen({
    * ne mène nulle part vaut moins que pas de bouton.
    */
   onVoirLAbonnement?: () => void;
+  /**
+   * Ouvrir la fiche d'une créatrice. **La rangée y mène désormais**, là où
+   * elle ne menait qu'à Instagram — hors du produit, dans un onglet dont on
+   * ne revient pas. Le lien sortant n'a pas disparu : il a déménagé sur la
+   * fiche, où il redevient un geste parmi d'autres au lieu d'être le seul.
+   */
+  onOuvrirLaCreatrice?: (creatorId: string) => void;
 }) {
   const { api } = useApi();
   const { t, locale } = useI18n();
@@ -250,7 +257,13 @@ export function AnnuaireScreen({
       ),
       elements: createurs.map((createur) => ({
         cle: createur.creator_id,
-        rendu: <FicheDeCreateur key={createur.creator_id} createur={createur} />,
+        rendu: (
+          <FicheDeCreateur
+            key={createur.creator_id}
+            createur={createur}
+            onOuvrir={onOuvrirLaCreatrice}
+          />
+        ),
       })),
       pied: (
         /* **« 20 sur 128 » demande de connaître le total.** Une page pleine ne
@@ -539,7 +552,13 @@ function Grille({ children }: { children: React.ReactNode }) {
 /** Le côté de l'avatar, rond : une photo de profil arrive ronde. */
 const AVATAR = 56;
 
-function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
+function FicheDeCreateur({
+  createur,
+  onOuvrir,
+}: {
+  createur: CreateurDeLAnnuaire;
+  onOuvrir?: (creatorId: string) => void;
+}) {
   const { api } = useApi();
   const { t, locale } = useI18n();
   const c = useColors();
@@ -585,20 +604,26 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
      * tête de ligne la reçoit entière, et six créatrices tiennent là où deux
      * cartes tenaient.
      *
-     * **La ligne entière est la cible, et rien d'autre dedans ne l'est.** Le
-     * geste de cet écran est unique — aller voir son travail chez elle — et
-     * c'est ce qui permet aux deux glyphes de droite de n'être que des marques.
+     * **La ligne mène à la fiche, et non plus chez Instagram.** Le seul geste
+     * de cet écran sortait du produit : on ouvrait le profil public dans un
+     * onglet, et l'annuaire — ce que l'abonnement achète — restait derrière.
+     * La rangée ouvre maintenant la fiche de la créatrice, où le lien sortant
+     * a déménagé et où il est un geste parmi d'autres.
+     *
+     * **La ligne entière est la cible, et rien d'autre dedans ne l'est** : les
+     * deux glyphes de droite restent des marques, l'un qui dit sur quel réseau
+     * elle publie, l'autre qu'il y a une suite.
      */
-    <LienExterne
+    <Pressable
       testID={`createur-${createur.creator_id}`}
-      /* **Une vraie ancre, et c'est cet écran qui en avait le plus besoin.**
-         Le geste est unique — aller voir son travail chez elle — et on le
-         répète sur une liste : ouvrir six profils dans six onglets sans perdre
-         l'annuaire est exactement ce qu'un `<div role="link">` interdisait.
+      onPress={onOuvrir ? () => onOuvrir(createur.creator_id) : undefined}
+      /* **Un bouton et non un lien, parce qu'on ne quitte plus rien.** Le rôle
+         de lien promettait ce qu'une ancre offre — clic milieu, nouvel onglet,
+         copier l'adresse — et cette rangée ne mène plus hors du produit. Le
+         lien sortant garde son ancre, sur la fiche.
 
-         `url` nul quand aucun compte n'est rattaché : la rangée garde sa forme
-         et ne prétend rien ouvrir, ce que `disabled` faisait ici à la main. */
-      url={profil?.profil_url ?? null}
+         Sans `onOuvrir`, la rangée garde sa forme et ne prétend rien ouvrir. */
+      accessibilityRole={onOuvrir ? 'button' : undefined}
       /**
        * **Ce que le salon peut en faire, dit et non peint.**
        *
@@ -612,11 +637,16 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
         nom,
         situation,
         t(createur.peut_reserver_ici ? 'annuaire.paliersOuverts' : 'annuaire.aucunPalier'),
-        profil ? t('annuaire.voirLeProfil', { reseau: nomDePlateforme(profil.platform) }) : null,
+        onOuvrir ? t('annuaire.ouvrirLaFiche') : null,
+        profil ? t('annuaire.publieSur', { reseau: nomDePlateforme(profil.platform) }) : null,
       ]
         .filter(Boolean)
         .join(' — ')}
-      style={{
+      /* **Elle répond au doigt.** La rangée était une ancre, dont le navigateur
+         signalait l'appui tout seul ; elle est un contrôle, et plus personne ne
+         le fait à sa place. */
+      style={({ pressed }) => ({
+        opacity: pressed ? 0.7 : 1,
         minHeight: 76,
         paddingVertical: 10,
         flexDirection: 'row',
@@ -624,7 +654,7 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
         gap: 14,
         borderBottomWidth: 1,
         borderBottomColor: c['line.default'],
-      }}
+      })}
     >
       {/* **Le cercle porte le premier critère du tri.** Le contour d'encre
           disait « celle-ci peut réserver chez vous » sur la carte ; il tient le
@@ -701,18 +731,24 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
         ) : null}
       </View>
 
-      {/* **De quel réseau, puis où ça mène** : c'est l'ordre de lecture, et les
-          deux sont des marques. La cible est la rangée. */}
-      {profil ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      {/* **De quel réseau, puis qu'il y a une suite** : c'est l'ordre de
+          lecture, et les deux sont des marques. La cible est la rangée.
+
+          **Un chevron et non le glyphe de sortie.** Celui-ci annonçait qu'on
+          quittait le produit, ce qui était vrai et ne l'est plus : la rangée
+          ouvre une fiche, dont on revient. Le garder mentirait sur ce qui va
+          se passer, et c'est le genre de mensonge qu'on ne remarque qu'après
+          l'avoir cru. */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        {profil ? (
           <Icone
             nom={profil.platform === 'tiktok' ? 'tiktok' : 'instagram'}
             couleur="ink.default"
             taille={20}
           />
-          <Icone nom="sortie" couleur="ink.soft" taille={18} />
-        </View>
-      ) : null}
-    </LienExterne>
+        ) : null}
+        {onOuvrir ? <Icone nom="chevron" couleur="ink.soft" taille={18} /> : null}
+      </View>
+    </Pressable>
   );
 }

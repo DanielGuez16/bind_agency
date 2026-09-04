@@ -12014,3 +12014,87 @@ liste dans l'énumération Python plutôt que de la recopier. Une liste recopié
 la main aurait été exactement le décor que le code fautif produit — d'accord
 avec ce qu'on vient d'écrire, y compris le jour où une valeur manquerait des
 deux côtés à la fois.
+---
+
+## 2026-09-04 — La fiche d'une créatrice, et les abonnés qu'un commentaire avait exilés
+
+**Le lien sortant n'a pas été supprimé, il a déménagé.** La rangée de l'annuaire
+était une ancre vers Instagram : le seul geste de l'écran quittait le produit,
+avant toute décision, et ce que l'abonnement achète restait derrière. Elle ouvre
+la fiche ; l'ancre y est, avec les autres réseaux. Sortir reste possible et
+cesse d'être obligatoire.
+
+**Les conditions de visibilité sont extraites, pas recopiées.** L'annuaire liste,
+la fiche ouvre, et les deux doivent décider pareil. Écrites deux fois, elles
+finiraient par diverger — et l'écart ne se lirait pas comme un désaccord entre
+deux fonctions : il se lirait comme une rangée qui mène à une page vide, sans
+que rien à l'écran ne l'explique. Le test qui le tient compare **tous** les
+champs de l'objet ; se contenter de l'identifiant laisserait le volume, le
+palier et la distance diverger en silence. C'est la seule mutation — une fiche
+plus stricte que la liste — qu'aucun autre test n'attrape.
+
+**L'abonnement remonte au routeur.** Il était vérifié en ligne dans la route de
+la liste. Une fiche qui ouvre exactement ce que la liste vend aurait pu naître
+sans lui : un oubli d'une ligne, que rien n'aurait signalé, et un salon non
+abonné aurait lu une par une les créatrices que la liste lui refuse.
+
+**404 et non 403 hors du rayon, et le corps est indiscernable de celui d'un
+identifiant inventé.** Distinguer les deux ferait de cette route un moyen de
+sonder l'annuaire national, une requête à la fois.
+
+**Un commentaire qui justifie un retrait par un écran inexistant vaut
+suppression.** Les abonnés avaient quitté la grille en v9 avec une raison écrite
+noir sur blanc — « l'audience appartient à la fiche qu'on ouvre pour décider,
+pas à une liste qu'on parcourt ». La fiche n'existait pas. Le champ était donc
+servi, lu par personne, porté « candidat au retrait » dans la table des champs
+sans lecteur, et le raisonnement qui l'y tenait promettait un écran que personne
+n'écrivait. C'est un mode de perte discret : la justification a l'air complète,
+elle est même juste, et elle repose sur une chose qui n'existe pas. Le jour où
+un commentaire renvoie à un écran, la question à poser est « est-il écrit ? ».
+
+**Une exception d'homonyme se retire avec sa cause.** `audience_totale` était
+dispensée de la détection parce que l'annuaire de l'administration la rendait et
+que celui du commerce ne la rendait pas : sans la dispense, la ligne du second
+passait pour périmée. La fiche la rend, la dispense n'a plus d'objet. Gardée,
+elle aurait fait passer pour vivante une garde qui ne tenait plus rien.
+
+**Une garde à deux cas force à exempter le troisième.** « Tout `onPress` de
+l'annuaire est un lien qui sort » était juste tant que sortir était le seul
+geste. La rangée ouvre une fiche : le geste est nouveau, il ne sort pas, et il
+n'agit sur personne. La garde passe en trichotomie — sortir, ouvrir une fiche,
+agir sur une créatrice — et seul le dernier reste interdit. Elle avait déjà été
+élargie une fois, de « pas d'`onPress` » à « pas d'`onPress` qui ne sorte pas ».
+La même correction, un cran plus tôt. Elle suit aussi l'écran : la fiche est
+désormais là où un bouton « contacter » aurait le plus de sens à écrire, donc
+c'est là qu'elle doit regarder.
+
+## 2026-09-04 — Trois choses apprises en réparant une CI, et une quatrième sur les têtes d'Alembic
+
+**`ruff` fait partie du job `api`, et une note de mémoire ne remplace pas la
+commande.** #468 a échoué en trente-six secondes — trop court pour pytest.
+Trente-neuf erreurs de style, aucune de logique. La consigne « lancer les
+commandes exactes de la CI avant de pousser » était écrite, relue, et pas
+appliquée : les PR précédentes étaient passées par chance, faute d'avoir dépassé
+cent caractères. Le correctif a reformaté vingt-deux fichiers, ce qui pose à son
+tour la question de savoir s'il a débordé.
+
+**Et la vérification de ce débordement se fait contre la branche, pas contre le
+dernier commit.** Comparer à `git show --name-only HEAD` a listé vingt fichiers
+comme étrangers alors qu'ils étaient dans le premier commit de la branche. La
+forme juste est `git diff --name-only origin/main...HEAD`. Un contrôle qui se
+trompe est pire qu'un contrôle absent : celui-ci aurait fait annuler un
+formatage légitime.
+
+**`alembic heads` après tout rebase qui touche `alembic/versions/`, et c'est la
+deuxième fois.** Le rebase est passé sans un conflit et laissait deux têtes : les
+centres d'intérêt, fusionnés entre-temps par une conversation voisine,
+descendaient du même parent que le portail d'âge. Git compare des noms de
+fichiers, pas des `down_revision` — il n'avait rien à signaler et n'a rien
+signalé. La question ne se retient pas, elle se pose, et elle se pose au même
+moment que « la branche est-elle fusionnable ».
+
+**Un nombre d'erreurs identique n'est pas une cause identique.** Deux fois 2010
+erreurs de montage, à quelques heures d'écart : la première venait d'un `rm -f
+.venv` lancé dans la même commande que `pytest`, la seconde d'une révision
+fantôme dans la base de développement partagée. Le compte identique a fait
+conclure à une répétition de la première, et relancer au lieu de lire.

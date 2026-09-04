@@ -21,6 +21,7 @@ import { couleurs, ThemeProvider, type Role } from '../src/theme';
 import { ArbitrageScreen } from '../src/screens/ArbitrageScreen';
 import { AbonnementScreen } from '../src/screens/AbonnementScreen';
 import { AnnuaireScreen } from '../src/screens/AnnuaireScreen';
+import { CreatriceScreen } from '../src/screens/CreatriceScreen';
 import { CatalogueScreen } from '../src/screens/CatalogueScreen';
 import { HorairesScreen } from '../src/screens/HorairesScreen';
 import { LieuScreen } from '../src/screens/LieuScreen';
@@ -505,6 +506,16 @@ const ECRANS = [
     plein: { '/creators': annuaireDe([CREATEUR_DE_L_ANNUAIRE]) },
     // Aucune créatrice autour : la carte de portée se tait, l'état vide parle.
     vide: { '/creators': annuaireDe([], { createurs: 0, peuvent_reserver: 0 }) },
+  },
+  {
+    nom: 'creatrice',
+    noeud: <CreatriceScreen businessId="b1" creatorId="c1" onRetour={() => {}} />,
+    role: 'merchant' as Role,
+    plein: { '/creators/c1': CREATEUR_DE_L_ANNUAIRE },
+    // **Jamais vide.** Une fiche existe ou n'existe pas : le serveur répond 404
+    // et c'est l'état d'erreur qui le dit. Un état vide laisserait croire à une
+    // fiche sans contenu, ce qui n'arrive pas.
+    vide: null,
   },
   {
     nom: 'catalogue',
@@ -1021,6 +1032,7 @@ describe('quatre états', () => {
       reporting: 'ReportingScreen.tsx',
       abonnement: 'AbonnementScreen.tsx',
       annuaire: 'AnnuaireScreen.tsx',
+      creatrice: 'CreatriceScreen.tsx',
       terrain: 'TerrainScreen.tsx',
       commerces: 'CommercesScreen.tsx',
       createurs: 'CreateursAdminScreen.tsx',
@@ -2190,40 +2202,56 @@ describe('l’annuaire des créateurs', () => {
     expect(screen.queryByText(/Lea Moreau/)).toBeNull();
   });
 
-  it('mène au profil public, le seul geste que l’annuaire propose', async () => {
-    // `profil_url` était servi par le serveur et absent du type de l'app : les
-    // pseudonymes s'affichaient sans mener nulle part. La planche v3 en fait le
-    // seul geste de l'écran — on sort du produit pour voir son travail.
+  it('mène à la fiche de la créatrice, et non plus hors du produit', async () => {
+    // **Le renversement du 2026-09-04.** La rangée était une ancre vers
+    // Instagram : le seul geste de l'écran sortait du produit, avant toute
+    // décision, et ce que l'abonnement achète restait derrière. Elle ouvre la
+    // fiche ; le lien sortant y a déménagé.
+    //
+    // L'assertion porte sur l'identifiant transmis et pas seulement sur le fait
+    // qu'on ait navigué : une rangée qui ouvrirait toujours la même créatrice —
+    // le premier de la liste, une constante — passerait un test qui se
+    // contenterait de compter les appels.
+    const ouvertes: string[] = [];
     await monter(
-      <AnnuaireScreen businessId="b1" />,
+      <AnnuaireScreen
+        businessId="b1"
+        onOuvrirLaCreatrice={(creatorId) => ouvertes.push(creatorId)}
+      />,
+      clientDe({
+        '/creators': annuaireDe([
+          CREATEUR_DE_L_ANNUAIRE,
+          { ...CREATEUR_DE_L_ANNUAIRE, creator_id: 'c2' },
+        ]),
+      }),
+      'merchant',
+    );
+    await waitFor(() => expect(screen.getByTestId('createur-c2')).toBeTruthy());
+
+    // **Un bouton et non un lien.** Le rôle de lien promettait ce qu'une ancre
+    // offre — clic milieu, nouvel onglet, copier l'adresse — et cette rangée ne
+    // mène plus hors du produit.
+    expect(screen.getByTestId('createur-c2').props.accessibilityRole).toBe('button');
+
+    await fireEvent.press(screen.getByTestId('createur-c2'));
+    expect(ouvertes).toEqual(['c2']);
+  });
+
+  it('n’ouvre plus le profil public depuis la rangée', async () => {
+    // **L'autre sens, et il ne se déduit pas du précédent.** Une rangée qui
+    // ferait les deux — naviguer *et* garder son ancre sortante — passerait le
+    // test ci-dessus sans rien avoir déménagé, et le salon continuerait de
+    // partir chez Instagram d'un clic milieu.
+    await monter(
+      <AnnuaireScreen businessId="b1" onOuvrirLaCreatrice={() => {}} />,
       clientDe({ '/creators': annuaireDe([CREATEUR_DE_L_ANNUAIRE]) }),
       'merchant',
     );
     await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
 
-    // **La ligne entière est la cible depuis la v13**, et rien d'autre dedans
-    // ne l'est : les deux glyphes de droite sont des marques.
-    const lien = screen.getByTestId('createur-c1');
-    expect(lien.props.accessibilityRole).toBe('link');
-  });
-
-  it('ne prétend pas mener quelque part quand il n’y a pas d’adresse', async () => {
-    // Un lien mort vaut moins qu'un texte : il apprend à ne plus cliquer.
-    const sansProfil = {
-      ...CREATEUR_DE_L_ANNUAIRE,
-      comptes: [{ ...CREATEUR_DE_L_ANNUAIRE.comptes[0], profil_url: null }],
-    };
-
-    await monter(
-      <AnnuaireScreen businessId="b1" />,
-      clientDe({ '/creators': annuaireDe([sansProfil]) }),
-      'merchant',
-    );
-    await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
-
-    // La ligne reste lisible, elle ne devient simplement pas pressable.
-    expect(screen.getByText('lea.mrl')).toBeTruthy();
-    expect(screen.getByTestId('createur-c1').props.accessibilityRole).toBeUndefined();
+    const rangee = screen.getByTestId('createur-c1');
+    expect(rangee.props.accessibilityRole).not.toBe('link');
+    expect(rangee.props.href).toBeUndefined();
   });
 
   it('montre le portrait, et garde son cadre quand il n’y en a pas', async () => {
@@ -2658,16 +2686,22 @@ describe('l’annuaire est en lecture seule', () => {
       'utf-8',
     );
 
-    // **Ce que la règle interdit, c'est d'agir sur une créatrice dans BIND** :
-    // un bouton, une invitation, un message. Elle n'interdit pas de sortir du
-    // produit pour aller voir son travail chez elle — c'est ce que la planche
-    // v3 appelle le lien de profil, et c'est le seul geste offert.
+    // **Trois gestes, et un seul est interdit.** La règle n'a jamais porté sur
+    // le mot « bouton » : elle porte sur le fait d'*agir sur une créatrice*
+    // dans BIND — inviter, contacter, écrire. Il faut donc les distinguer :
     //
-    // La version précédente cherchait `onPress` tout court. Elle attrapait donc
-    // le lien de profil au même titre qu'un bouton de contact, alors que les
-    // deux ne disent pas la même chose : l'un reste dedans, l'autre s'en va.
-    // Une garde qui confond les deux force à l'exempter, et une garde exemptée
-    // ne garde plus rien.
+    //   1. **sortir** — aller voir son travail chez elle, hors du produit ;
+    //   2. **ouvrir une fiche** — rester dedans, sur une lecture ;
+    //   3. **agir sur elle** — le seul que la règle refuse.
+    //
+    // La version d'avant n'en connaissait que deux, et exigeait que tout
+    // `onPress` soit un `Linking.openURL`. C'était juste tant que sortir était
+    // le seul geste ; ça a cessé de l'être le jour où la rangée a mené à une
+    // fiche. Une garde qui ne connaît que deux cas force à exempter le
+    // troisième — et une garde exemptée ne garde plus rien.
+    //
+    // Elle avait déjà été élargie une fois, de « pas d'`onPress` » à « pas
+    // d'`onPress` qui ne sorte pas » : la même correction, un cran plus tôt.
     // **Deux contrôles nommés, et aucun ne porte sur une créatrice.**
     //
     // Le premier mène aux offres : le mur intercepte le refus d'abonnement,
@@ -2699,25 +2733,51 @@ describe('l’annuaire est en lecture seule', () => {
     expect(source).toMatch(/testID="voir-plus"/);
     expect(source).toMatch(/annuaireDesCreateurs\(/);
 
-    // Et tout `onPress` de cet écran est un lien qui sort : autant de
-    // `Linking.openURL` que de `onPress`, et un `accessibilityRole="link"`
-    // pour chacun. Sans ce compte, la garde ci-dessus laisserait passer
-    // n'importe quelle action tant qu'elle évite le mot « bouton ».
+    // **Chaque `onPress` restant est l'un des deux gestes permis**, et la garde
+    // le vérifie en les comptant. Sans ce compte, tout ce qui précède
+    // laisserait passer n'importe quelle action tant qu'elle évite le mot
+    // « bouton ».
     const combien = (motif: RegExp) => (lisibles.match(motif) ?? []).length;
+    // Sortir du produit : `LienExterne` s'en charge, et il ne prend pas
+    // d'`onPress` — il prend une `url`. Ouvrir une fiche : un `onPress` qui
+    // appelle la fonction que l'écran reçoit pour ça, et rien d'autre.
     expect({
       onPress: combien(/onPress=/g),
-      sorties: combien(/Linking\.openURL/g),
-      // **Les deux écritures du rôle.** La forme littérale et la forme
-      // conditionnelle — `{profil ? 'link' : undefined}` — disent la même
-      // chose ; ne reconnaître que la première ferait rougir la garde sur une
-      // ligne qui ne prétend mener quelque part que lorsqu'elle le peut, ce
-      // qui est précisément ce qu'on lui demande.
-      liens: combien(/accessibilityRole=(?:"link"|\{[^}]*'link'[^}]*\})/g),
-    }).toEqual({
-      onPress: combien(/onPress=/g),
-      sorties: combien(/onPress=/g),
-      liens: combien(/onPress=/g),
-    });
+      ouvertures: combien(/onOuvrir\(createur\.creator_id\)/g),
+    }).toEqual({ onPress: 1, ouvertures: 1 });
+
+    // **Et ce que cette ouverture reçoit est un identifiant, pas un pouvoir.**
+    // La fonction vient de la navigation ; l'écran ne peut rien en faire
+    // d'autre que demander une fiche. Un `onPress` qui appellerait `api.`
+    // quelque chose serait une action, et c'est ce que la ligne suivante
+    // refuse.
+    expect(lisibles).not.toMatch(/onPress=\{[^}]*\bapi\./);
+  });
+
+  it('la fiche d’une créatrice n’agit pas sur elle non plus', () => {
+    // **La règle suit l'écran qu'on vient d'ouvrir.** Déplacer la lecture vers
+    // une fiche sans y déplacer la garde reviendrait à la lever : c'est
+    // désormais là que le salon regarde une créatrice, donc là qu'un bouton
+    // « contacter » aurait le plus de sens à écrire.
+    const { readFileSync } = require('fs') as typeof import('fs');
+    const { join } = require('path') as typeof import('path');
+    const source = readFileSync(
+      join(__dirname, '..', 'src', 'screens', 'CreatriceScreen.tsx'),
+      'utf-8',
+    );
+
+    for (const interdit of [/<Button/, /accessibilityRole="button"/, /onPress=/, /api\.\w*(?:nvit|ontact|essage)/]) {
+      expect({ interdit: String(interdit), present: interdit.test(source) }).toEqual({
+        interdit: String(interdit),
+        present: false,
+      });
+    }
+
+    // **Le lien sortant y est, et c'est pour ça que la fiche existe.** Sans
+    // cette ligne, une fiche qui ne mènerait plus nulle part passerait les
+    // interdits ci-dessus en ayant perdu le geste qu'on lui a confié.
+    expect(source).toMatch(/<LienExterne/);
+    expect(source).toMatch(/url=\{compte\.profil_url\}/);
   });
 
   it('et l’API ne lui en offre aucune', () => {

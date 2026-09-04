@@ -101,6 +101,11 @@ export const routes = {
   activerLeCommerce: (businessId: string) => chemin(`/business/${businessId}/activate`),
   mettreEnPauseLeCommerce: (businessId: string) => chemin(`/business/${businessId}/pause`),
   annuaireDesCreateurs: (businessId: string) => chemin(`/business/${businessId}/creators`),
+  // La fiche d'une créatrice, où la rangée de l'annuaire mène. Le lien vers
+  // Instagram y déménage : il était le seul geste de la liste, et il sortait
+  // du produit.
+  creatriceDeLAnnuaire: (businessId: string, creatorId: string) =>
+    chemin(`/business/${businessId}/creators/${creatorId}`),
   photosDuCommerce: (businessId: string) => chemin(`/business/${businessId}/photos`),
   // La carte du commerce. **Distincte de la galerie** : la galerie montre le
   // lieu, la carte se consulte. Même mécanisme, deux gestes différents.
@@ -261,6 +266,7 @@ export const METHODES: Record<keyof typeof routes, ('GET' | 'POST' | 'PATCH' | '
     activerLeCommerce: ['POST'],
     mettreEnPauseLeCommerce: ['POST'],
     annuaireDesCreateurs: ['GET'],
+    creatriceDeLAnnuaire: ['GET'],
     photosDuCommerce: ['GET', 'POST'],
     carteDuCommerce: ['GET', 'POST'],
     televerserUnePageDeCarte: ['POST'],

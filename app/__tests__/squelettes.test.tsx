@@ -33,6 +33,7 @@ import type { ReactNode } from 'react';
 import { ApiClient, ApiProvider } from '../src/api';
 import { I18nProvider } from '../src/i18n';
 import { AnnuaireScreen } from '../src/screens/AnnuaireScreen';
+import { CreatriceScreen } from '../src/screens/CreatriceScreen';
 import { CreneauxScreen } from '../src/screens/CreneauxScreen';
 import { FicheScreen } from '../src/screens/FicheScreen';
 import { HorairesScreen } from '../src/screens/HorairesScreen';
@@ -75,6 +76,13 @@ const CAS = [
     squelette: 'squelette-annuaire',
     forme: 'des lignes de créateurs',
     noeud: <AnnuaireScreen businessId="b1" />,
+  },
+  {
+    nom: 'creatrice',
+    role: 'merchant',
+    squelette: 'squelette-creatrice',
+    forme: 'un portrait, une bio, des réseaux',
+    noeud: <CreatriceScreen businessId="b1" creatorId="c1" onRetour={() => {}} />,
   },
   {
     nom: 'fiche',
@@ -121,6 +129,7 @@ const DOIVENT_AVOIR_LEUR_SQUELETTE = [
   'FilScreen.tsx',
   'AbonnementScreen.tsx',
   'AnnuaireScreen.tsx',
+  'CreatriceScreen.tsx',
   'CreateursAdminScreen.tsx',
   'ProfilScreen.tsx',
   'MesPublicationsScreen.tsx',
