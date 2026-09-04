@@ -36,7 +36,12 @@ import tokens from '../src/theme/tokens.json';
  * la moitié en silence — ce qui est exactement la façon dont ce défaut a vécu.
  */
 const ONGLETS: { ecran: string; cles: string[] }[] = [
-  { ecran: 'réservations', cles: ['parcours.ongletAVenir', 'parcours.ongletEnCours', 'parcours.ongletTerminees'] },
+  { ecran: 'réservations', cles: [
+      'parcours.ongletAVenir',
+      'parcours.ongletEnCours',
+      'parcours.ongletEnRevue',
+      'parcours.ongletTerminees',
+    ] },
   { ecran: 'publications', cles: ['commerce.filtreAControler', 'commerce.filtreApprouvee', 'commerce.filtreAttendue'] },
   { ecran: 'caisse', cles: ['redemption.scanTab', 'redemption.manualTab'] },
   { ecran: 'prestations du palier', cles: ['tiers.prestationsProches', 'tiers.prestationsToutes'] },
@@ -48,13 +53,80 @@ const MARGE_DE_L_ECRAN = 16;
 const MARGE_DE_LA_CELLULE = 8;
 
 /**
- * L'avance moyenne d'une capitale, en points, interlettrage compris.
+ * L'avance de chaque capitale, en points, interlettrage compris.
  *
- * Tirée des jetons plutôt que posée : le jour où l'échelle change, la garde
- * suit au lieu de mentir.
+ * **Mesurée dans un navigateur, pas calculée — et c'est tout le sujet.** La
+ * garde employait `longueur × avance moyenne`, avec une avance dérivée des
+ * jetons. Le modèle est faux **dans sa forme** : un caractère n'a pas de
+ * largeur fixe. Confronté au rendu réel de Plus Jakarta Sans, l'écart allait
+ * de −14 % à +9 % selon le mot — et il se trompait dans le sens dangereux.
+ *
+ * Deux exemples, mesurés le 2026-09-04 sur une cellule de 73,5 pt :
+ *
+ * - `Upcoming` rend **74,0 pt** quand la formule annonçait 65,8. La garde
+ *   l'aurait laissé passer alors qu'il déborde ;
+ * - `In review` rend **67,7 pt** quand la formule annonçait 74,0. La garde le
+ *   refusait alors qu'il tient.
+ *
+ * Autrement dit, elle acceptait un libellé coupé et en rejetait un bon. On
+ * s'apprêtait à raccourcir de l'espagnol contre un nombre que personne n'avait
+ * vérifié.
+ *
+ * **Régénérer** : rendre chaque caractère doublé puis simple dans un navigateur
+ * chargé de la police, et prendre la différence — un caractère isolé porte son
+ * interlettrage de queue, la paire donne l'avance qui s'accumule dans un mot.
+ * La table reproduit alors les largeurs mesurées à 0,4 pt près.
  */
-const AVANCE =
-  tokens.type.label.size * 0.62 + Number.parseFloat(tokens.type.label.tracking);
+const AVANCES: Record<string, number> = {
+  " ": 3.33,
+  "0": 9.28,
+  "1": 5.72,
+  "2": 7.98,
+  "3": 8.13,
+  "4": 8.5,
+  "5": 8.17,
+  "6": 8.02,
+  "7": 7.5,
+  "8": 8.34,
+  "9": 8.02,
+  "A": 9.02,
+  "B": 9.02,
+  "C": 9.95,
+  "D": 9.55,
+  "E": 8.02,
+  "F": 7.83,
+  "G": 10.34,
+  "H": 9.47,
+  "I": 4.39,
+  "J": 5.69,
+  "K": 8.78,
+  "L": 7.33,
+  "M": 11.02,
+  "N": 9.53,
+  "O": 11.06,
+  "P": 8.5,
+  "Q": 11.06,
+  "R": 8.59,
+  "S": 8.52,
+  "T": 7.25,
+  "U": 9.23,
+  "V": 8.91,
+  "W": 12.48,
+  "X": 8.44,
+  "Y": 8.53,
+  "Z": 7.73,
+  "\u00b7": 5.22,
+  "\u00c1": 9.02,
+  "\u00c9": 8.02,
+  "\u00cd": 4.39,
+  "\u00d1": 9.53,
+  "\u00d3": 11.06,
+  "\u00da": 9.23,
+  "\u00dc": 9.23,
+};
+
+/** Faute de mieux pour un caractère hors table : la plus large connue. */
+const AVANCE_INCONNUE = Math.max(...Object.values(AVANCES));
 
 const lire = (catalogue: Record<string, unknown>, cle: string): string => {
   const valeur = cle.split('.').reduce<unknown>((n, p) => (n as Record<string, unknown>)?.[p], catalogue);
@@ -62,7 +134,8 @@ const lire = (catalogue: Record<string, unknown>, cle: string): string => {
   return valeur;
 };
 
-const largeur = (texte: string) => texte.toUpperCase().length * AVANCE;
+const largeur = (texte: string) =>
+  [...texte.toUpperCase()].reduce((total, c) => total + (AVANCES[c] ?? AVANCE_INCONNUE), 0);
 
 describe('les libellés d’onglets tiennent dans les deux langues', () => {
   /**

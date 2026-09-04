@@ -85,11 +85,15 @@ test('une réservation confirmée mène à son code', async ({ page }) => {
   // **L'onglet d'abord, depuis la v7.** Les onglets suivent l'ordre de ce qu'on
   // doit faire : celui qui s'ouvre porte les contreparties à envoyer, dont le
   // geste mène à l'écran de preuve. Une réservation confirmée vit sous
-  // « Upcoming », et prendre le premier geste de l'écran ouvrait donc le bon
+  // « Booked », et prendre le premier geste de l'écran ouvrait donc le bon
   // bouton d'un autre parcours — un test vert qui aurait éprouvé autre chose.
-  // Par le rôle et non par le texte : l'onglet affiche « Upcoming · 3 », son
+  // Par le rôle et non par le texte : l'onglet affiche « Booked · 3 », son
   // compte compris, et un libellé exact n'y trouvait rien.
-  await page.getByRole('tab', { name: /Upcoming/ }).click();
+  // **« Booked » et non « Upcoming » depuis le quatrième onglet** : la cellule
+  // est passée de 103,3 à 73,5 points et `Upcoming` en rendait 74,0 — il
+  // débordait. La garde de largeur l'acceptait pourtant, sa formule se trompant
+  // de 11 % dans le sens dangereux.
+  await page.getByRole('tab', { name: /Booked/ }).click();
 
   const ouvrable = page
     .getByTestId('ecran-historique')

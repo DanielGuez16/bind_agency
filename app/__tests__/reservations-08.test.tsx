@@ -733,17 +733,21 @@ describe('l’onglet des terminées reçoit ce qui a été honoré', () => {
     expect(within(carte).queryByTestId('publie-r-annul')).toBeNull();
   });
 
-  it('demande bien les réservations closes au serveur', async () => {
+  it('demande bien son onglet au serveur, et non une liste de statuts', async () => {
     /**
      * **Le décor de cette classe ne pouvait pas l'attraper, et c'est une
      * mutation qui l'a dit.** `monter` répond les mêmes lignes quelle que soit
-     * la requête : retirer `closed` de l'onglet laissait donc les trois tests
-     * ci-dessus au vert, alors que l'onglet ne demandait plus au serveur la
-     * seule chose qu'on vient y chercher. C'est exactement le décor qu'une
-     * implémentation fausse satisfait.
+     * la requête : le contenu de l'onglet n'y est donc jamais éprouvé. Celui-ci
+     * regarde ce qui part sur le réseau.
      *
-     * Celui-ci regarde ce qui part sur le réseau, seul endroit où la liste de
-     * statuts de l'onglet est observable.
+     * **Ce qu'il vérifiait a changé de bord, il n'a pas disparu.** Il exigeait
+     * `status=closed` et `status=cancelled`, parce que le découpage vivait ici.
+     * Il vit maintenant au serveur — deux onglets partagent `consumed`, et
+     * seule la contrepartie les sépare. La question « les quatre fins sont-elles
+     * dans l'onglet des terminées » est donc posée côté API, par
+     * `test_les_onglets_couvrent_tous_les_statuts_de_reservation` et
+     * `test_l_onglet_des_terminees_porte_les_quatre_fins`. Ce qui reste ici est
+     * la moitié que seul le client peut mentir : demander le bon onglet.
      */
     const vues: string[] = [];
     const api = new ApiClient({
@@ -754,7 +758,11 @@ describe('l’onglet des terminées reçoit ce qui a été honoré', () => {
         return {
           ok: true,
           status: 200,
-          json: async () => ({ items: [], compteurs: {}, a_envoyer: 0 }),
+          json: async () => ({
+            items: [],
+            compteurs: {},
+            compteurs_par_onglet: { 'a-venir': 0, 'en-cours': 0, 'en-revue': 0, terminees: 0 },
+          }),
         } as Response;
       },
     });
@@ -770,10 +778,10 @@ describe('l’onglet des terminées reçoit ce qui a été honoré', () => {
 
     await waitFor(() => expect(vues.length).toBeGreaterThan(0));
     const appel = vues.find((u) => u.includes('/me/bookings')) ?? '';
-    expect(appel).toContain('status=closed');
-    // Et les trois fins malheureuses restent demandées : `closed` s'ajoute,
-    // il ne remplace pas.
-    expect(appel).toContain('status=cancelled');
+    expect(appel).toContain('onglet=terminees');
+    // Et surtout plus de liste de statuts : la laisser partirait en double du
+    // découpage serveur, et c'est le client qui gagnerait.
+    expect(appel).not.toContain('status=');
   });
 
   it('distingue un dossier fermé sans faute d’une annulation', async () => {

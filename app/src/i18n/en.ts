@@ -716,10 +716,11 @@ export const en = {
     historiqueTitre: 'Your bookings',
     historiqueVide: 'Nothing here yet.',
     prestationEtDuree: '{{prestation}} · {{minutes}} min',
-    ongletAVenir: 'Upcoming',
+    ongletAVenir: 'Booked',
     ongletEnCours: 'To send',
     ongletAEnvoyerAide: 'You have posted. Send your proof so the salon can check it.',
     reservationAcceptee: 'Accepted',
+    ongletEnRevue: 'In review',
     ongletTerminees: 'Done',
   },
   roles: {

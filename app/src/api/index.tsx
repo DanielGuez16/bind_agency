@@ -50,6 +50,7 @@ import type {
   JourneeDuCommerce,
   LigneDeFile,
   MotifQuiRevient,
+  OngletDesReservations,
   PlanAdministrateur,
   PlanSouscriptible,
   PlateformeConnectable,
@@ -255,14 +256,29 @@ export class Api {
   }
 
   mesReservations(
-    options: { statuts?: BookingStatus[]; avant?: string; limite?: number } = {},
+    options: {
+      statuts?: BookingStatus[];
+      /**
+       * Le découpage de l'écran des réservations, **tenu par le serveur**.
+       * « À envoyer » et « en revue » portent tous les deux `consumed` : seul
+       * le statut de la contrepartie les sépare, et `statuts` ne l'exprime pas.
+       */
+      onglet?: OngletDesReservations;
+      avant?: string;
+      limite?: number;
+    } = {},
     signal?: AbortSignal,
   ) {
     return this.client.request<HistoriqueDuCreateur>(routes.mesReservations(), {
-      // `status` répétable : un onglet « à venir » couvre `held` et
-      // `confirmed`, et deux appels obligeraient l'app à fusionner deux pages
-      // triées séparément.
-      query: { status: options.statuts, avant: options.avant, limite: options.limite },
+      // `status` reste répétable, et reste servi : deux appelants n'ont rien
+      // d'un onglet — « mes publications » veut `consumed` et `closed`, les
+      // réglages veulent tout l'historique.
+      query: {
+        status: options.statuts,
+        onglet: options.onglet,
+        avant: options.avant,
+        limite: options.limite,
+      },
       signal,
     });
   }

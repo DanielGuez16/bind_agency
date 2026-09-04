@@ -20,6 +20,7 @@ from app.models.enums import (
     Platform,
 )
 from app.schemas.support import BusinessSupportAccessRead
+from app.services.booking_history import OngletDuCreateur
 
 
 class ContrepartieBreveRead(BaseModel):
@@ -114,10 +115,11 @@ class HistoriqueDuCreateurRead(BaseModel):
     #: Tous les statuts sont présents, à zéro s'il le faut : l'app affiche ses
     #: onglets sans connaître la liste, et un onglet vide reste un onglet.
     compteurs: dict[BookingStatus, int]
-    #: Le badge de l'onglet « à envoyer » : ce qui attend un geste de la
-    #: créatrice, et rien d'autre. Voir le service — un dossier en contrôle est
-    #: `consumed` lui aussi, et n'attend personne de ce côté.
-    a_envoyer: int
+    #: Un compte par onglet, sur tout l'historique. **Nécessaire depuis qu'un
+    #: onglet n'est plus un ensemble de statuts** : « à envoyer » et « en revue »
+    #: portent tous les deux `consumed`, et un compte par statut les
+    #: additionnerait.
+    compteurs_par_onglet: dict[OngletDuCreateur, int]
 
 
 class CompteDeLaCreatriceRead(BaseModel):

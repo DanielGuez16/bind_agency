@@ -21,6 +21,7 @@ import {
   useApi,
   type BookingStatus,
   type HistoriqueDuCreateur,
+  type OngletDesReservations,
   type ReservationDuCreateur,
 } from '../api';
 import {
@@ -207,34 +208,26 @@ export function surfaceDe(
  * de vie mettait « à venir » en tête parce que c'est le début de l'histoire —
  * une raison de modèle, pas une raison de lecteur.
  */
-const ONGLETS: { cle: string; libelle: string; statuts: BookingStatus[] }[] = [
+const ONGLETS: { cle: OngletDesReservations; libelle: string }[] = [
   {
     cle: 'a-venir',
     libelle: 'parcours.ongletAVenir',
-    // `awaiting_business` est à venir, pas en cours : la place est tenue et le
-    // rendez-vous existe. Le ranger ailleurs le ferait disparaître de l'onglet
-    // où on le cherche, pendant les quelques heures qui comptent.
-    statuts: ['held', 'awaiting_business', 'confirmed'],
   },
   {
     cle: 'en-cours',
     libelle: 'parcours.ongletEnCours',
-    statuts: ['consumed'],
+  },
+  {
+    // **Le quatrième, et il découpe dans le troisième plutôt que de s'y
+    // ajouter.** Une preuve partie n'attend plus rien de la créatrice : elle se
+    // noyait parmi les dossiers qui appellent un geste, et le seul moyen de
+    // savoir lequel des deux on regardait était de lire la ligne entière.
+    cle: 'en-revue',
+    libelle: 'parcours.ongletEnRevue',
   },
   {
     cle: 'terminees',
     libelle: 'parcours.ongletTerminees',
-    // `expired`, `cancelled` et `no_show` sont des fins, pas des absences. Les
-    // omettre ferait disparaître de l'écran des réservations dont quelqu'un se
-    // souvient.
-    //
-    // **`closed` en tête, et c'est ce que l'onglet manquait.** Une prestation
-    // servie dont la publication a été acceptée est la seule chose qu'on vient
-    // vraiment chercher ici — et c'était précisément la seule qui n'y arrivait
-    // jamais, faute d'un état de sortie à `consumed`. L'onglet ne montrait donc
-    // que des fins malheureuses, et le badge « honorée » qu'il sait dessiner
-    // était du code que rien ne pouvait atteindre.
-    statuts: ['closed', 'cancelled', 'no_show', 'expired'],
   },
 ];
 
@@ -320,9 +313,13 @@ export function HistoriqueScreen({
     appliquer.current?.();
   }, [ongletDemande]);
 
-  const statuts = ONGLETS[index].statuts;
+  // **Le découpage est parti au serveur.** L'app envoyait une liste de
+  // `BookingStatus` ; ça ne pouvait plus marcher dès que deux onglets partagent
+  // `consumed` — seul le statut de la contrepartie les sépare, et il ne
+  // s'exprime pas dans ce paramètre.
+  const onglet = ONGLETS[index].cle;
   const requete = useRequete<HistoriqueDuCreateur>(
-    (signal) => api.mesReservations({ statuts }, signal),
+    (signal) => api.mesReservations({ onglet }, signal),
     { estVide: (vue) => vue.items.length === 0, dependances: [index] },
   );
 
@@ -333,7 +330,7 @@ export function HistoriqueScreen({
   // répondait à « combien sont consommées », le badge demande « combien
   // attendent quelque chose de moi » — et les deux divergent sur tout dossier
   // soumis et en cours de contrôle, où la créatrice ne peut rien faire. Voir
-  // `a_envoyer`, qui est calculé sur l'état de la contrepartie.
+  // le compte de l'onglet, qui est calculé sur l'état de la contrepartie.
   const compteurs = useMemo(() => {
     const source =
       requete.etat === 'pret'
@@ -341,8 +338,20 @@ export function HistoriqueScreen({
         : requete.etat === 'erreur' && requete.donnees
           ? requete.donnees
           : null;
+    // **Servi par onglet.** Un champ `a_envoyer` répondait déjà correctement —
+    // il excluait les dossiers en contrôle — mais il ne savait parler que d'un
+    // onglet, et il disait exactement ce que dit maintenant le compte de
+    // « à envoyer ». Deux définitions de la même chose finissent par diverger :
+    // il a été retiré. Un seul onglet porte un chiffre, voir `ONGLET_QUI_COMPTE`.
     return ONGLETS.map((onglet) =>
-      source === null || onglet.cle !== ONGLET_QUI_COMPTE ? undefined : source.a_envoyer,
+      source === null || onglet.cle !== ONGLET_QUI_COMPTE
+        ? undefined
+        : // **Absent vaut « pas de chiffre », jamais un écran blanc.** Le
+          // serveur le sert toujours ; une réponse partielle — une version
+          // antérieure, un double de test — ne doit pas coûter la liste, qui
+          // est ce qu'on est venu lire. Le badge est une décoration, la
+          // liste est le contenu.
+          source.compteurs_par_onglet?.[onglet.cle],
     );
   }, [requete]);
 
