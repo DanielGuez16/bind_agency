@@ -172,14 +172,14 @@ describe('le rayon se règle au kilomètre', () => {
 
     // Le doigt glisse : l'écran répond, le réseau se tait.
     await act(async () => {
-      fireEvent(curseur, 'valueChange', 32);
+      await fireEvent(curseur, 'valueChange', 32);
     });
     expect(screen.getByTestId('rayon-de-recherche-valeur')).toHaveTextContent(/32/);
     expect(appels.length).toBe(avant);
 
     // Il se lève : la requête part, avec le rayon en mètres.
     await act(async () => {
-      fireEvent(curseur, 'slidingComplete', 32);
+      await fireEvent(curseur, 'slidingComplete', 32);
     });
     await waitFor(() =>
       expect(appels.some((a) => a.url.includes('rayon_metres=32000'))).toBe(true),
