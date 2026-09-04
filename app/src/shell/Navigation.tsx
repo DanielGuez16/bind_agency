@@ -643,7 +643,11 @@ function PileDuProfil({ onVoirMesPaliers }: { onVoirMesPaliers: () => void }) {
             // à la réservation, et la réservation appartient au parcours : la
             // rendre depuis le profil enfermerait quelqu'un dans une pile qui
             // n'a pas de suite.
-            onOuvrirLeCommerce={() => {}}
+            //
+            // **Et la prop est donc absente, non pas vide.** Une fonction vide
+            // laissait la rangée pressable : elle répondait au doigt sans rien
+            // ouvrir, et annonçait un bouton à la lecture d'écran là où il n'y
+            // en a pas. Sans destination, la rangée n'est plus un bouton.
             onVoirMesPaliers={onVoirMesPaliers}
           />
         )}

@@ -7,6 +7,9 @@
  * un salon qui ne paraît plus n'est dans aucun fil, donc son favori n'aurait
  * **jamais** pu être retiré, et la liste se remplit une fois pour toutes.
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider, type Favori } from '../src/api';
@@ -64,6 +67,11 @@ async function monter(
    * mur, apprise deux fois.
    */
   patchSansReponse = false,
+  /**
+   * Sans destination : c'est le montage de la pile du profil, où la fiche
+   * n'est pas atteignable. La rangée doit alors cesser d'être un bouton.
+   */
+  sansOuverture = false,
 ) {
   const appels: { url: string; methode: string }[] = [];
   const ouvertures: string[] = [];
@@ -125,7 +133,9 @@ async function monter(
           <ApiProvider client={api}>
             <FavorisScreen
               onRetour={() => {}}
-              onOuvrirLeCommerce={(id) => ouvertures.push(id)}
+              onOuvrirLeCommerce={
+                sansOuverture ? undefined : (id) => ouvertures.push(id)
+              }
               onVoirMesPaliers={() => paliersOuverts.push(1)}
             />
           </ApiProvider>
@@ -405,4 +415,60 @@ describe('l’interrupteur compte ce à quoi il sert', () => {
 
     expect(screen.queryByTestId('avis-compte')).toBeNull();
   });
+});
+
+describe('la rangée ne répond au doigt que si elle mène quelque part', () => {
+  /** La rangée d'identité : la photo, le nom, le salon. */
+  const rangee = () => screen.getByTestId('favori-photo-i1').parent!;
+
+  it('depuis le fil elle ouvre le salon, et s’annonce comme un bouton', async () => {
+    const { ouvertures } = await monter([favori()]);
+    await waitFor(() => expect(screen.getByTestId('favori-i1')).toBeTruthy());
+
+    await fireEvent.press(rangee());
+    expect(ouvertures).toEqual(['b1']);
+  });
+
+  it('depuis le profil elle n’ouvre rien, donc elle n’est plus un bouton', async () => {
+    // **Le défaut : une fonction vide laissait la rangée pressable.** Elle
+    // répondait au doigt sans rien ouvrir — ce qui apprend à ne plus essayer —
+    // et annonçait un bouton à la lecture d'écran là où il n'y en a pas.
+    //
+    // **Le cœur, lui, reste pressable dans les deux cas** : retirer un favori
+    // ne dépend d'aucune destination, et une liste d'où l'on ne peut rien
+    // lâcher se remplit une fois pour toutes.
+    await monter([favori()], undefined, true, { prochain_palier: null }, false, true);
+    await waitFor(() => expect(screen.getByTestId('favori-i1')).toBeTruthy());
+
+    type Noeud = { props: Record<string, unknown>; parent: Noeud | null };
+    let noeud = rangee() as unknown as Noeud | null;
+    let annonceUnBouton = false;
+    while (noeud !== null) {
+      if (noeud.props?.accessibilityRole === 'button') annonceUnBouton = true;
+      if (noeud.props?.testID === 'favori-i1') break;
+      noeud = noeud.parent;
+    }
+    expect(annonceUnBouton).toBe(false);
+
+    expect(screen.getByTestId('favori-retirer-i1')).toBeTruthy();
+  });
+});
+
+it('et aucune pile ne passe un geste vide à la place de rien', () => {
+  // **La mutation qui a survécu au test du dessus.** Celui-ci éprouve le
+  // contrat du composant — sans `onOuvrir`, pas de bouton — mais rien
+  // n'empêchait une pile de repasser `() => {}`, qui redonne un bouton qui
+  // n'ouvre rien. C'est le défaut d'origine, et il tenait à une ligne de
+  // câblage qu'aucun test ne regardait.
+  //
+  // Les quatre écritures de la fonction vide, pas seulement celle qu'on avait
+  // sous les yeux : une garde qui n'attrape que sa propre forme laisse passer
+  // les trois autres.
+  const source = readFileSync(
+    join(__dirname, '..', 'src', 'shell', 'Navigation.tsx'),
+    'utf-8',
+  );
+
+  const vides = /onOuvrirLeCommerce=\{\s*\(\s*\)\s*=>\s*\{\s*\}\s*\}/g;
+  expect(source.match(vides)).toBeNull();
 });
