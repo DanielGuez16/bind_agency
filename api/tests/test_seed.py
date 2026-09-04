@@ -67,6 +67,7 @@ from app.seed import (
     verifier_la_cible,
 )
 from app.services import booking_history
+from app.services import collaboration as collaboration_service
 from tests.conftest import _maintenance_dsn
 
 #: Ce que le semis produit, **dérivé de lui** et non recopié.
@@ -2025,6 +2026,39 @@ async def test_aucune_demande_a_trancher_n_est_posee_dans_le_passe(
             "des demandes attendent une décision sur une heure trop proche : "
             "le produit refusera dès qu'elle sera dépassée, et elle le sera "
             f"pendant la démonstration : {[(n, str(q)) for n, q in passees]}"
+        )
+
+
+async def test_la_file_d_arbitrage_survit_a_la_nuit(seed_conn: AsyncConnection) -> None:
+    """**Elle se vidait douze heures après le semis, et personne ne le voyait.**
+
+    Un dossier arrive en revue humaine par trois demandes de nouvelle
+    soumission ; la troisième pose une échéance à `collaboration_resubmit_
+    seconds` — douze heures — sur un statut que `EXPIRABLES` contient. Le
+    balayage les faisait donc tomber en `unfulfilled`, statut que
+    `file_de_revue_humaine` exclut : file pleine une demi-journée, vide ensuite.
+
+    **Vingt-quatre heures est le seuil qui sépare les deux implémentations**, et
+    c'est pour ça qu'il est là plutôt qu'un autre. Le défaut donne douze heures,
+    la correction trente jours ; un seuil posé sous douze heures serait franchi
+    par les deux et ce test ne prouverait rien. Il dit aussi ce qui compte
+    vraiment : la file doit tenir plus longtemps que l'écart entre deux semis
+    nocturnes.
+    """
+    factory = async_sessionmaker(bind=seed_conn, expire_on_commit=False)
+    async with factory() as session:
+        file = await collaboration_service.file_de_revue_humaine(session)
+        assert file, "aucun dossier d'arbitrage : la file est vide dès le semis"
+
+        maintenant = datetime.now(UTC)
+        trop_courtes = [
+            ligne.deadline_at
+            for ligne in file
+            if ligne.deadline_at - maintenant <= timedelta(hours=24)
+        ]
+        assert trop_courtes == [], (
+            f"{len(trop_courtes)} dossier(s) d'arbitrage expirent dans moins de 24 h : "
+            "la file sera vide demain matin"
         )
 
 

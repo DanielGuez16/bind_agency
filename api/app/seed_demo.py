@@ -2208,6 +2208,51 @@ async def vieillir_un_releve(session: AsyncSession, createurs: dict) -> None:
     )
 
 
+#: De combien on éloigne l'échéance des dossiers d'arbitrage. Voir
+#: `eloigner_les_echeances_d_arbitrage`.
+#:
+#: Trente jours, et le nombre n'a rien de fin : ce qui compte est qu'il dépasse
+#: franchement l'écart entre deux semis. Une valeur juste au-dessus — deux
+#: jours, une semaine — rouvrirait le même défaut le jour où le semis
+#: automatique s'arrête sans que personne s'en aperçoive.
+ECHEANCE_D_ARBITRAGE = timedelta(days=30)
+
+
+async def eloigner_les_echeances_d_arbitrage(session: AsyncSession) -> int:
+    """Repousse l'échéance des dossiers en revue humaine. **Sinon la file se vide.**
+
+    Une exception nommée, comme `vieillir_un_releve` juste au-dessus, et pour la
+    même raison : aucun service ne sait déplacer le temps, et le seul autre
+    moyen serait d'attendre.
+
+    **Le défaut qu'elle répare.** Un dossier arrive en revue humaine par trois
+    demandes de nouvelle soumission, et la troisième pose une échéance à
+    `collaboration_resubmit_seconds` — douze heures. Ce statut,
+    `resubmit_requested`, est dans `EXPIRABLES` : douze heures après le semis, le
+    balayage des échéances fait tomber les quatre dossiers en `unfulfilled`, et
+    `file_de_revue_humaine` exclut ce statut. La file d'arbitrage était donc
+    pleine une demi-journée puis vide pour toujours, et personne ne pouvait la
+    montrer sans rejouer les scénarios à la main.
+
+    **On repousse plutôt qu'on ne rejoue.** Le compteur de tentatives, le drapeau
+    de revue humaine et les trois motifs sont produits par les services, comme le
+    reste du jeu ; seule l'échéance est déplacée, et c'est le seul champ qu'aucun
+    service ne peut poser où on en a besoin.
+    """
+    resultat = await session.execute(
+        sa.update(Collaboration)
+        .where(
+            Collaboration.needs_human_review.is_(True),
+            # Les mêmes statuts que `collaboration.EXPIRABLES`, et pour cause :
+            # ce sont exactement ceux que le balayage fait tomber. Un dossier
+            # déjà approuvé ou déjà tombé n'a pas d'échéance à défendre.
+            Collaboration.status.in_(collaboration_service.EXPIRABLES),
+        )
+        .values(deadline_at=datetime.now(UTC) + ECHEANCE_D_ARBITRAGE)
+    )
+    return resultat.rowcount
+
+
 async def enrichir(session: AsyncSession) -> ResumeDemo:
     """Tout l'enrichissement, dans l'ordre où les dépendances l'imposent."""
     photos = await poser_les_photos(session)
@@ -2222,6 +2267,9 @@ async def enrichir(session: AsyncSession) -> ResumeDemo:
     # sans aucune histoire — un obstacle sans passé ne s'explique pas. La
     # dégradation se constate donc sur un compte qui a vécu.
     await marquer_les_etats_de_compte(session, createurs)
+    # **Après les parcours, forcément** : les dossiers d'arbitrage n'existent
+    # qu'une fois menés jusqu'à leur troisième demande de nouvelle soumission.
+    await eloigner_les_echeances_d_arbitrage(session)
     await recalculer_les_scores(session, createurs)
     await vieillir_un_releve(session, createurs)
     favoris = await poser_les_favoris(session, createurs)

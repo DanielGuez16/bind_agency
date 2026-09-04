@@ -11296,3 +11296,96 @@ mois — restait le téléchargement. Sans cette contre-épreuve, deux PR auraie
 `npx serve` sans `--yes` : le binaire vient de `node_modules`, que
 `setup-node` restaure déjà de son cache. Vérifié en local — le serveur répond
 200 en deux secondes, sans aucun appel au registre.
+---
+
+## 2026-09-03 — Le semis de nuit, et l'échéance d'arbitrage éloignée par le jeu lui-même
+
+**La file d'arbitrage se vide douze heures après chaque semis, et la cause est
+un délai de configuration, pas un défaut.** Mesuré sur la base plutôt que
+déduit : les quatre dossiers `needs_human_review` du jeu de démonstration sont
+en `resubmit_requested` avec une échéance à 11 h 58 du moment de la lecture —
+c'est-à-dire `COLLABORATION_RESUBMIT_SECONDS`, douze heures, posé par
+`demander_une_nouvelle_soumission` au troisième passage. `EXPIRABLES` contient
+`resubmit_requested` : le balayage des échéances les fait donc tomber en
+`unfulfilled`, et `file_de_revue_humaine` exclut ce statut. La file est pleine
+pendant douze heures, puis vide pour toujours.
+
+**Deux corrections, et elles ne se remplacent pas.** L'une remplit la file,
+l'autre rafraîchit tout le reste : prendre la seconde seule laissait la file se
+vider entre deux semis, prendre la première seule laissait le jeu vieillir sans
+jamais repartir.
+
+**1. Le jeu de données éloigne lui-même l'échéance de ses dossiers
+d'arbitrage.** `eloigner_les_echeances_d_arbitrage` la porte à trente jours, sur
+les seules lignes `needs_human_review` dont le statut est dans `EXPIRABLES` — et
+cette liste est **importée** de `collaboration.EXPIRABLES`, jamais recopiée,
+parce que la propriété défendue est exactement « ce que le balayage ferait
+tomber ». C'est une exception nommée, comme `vieillir_un_releve` juste
+au-dessus : aucun service ne sait déplacer le temps, et le seul autre moyen
+serait d'attendre. Le compteur de tentatives, le drapeau de revue humaine et les
+trois motifs restent produits par les services, comme le reste du jeu.
+
+Trente jours n'a rien de fin : ce qui compte est que le nombre dépasse
+franchement l'écart entre deux semis. Une valeur juste au-dessus — deux jours,
+une semaine — rouvrirait le même défaut le jour où le semis automatique
+s'arrêterait sans que personne s'en aperçoive.
+
+**2. Le semis automatique est nocturne, et non périodique.** `DEMO_RESEED_HOUR`
+porte une heure locale de Miami — 4 chez Render — au lieu d'une période. Une
+période tombe à une heure différente chaque jour, donc finit mécaniquement par
+tomber en pleine démonstration ; une heure de nuit tombe toujours quand personne
+ne regarde. C'est ce qui rend acceptable ce que ce semis coûte.
+
+**Le démarrage ne sème pas, et ne fait pas non plus sauter une nuit.**
+`_jour_deja_seme` pose le jour en cours comme déjà semé si son heure est passée,
+la veille sinon. Les deux moitiés divergent et comptent : poser « aujourd'hui »
+dans les deux cas ferait attendre vingt-cinq heures à un service redémarré à
+trois heures du matin ; poser « la veille » dans les deux ferait table rase dans
+la minute à chaque fusion sur `main`, c'est-à-dire en plein jour. C'est le seul
+endroit du dispositif où une erreur détruit des données au mauvais moment, d'où
+deux cas de test qui se contredisent plutôt qu'un seul qui passerait sur les
+deux implémentations.
+
+**Un semis automatique écrase tout, sans alternative, et c'est la seule réponse
+honnête à « est-ce que ça consomme ce que quelqu'un manipulait ».**
+`seed.reset_schema()` exécute `TABLE_RASE`, qui `DROP TABLE ... CASCADE` sur
+chaque table de `public` non rattachée à une extension — trente-sept sur la base
+locale, `spatial_ref_sys` de PostGIS exceptée. Compté avant d'affirmer :
+`app_user` 27 lignes, `booking` 248, `collaboration` 51, `creator_favorite` 5,
+toutes supprimées. Il n'existe aucun mode partiel, aucun `ON CONFLICT`, aucune
+notion de « ce qui a été ajouté depuis » : le jeu de données est écrit sur une
+base neuve, c'est ce qui le rend rejouable, et c'est exactement ce qui le rend
+destructeur. S'y ajoute une fenêtre d'une minute où l'application ne répond plus
+rien d'utile — les tables sont supprimées, les migrations tournent — et où les
+jetons d'accès en circulation désignent des comptes qui n'existent plus.
+
+**Le coût est donc accepté, pas évité — et c'est l'heure qui le rend
+acceptable.** Le défaut du code reste inerte : `demo_reseed_hour` vaut `None`,
+et `.env.example` la laisse vide. Un défaut « raisonnable » aurait été emporté
+par tout environnement neuf sans que personne ne le décide. Seul `render.yaml`
+la pose à 4, pour la démonstration et pour elle seule.
+
+**Le semis vit dans la boucle du worker, pas dans un job de la file, et ce n'est
+pas un choix de style.** Un traitement tourne dans la transaction qui tient le
+verrou de réclamation de sa propre ligne de `job` ; `TABLE_RASE` demande un
+verrou exclusif sur cette même table. Le job attendrait sa propre transaction,
+indéfiniment, et la boucle serait morte sans rien dire. Les vérifications
+reprises sont celles de `scripts.deploiement`, dans le même ordre :
+`verifier_la_cible` d'abord — un refus après table rase donnerait le même
+message sur une base déjà détruite —, puis les deux compartiments d'objets,
+parce que le semis y dépose des photos et échouerait *après* avoir effacé.
+
+**`SEED_DATABASE_NAME` entre chez le worker, où un commentaire disait « il ne
+sème pas ».** Elle ne déclenche rien : elle fait que l'activation échoue sur une
+décision et non sur « SEED_DATABASE_NAME doit nommer explicitement la base ».
+
+**Ce que le dépôt partagé a coûté ce jour-là, et qui n'est pas anecdotique.**
+Trois sessions travaillaient dans le même répertoire. Un `git add -A` a happé le
+fichier de travail d'une voisine dans un commit qui n'avait rien à voir ; sorti
+à la main, mais rien ne l'aurait dit. Et la base de test est partagée : la suite
+d'à côté supprimait `bind_test_gw0` pendant que la mienne s'y connectait, ce qui
+ressort en `AdminShutdown` ou en « database does not exist » sur du code qui n'a
+pas bougé — un diagnostic qu'on ne trouve qu'en comptant les processus `pytest`.
+La règle qui en sort tient en une ligne : **ajouter les fichiers par leur
+chemin, jamais `-A`**, et lire un échec de base comme une collision avant de le
+lire comme un défaut.

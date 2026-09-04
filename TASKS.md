@@ -3437,6 +3437,39 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `createurs_qui_peuvent_reserver` et `confirmation_jours` sont retirés de la
       vue d'activation ; la portée reste servie par l'annuaire, qui en a l'usage.*
 
+- [x] **La file d'arbitrage ne se vide plus : échéance éloignée, et semis de nuit**
+      *La file se vidait douze heures après chaque semis, et la cause est
+      mesurée sur la base et non déduite : les quatre dossiers
+      `needs_human_review` étaient en `resubmit_requested` avec une échéance à
+      douze heures — `COLLABORATION_RESUBMIT_SECONDS`, posée par
+      `demander_une_nouvelle_soumission` au troisième passage. Ce statut est
+      dans `EXPIRABLES`, le balayage le faisait tomber en `unfulfilled`, et
+      `file_de_revue_humaine` exclut ce statut.*
+
+      ***Les deux corrections, pas l'une ou l'autre.** L'une remplit la file,
+      l'autre rafraîchit tout le reste ; seule, aucune ne suffit.*
+
+      ***Le jeu éloigne lui-même l'échéance.**
+      `eloigner_les_echeances_d_arbitrage` la porte à trente jours sur les
+      lignes `needs_human_review` dont le statut est dans `EXPIRABLES` — liste
+      importée du service, jamais recopiée. Exception nommée, comme
+      `vieillir_un_releve` : aucun service ne sait déplacer le temps. La file est
+      pleine dès la fin du semis, sans rejouer aucun scénario à la main.*
+
+      ***Et le semis se replante une fois par nuit**, à 4 h heure de Miami :
+      `DEMO_RESEED_HOUR`, lu par la boucle de `bind-worker-demo`, aucun service
+      neuf. Une heure et non une période — une période tombe à une heure
+      différente chaque jour et finit par tomber en pleine démonstration. Dans la
+      boucle et non dans un job : un traitement tient le verrou de sa propre
+      ligne de `job`, et `TABLE_RASE` demande un verrou exclusif sur cette table.*
+
+      ***Ce que ça coûte, su et accepté** : `reset_schema` supprime les
+      trente-sept tables — 27 comptes, 248 réservations, 51 contreparties,
+      5 favoris comptés avant de l'affirmer — et il n'existe aucun mode partiel.
+      S'y ajoute une minute où l'application ne répond plus rien d'utile, et les
+      jetons en circulation qui désignent des comptes disparus. À 4 h, personne
+      ne teste : c'est l'heure qui rend le coût acceptable, pas sa réduction.*
+
 - [x] **Le jeu de démonstration raconte quelque chose**
       *Il montrait une journée pauvre : une ligne par salon, des demandes
       posées derrière nous qu'aucun bouton ne pouvait trancher, une série
