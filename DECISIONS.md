@@ -11650,3 +11650,50 @@ point de divergence plutôt que supposer `origin/main`.** Deux remèdes
 voisins pour deux pièges voisins — assez proches pour qu'une session les
 ait confondus ce soir, et ait annoncé dans `CLAUDE.md` un `rebase --onto`
 qui ne s'y trouve pas.
+
+## 2026-09-04 — La bio d'une créatrice s'affiche, et l'objection qui la retenait reste vraie
+
+**Renversement explicite.** `champs-servis.test.ts` portait
+`CreateurDeLAnnuaire.bio` en « à instruire » depuis le contrat
+commerce-scopé, avec une objection précise : la bio est du **texte
+libre**, et le produit a déjà constaté qu'un champ libre peut porter un
+pseudonyme — donc une adresse de contact hors BIND, donc un
+contournement de la paroi payante que l'abonnement existe pour tenir.
+La direction envisagée était le **retrait de la réponse**, pas
+l'affichage.
+
+**Elle s'affiche quand même, et l'objection n'est pas réfutée : elle est
+payée.** Ce qui a tranché est ce que la rangée d'annuaire disait sans
+elle — un pseudonyme, une ville, une distance. De quoi **reconnaître**
+quelqu'un dont on a déjà entendu parler ; rien pour **choisir** entre
+deux personnes qu'on découvre. Or choisir est la seule chose que cet
+écran sert à faire, et c'est ce qu'un salon paie.
+
+Le contournement reste possible et n'est pas mitigé ici. Ce qui rend le
+coût acceptable : il existe déjà par le pseudonyme lui-même, que
+l'annuaire affiche depuis toujours et qui suffit à retrouver quelqu'un
+sur sa plateforme. La bio n'ouvre pas une porte fermée, elle élargit une
+porte ouverte.
+
+**Ce que ça a révélé, et qui était le vrai défaut.** La route
+`PATCH /me/profile` existe depuis la création du profil, avec onze tests
+derrière — et **aucun client ne l'appelait**. `monProfil` était déclarée
+dans `app/src/api/routes.ts` sans méthode d'`Api`, donc sans écran, donc
+sans données : `bio` et `city` étaient **nulles pour toutes les
+créatrices**, jeu de démonstration compris. Afficher la bio sans
+construire l'écran de saisie n'aurait donc rien affiché du tout.
+
+Le chantier réel n'était pas « rendre un champ servi », c'était « fermer
+un circuit ouvert aux deux bouts ». La garde `routes-sans-appelant` ne
+pouvait pas le voir : elle inspecte les **méthodes** d'`Api`, pas les
+entrées de `routes.ts`, et une route déclarée sans méthode lui est
+invisible. C'est un angle mort connu de plus, du même genre que les
+homonymies textuelles de `champs-servis`.
+
+**Le formulaire vit dans `screens/reglages/` et non en `*Screen.tsx`.**
+Cinq gardes de registre — couverture des écrans, quatre états, blocs,
+squelettes, sélecteurs — s'appliquent au premier niveau de `screens/` et
+ne sont pas récursives. Un sous-composant de réglages y échappe
+légitimement : il n'est pas un écran, il n'a ni route ni retour, et
+l'inscrire aux cinq registres aurait décrit une navigation qui n'existe
+pas.
