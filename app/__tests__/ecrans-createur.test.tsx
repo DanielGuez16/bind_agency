@@ -774,7 +774,7 @@ describe('historique', () => {
         '/me/bookings': {
           items: [RESERVATION],
           compteurs: { ...COMPTEURS_VIDES, confirmed: 1, held: 2, cancelled: 4, consumed: 7 },
-          a_envoyer: 2,
+          compteurs_par_onglet: { 'a-venir': 0, 'en-cours': 2, 'en-revue': 0, terminees: 0 },
         },
       }),
     );

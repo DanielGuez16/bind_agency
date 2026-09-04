@@ -621,9 +621,10 @@ export const es: Catalogue = {
     historiqueVide: 'Todavía no hay nada.',
     prestationEtDuree: '{{prestation}} · {{minutes}} min',
     ongletAVenir: 'Próximas',
-    ongletEnCours: 'Por enviar',
+    ongletEnCours: 'A enviar',
     ongletAEnvoyerAide: 'Ya has publicado. Envía tu prueba para que el negocio pueda comprobarla.',
     reservationAcceptee: 'Aceptada',
+    ongletEnRevue: 'Revisión',
     ongletTerminees: 'Hechas',
   },
   roles: {

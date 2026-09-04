@@ -851,21 +851,21 @@ export type ReservationDuCreateur = {
   contrepartie: ContrepartieBreve | null;
 };
 
+/** Les quatre onglets de l'écran des réservations, nommés par le serveur. */
+export type OngletDesReservations = 'a-venir' | 'en-cours' | 'en-revue' | 'terminees';
+
 export type HistoriqueDuCreateur = {
   items: ReservationDuCreateur[];
   /** Tous les statuts, à zéro s'il le faut, calculés sur tout l'historique. */
   compteurs: Record<BookingStatus, number>;
   /**
-   * Le badge de l'onglet « à envoyer » : **ce qui attend un geste de la
-   * créatrice**, et rien d'autre.
+   * Un compte par onglet, sur tout l'historique.
    *
-   * **Servi, et non sommé depuis `compteurs`.** L'écran additionnait les
-   * statuts de l'onglet, ce qui répondait à une autre question : une
-   * publication soumise et en cours de contrôle est `consumed` elle aussi, et
-   * n'attend personne de ce côté. Le badge réclamait donc une action sur des
-   * dossiers où elle ne peut rien faire.
+   * **Nécessaire depuis qu'un onglet n'est plus un ensemble de statuts** :
+   * « à envoyer » et « en revue » portent tous les deux `consumed`, et
+   * `compteurs`, groupé par statut, les additionnerait.
    */
-  a_envoyer: number;
+  compteurs_par_onglet: Record<OngletDesReservations, number>;
 };
 
 /**

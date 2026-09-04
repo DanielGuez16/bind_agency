@@ -1386,6 +1386,34 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       ***Le test qui annonçait sa propre chute n'est pas tombé.*** *Son décor
       était casté et ne portait pas `business_name` : il passait avant comme
       après. Décor corrigé en même temps que le code. Cinq mutations vérifiées.*
+- [x] **C7 — un quatrième onglet, « in review », et le découpage passe au serveur**
+      *« À envoyer » et « en revue » portent tous les deux `consumed` : seul le
+      statut de la contrepartie les sépare, et le paramètre `status` que l'app
+      envoyait ne sait pas l'exprimer. Le mapping vit désormais au serveur, sur
+      le motif de `FiltreDeContrepartie` — la créatrice était le seul des deux
+      bords à ne pas l'avoir. **Une table de prédicats et non de statuts** : la
+      jointure sur la contrepartie est externe, et deux onglets sur quatre n'ont
+      aucune contrainte de ce côté.*
+
+      ***« À envoyer » se définit par soustraction**, ce qui garantit la
+      couverture des huit `BookingStatus` — la contrainte du 2026-08-16. Un test
+      l'éprouve sur les statuts, pas sur les prédicats. `status` survit pour les
+      deux appelants qui ne sont pas des onglets. `a_envoyer` est retiré : il
+      disait ce que dit maintenant le compte de son onglet.*
+
+      ***La garde de largeur était fausse, et c'est la trouvaille du chantier.***
+      *Sa formule `longueur × avance moyenne` n'avait jamais rencontré un rendu.
+      Mesurée : l'écart va de −14 % à +9 % **et change de signe**, donc le modèle
+      est faux dans sa forme. Elle acceptait `Upcoming` (74,0 pt rendus, coupé)
+      et refusait `In review` (67,7 pt, bon). Le vrai coupable n'était pas
+      l'espagnol. Table d'avances mesurée caractère par caractère, exacte à
+      0,4 pt. Libellés finaux : `Booked`/`Próximas`, `To send`/`A enviar`,
+      `In review`/`Revisión`, `Done`/`Hechas`.*
+
+      ***L'arbitrage du 2026-08-17 est renversé en place***, sous l'entrée
+      d'origine : « des mots pour la seconde » a tenu six semaines sans suffire.
+      `attenteDe` n'est pas retirée — elle devient la définition serveur du
+      quatrième onglet.*
 
 - [x] **La suite en parallèle** — 651 s à 300 s, mesuré
       *`pytest-xdist` avec `--dist loadgroup`. Les deux tests de concurrence
@@ -3176,6 +3204,11 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       ***Un écart écrit sur le libellé.*** *La planche dit « Waiting on you » ;
       la garde des libellés courts le refuse — 103 points par cellule sur trois
       onglets. « To do » dit la même chose et tient.*
+      ***Les deux nombres de ce paragraphe ont vieilli, le 2026-09-04.** La
+      cellule fait **73,5 points** depuis que l'écran porte quatre onglets, et
+      la formule qui donnait 103 s'est révélée fausse dans sa forme — voir
+      `DECISIONS.md`. `Upcoming` est devenu `Booked` pour cette raison : il
+      rendait 74,0 points là où la formule en annonçait 65,8.*
       *Deux mutations, les deux tombent. Un décor corrigé au passage : « confirmée
       sans contrepartie » servait de cas « sans geste », alors que c'est
       précisément le cas qui en a un depuis cette passe. Le vrai cas sans geste
