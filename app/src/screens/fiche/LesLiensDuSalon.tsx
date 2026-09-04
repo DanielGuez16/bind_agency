@@ -10,9 +10,9 @@
  * n'est nulle part », ce qui est faux : elles diraient seulement qu'il ne l'a
  * pas écrit.
  */
-import { Linking, Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
-import { Icone, Texte, type NomIcone } from '../../components';
+import { Icone, LienExterne, Texte, type NomIcone } from '../../components';
 import { useI18n } from '../../i18n';
 
 type Lien = { cle: string; url: string; icone: NomIcone; libelle: string };
@@ -77,24 +77,18 @@ export function LesLiensDuSalon({
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }} testID={testID}>
       {lignes.map((ligne) => (
-        <Pressable
+        <LienExterne
           key={ligne.cle}
-          accessibilityRole="link"
+          url={ligne.url}
           accessibilityLabel={ligne.libelle}
-          onPress={() => void Linking.openURL(ligne.url)}
           testID={`${testID}-${ligne.cle}`}
-          style={({ pressed }) => ({
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 6,
-            opacity: pressed ? 0.7 : 1,
-          })}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
         >
           <Icone nom={ligne.icone} couleur="brand.700" taille={16} />
           <Texte variante="type.caption" couleur="brand.700">
             {ligne.libelle}
           </Texte>
-        </Pressable>
+        </LienExterne>
       ))}
     </View>
   );

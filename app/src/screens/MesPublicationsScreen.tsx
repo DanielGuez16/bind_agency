@@ -25,10 +25,18 @@
  * lien.
  */
 import { useEffect, useState } from 'react';
-import { Linking, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useApi, type BookingStatus, type ReservationDuCreateur } from '../api';
-import { EmptyState, Icone, MediaFallback, Photo, SkeletonLignes, Texte } from '../components';
+import {
+  EmptyState,
+  Icone,
+  LienExterne,
+  MediaFallback,
+  Photo,
+  SkeletonLignes,
+  Texte,
+} from '../components';
 import { formatDate } from '../format';
 import { useI18n } from '../i18n';
 import { radius, useColors } from '../theme';
@@ -158,15 +166,13 @@ function Publication({ item }: { item: ReservationDuCreateur }) {
   if (!lien) return ligne;
 
   return (
-    <Pressable
-      accessibilityRole="link"
+    <LienExterne
+      url={lien}
       accessibilityLabel={t('profil.publicationOuvrir', { prestation: item.item_name })}
-      onPress={() => void Linking.openURL(lien)}
       testID={`publication-${item.booking_id}-ouvrir`}
-      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
     >
       {ligne}
-    </Pressable>
+    </LienExterne>
   );
 }
 

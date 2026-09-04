@@ -11452,6 +11452,7 @@ elle, là où un nom fixe était repris au passage suivant. La commande de ramas
 est dans la docstring d'`empreinte_de_l_execution`. C'est le prix de l'isolement,
 et il est plus bas que trois quarts d'heure de diagnostic sur un défaut qui
 n'existe pas.
+
 ## 2026-09-03 — Une borne de largeur ne se vérifie pas contre elle-même
 
 Rebecca a rapporté trois défauts sur l'administration — « barre de

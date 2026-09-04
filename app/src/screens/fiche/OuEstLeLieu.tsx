@@ -17,9 +17,9 @@
  * à l'instant où l'on regarde ; la demander à la fiche la figerait à la
  * position du chargement, et l'écran est ouvert longtemps.
  */
-import { Linking, Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
-import { Icone, Texte } from '../../components';
+import { Icone, LienExterne, Texte } from '../../components';
 import { formatDistance } from '../../format';
 import { useI18n } from '../../i18n';
 import { elevationDeCarte, radius, useColors } from '../../theme';
@@ -127,12 +127,11 @@ export function OuEstLeLieu({
           maintenant quarante-huit points de haut, pleine largeur, sur un aplat
           de marque — la cible d'un pouce, sur l'écran qu'on regarde en
           marchant. */}
-      <Pressable
-        accessibilityRole="link"
+      <LienExterne
+        url={adresseDuPlan(lieu, nom)}
         accessibilityLabel={t('parcours.ouEstLeLieuOuvrir')}
-        onPress={() => void Linking.openURL(adresseDuPlan(lieu, nom))}
         testID={`${testID}-ouvrir`}
-        style={({ pressed }) => ({
+        style={{
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
@@ -141,14 +140,13 @@ export function OuEstLeLieu({
           paddingHorizontal: 16,
           borderRadius: radius['radius.md'],
           backgroundColor: c['brand.100'],
-          opacity: pressed ? 0.7 : 1,
-        })}
+        }}
       >
         <Icone nom="lieu" couleur="brand.900" taille={20} />
         <Texte variante="type.bodyStrong" couleur="brand.900">
           {t('parcours.ouEstLeLieuOuvrir')}
         </Texte>
-      </Pressable>
+      </LienExterne>
     </View>
   );
 }
