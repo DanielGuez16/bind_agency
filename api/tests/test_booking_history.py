@@ -1150,9 +1150,7 @@ async def test_une_preuve_video_ne_promet_pas_d_image(session: AsyncSession) -> 
     #    plus, et aucun service ne sait le fabriquer.
     ligne, elle = await publication_de(b"\x89PNG\r\n\x1a\n une autre")
     await session.execute(
-        sa.update(Proof)
-        .where(Proof.collaboration_id == ligne.id)
-        .values(media_content_type=None)
+        sa.update(Proof).where(Proof.collaboration_id == ligne.id).values(media_content_type=None)
     )
     await session.flush()
     ancienne = await relire(elle)
