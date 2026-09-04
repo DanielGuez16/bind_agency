@@ -13,7 +13,7 @@
   "booking.cancelledByBusiness.body": "Hola {creator}:\n\n{business} tuvo que cancelar tu reserva de {item}{quand_phrase}.\n\nLo que indicaron: {motif}\n\nEsto viene de su lado, no del tuyo: tu puntuación de fiabilidad queda intacta. El horario vuelve a estar libre si lo reabren.\n",
   "booking.cancelledByBusiness.cta": "Buscar otro hueco",
   "booking.cancelledByBusiness.subject": "{business} tuvo que cancelar tu reserva",
-  "booking.declined.body": "Hola {creator}:\n\n{business} no pudo aceptar tu reserva de {item}{quand_phrase}.\n\nLo que indicaron: {motif}\n\nNada cambia de tu lado: tus niveles y tu fiabilidad quedan intactos. Otros salones están abiertos para ti ahora mismo.\n",
+  "booking.declined.body": "Hola {creator}:\n\n{business} no pudo aceptar tu reserva de {item}{quand_phrase}.\n\nLo que indicaron: {motif}\n\nNada cambia de tu lado: tus niveles y tu fiabilidad quedan intactos. Puedes reservar en otros salones ahora mismo.\n",
   "booking.declined.cta": "Buscar otro salón",
   "booking.declined.subject": "{business} no pudo aceptar tu reserva",
   "booking.toReview.body": "Alguien reservó {item}. Abre BIND para aceptar o rechazar.",
