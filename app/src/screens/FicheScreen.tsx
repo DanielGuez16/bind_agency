@@ -23,6 +23,7 @@ import { useApi, type FichePublique, type OffreDeLaFiche, type Platform } from '
 import {
   Button,
   Icone,
+  LienExterne,
   LigneDeContrepartie,
   MediaFallback,
   SkeletonFiche,
@@ -38,6 +39,7 @@ import { urlImage } from './FilScreen';
 import { elevationDeCarte, elevationFlottante, radius, useTheme } from '../theme';
 import { Ecran } from './Ecran';
 import { useGabarit } from '../shell/gabarit';
+import { LaSemaineDuSalon } from './fiche/LaSemaineDuSalon';
 import { LesLiensDuSalon } from './fiche/LesLiensDuSalon';
 import { OuEstLeLieu } from './fiche/OuEstLeLieu';
 import { EcartAuSeuil } from './PaliersScreen';
@@ -256,6 +258,34 @@ export function FicheScreen({
                   </Texte>
                 </View>
               ) : null}
+              {/* **Le numéro était servi et lu nulle part.** Il arrive sur
+                  cette fiche depuis que la route existe, et aucune ligne de
+                  l'application ne le rendait — vérifié : zéro occurrence hors
+                  du type et des libellés de formulaire.
+
+                  **Un vrai lien `tel:`, pas un texte à recopier.** Une
+                  créatrice qui veut appeler avant de venir — pour une allergie,
+                  un retard, une question sur la prestation — recopiait dix
+                  chiffres à la main depuis un écran qu'elle devait quitter.
+
+                  **Le glyphe de sortie, faute de glyphe de téléphone.** La
+                  primitive n'en porte pas, et le dépôt interdit d'en retaper
+                  un de mémoire ; c'est le chemin déjà pris pour Facebook dans
+                  `LesLiensDuSalon`. Il dit au moins que la ligne quitte
+                  l'application, ce qui est vrai. */}
+              {fiche.phone ? (
+                <LienExterne
+                  url={`tel:${fiche.phone.replace(/[^+\d]/g, '')}`}
+                  accessibilityLabel={t('parcours.ficheAppeler', { nom: fiche.name })}
+                  testID="telephone-du-salon"
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                >
+                  <Icone nom="sortie" couleur="brand.700" taille={16} />
+                  <Texte variante="type.body" couleur="brand.700" style={{ flexShrink: 1 }}>
+                    {fiche.phone}
+                  </Texte>
+                </LienExterne>
+              ) : null}
             </View>
             {/* **Les deux étiquettes de la planche, dont l'horaire.** Il
                 manquait faute de champ ; le champ est arrivé. Il est
@@ -273,6 +303,12 @@ export function FicheScreen({
               ) : null}
               <Etiquette texte={t(`categories.${fiche.category}`)} testID="categorie" />
             </View>
+
+            {/* **La semaine entière, sous l'étiquette du jour.** Celle-ci dit
+                « puis-je y aller maintenant » et disparaît faute de preuve ;
+                la grille dit « quand puis-je y aller », qui est la question
+                d'une prestation qu'on réserve pour plus tard. */}
+            <LaSemaineDuSalon horaires={fiche.horaires} />
 
             {/* **Où le salon se montre ailleurs, avec son identité.** Le
                 composant existait, testé, et n'était monté nulle part : le
@@ -395,6 +431,7 @@ export function FicheScreen({
                     // Le fuseau du salon : un « prochain créneau » se lit là
                     // où il a lieu, jamais dans le fuseau du téléphone.
                     timezone={fiche.timezone}
+                    demandeUnAccord={fiche.requires_booking_approval}
                     favoris={favoris}
                     onReserver={() => onReserver(offre, fiche)}
                   />
@@ -423,6 +460,7 @@ export function FicheScreen({
                     key={offre.tier_offer_id}
                     offre={offre}
                     timezone={fiche.timezone}
+                    demandeUnAccord={fiche.requires_booking_approval}
                     favoris={favoris}
                     onReserver={() => onReserver(offre, fiche)}
                   />
@@ -888,11 +926,14 @@ export function domaineDe(lien: string): string {
 function Offre({
   offre,
   timezone,
+  demandeUnAccord,
   favoris,
   onReserver,
 }: {
   offre: OffreDeLaFiche;
   timezone: string;
+  /** Voir `ActionDeLOffre` : c'est une propriété du salon, pas de l'offre. */
+  demandeUnAccord: boolean;
   /**
    * Le cœur de cette ligne. **Sur les deux ensembles**, et c'est voulu :
    * garder une prestation qu'on ne peut pas encore réserver est exactement le
@@ -1043,12 +1084,16 @@ function Offre({
       ) : null}
 
       {offre.accessible ? (
-        <ActionDeLOffre
-          creneaux={creneaux}
-          requiertReservation={offre.requires_booking}
-          timezone={timezone}
-          onReserver={onReserver}
-        />
+        <>
+          <ActionDeLOffre
+            creneaux={creneaux}
+            requiertReservation={offre.requires_booking}
+            demandeUnAccord={demandeUnAccord}
+            timezone={timezone}
+            onReserver={onReserver}
+          />
+          <CeQuiSuivraLAppui demandeUnAccord={demandeUnAccord} />
+        </>
       ) : (
         <ObstacleDeLOffre offre={offre} />
       )}
@@ -1342,11 +1387,22 @@ function ProchainCreneau({ creneaux, timezone }: { creneaux: string[]; timezone:
 function ActionDeLOffre({
   creneaux,
   requiertReservation,
+  demandeUnAccord,
   timezone,
   onReserver,
 }: {
   creneaux: string[];
   requiertReservation: boolean;
+  /**
+   * Le salon tranche-t-il chaque demande à la main ?
+   *
+   * **Dit avant, et non après.** Le geste est le même dans les deux cas — on
+   * appuie, la demande part — mais ce qui suit ne l'est pas : ici on attend
+   * une décision, là on repart avec un code. L'écran qui le disait était celui
+   * d'après, `« en attente du salon »`, c'est-à-dire une fois qu'il était trop
+   * tard pour en tenir compte.
+   */
+  demandeUnAccord: boolean;
   timezone: string;
   onReserver: () => void;
 }) {
@@ -1379,6 +1435,30 @@ function ActionDeLOffre({
         </Texte>
       ) : null}
     </View>
+  );
+}
+
+/**
+ * Ce que l'appui va déclencher, dit avant l'appui.
+ *
+ * **Une ligne et pas un bandeau.** Le salon qui valide à la main est le cas par
+ * défaut du produit — la colonne vaut `true` à la création — donc l'écrire en
+ * avertissement le peindrait comme une exception. Ce qui manquait n'était pas
+ * une alarme, c'était une phrase.
+ *
+ * **Et rien du tout dans l'autre cas.** « Confirmé tout de suite » sur un salon
+ * qui ne valide pas apprendrait qu'une validation existe, et installerait le
+ * doute là où il n'y en avait pas — c'est l'argument déjà rendu sur le score de
+ * fiabilité de l'annuaire, où dire qu'on ne montre pas la note apprend qu'une
+ * note existe.
+ */
+function CeQuiSuivraLAppui({ demandeUnAccord }: { demandeUnAccord: boolean }) {
+  const { t } = useI18n();
+  if (!demandeUnAccord) return null;
+  return (
+    <Texte variante="type.caption" couleur="ink.mute" testID="accord-prealable">
+      {t('parcours.ficheAccordPrealable')}
+    </Texte>
   );
 }
 

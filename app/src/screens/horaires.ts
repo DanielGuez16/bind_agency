@@ -80,3 +80,41 @@ function jourDeLaSemaine(timezone: string, maintenant: Date): number {
 function court(heure: string): string {
   return heure.slice(0, 5);
 }
+
+/** Les sept jours, lundi en tête — l'ordre de `weekday`, où 0 est lundi. */
+export const JOURS_DE_LA_SEMAINE = [0, 1, 2, 3, 4, 5, 6] as const;
+
+/**
+ * Les plages de chaque jour, les sept, dans l'ordre de la semaine.
+ *
+ * **Sept lignes, toujours les sept.** Un jour fermé ne disparaît pas de la
+ * liste : son absence pourrait aussi bien vouloir dire « fermé » que « pas
+ * encore renseigné », et ces deux-là n'appellent pas la même conduite. C'est la
+ * règle que la grille du commerce s'était déjà donnée.
+ *
+ * **`filter` et non `find`, et c'est la différence qui compte.** La grille
+ * commerce ne garde qu'une plage par jour : un salon qui ferme le midi y perd
+ * sa seconde, et personne ne le voit puisqu'il en reste une. Une créatrice qui
+ * se présente à 13 h devant une porte close a payé ce raccourci.
+ *
+ * **Hebdomadaire, exceptions non appliquées** — c'est ce que le serveur sert,
+ * et il le dit. Une grille est plus exposée que l'étiquette du jour : celle-ci
+ * se tait faute de preuve, celle-là écrirait sept lignes dont une fausse un
+ * jour férié. C'est à l'écran de le dire, pas à cette fonction de le deviner.
+ */
+export function semaineComplete(
+  horaires: PlageHebdomadaire[],
+): { jour: number; plages: PlageHebdomadaire[] }[] {
+  return JOURS_DE_LA_SEMAINE.map((jour) => ({
+    jour,
+    plages: horaires
+      .filter((plage) => plage.weekday === jour)
+      .sort((a, b) => a.start_time.localeCompare(b.start_time)),
+  }));
+}
+
+/** « 09:00 – 19:00 », ou plusieurs séparées, ou rien quand le jour est fermé. */
+export function plagesDuJour(plages: PlageHebdomadaire[]): string | null {
+  if (plages.length === 0) return null;
+  return plages.map((p) => `${court(p.start_time)} – ${court(p.end_time)}`).join(' · ');
+}

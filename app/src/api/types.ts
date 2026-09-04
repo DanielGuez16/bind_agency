@@ -643,6 +643,15 @@ export type FichePublique = {
   timezone: string;
   phone: string | null;
   /**
+   * Le salon tranche-t-il chaque réservation à la main ?
+   *
+   * **Dit avant la réservation ce que l'écran d'attente disait après.** Le
+   * champ existe en base depuis le premier lot et n'était exposé par aucun
+   * schéma : le geste est le même dans les deux cas, et une créatrice
+   * apprenait qu'un accord était nécessaire une fois la demande partie.
+   */
+  requires_booking_approval: boolean;
+  /**
    * Où le salon se montre ailleurs, quand il l'a renseigné.
    *
    * **Rendus tels qu'écrits.** Ce sont des adresses que le salon donne, pas des
