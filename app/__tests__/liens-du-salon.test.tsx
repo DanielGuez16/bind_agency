@@ -20,6 +20,7 @@ const RIEN: LiensPublics = {
   tiktok_url: null,
   facebook_url: null,
   website_url: null,
+  instagram_handle: null,
 };
 
 async function monter(liens: LiensPublics) {
@@ -37,7 +38,7 @@ describe('ce qui part au serveur', () => {
     // **Le cas divergent.** Sans la conversion, `''` part tel quel : la fiche
     // rendrait alors un lien vers nulle part, et le salon croirait l'avoir
     // retiré. Une chaîne vide et `null` sont deux choses pour le serveur.
-    expect(aEnvoyer({ instagram_url: '', tiktok_url: '   ', facebook_url: null, website_url: null })).toEqual(RIEN);
+    expect(aEnvoyer({ instagram_url: '', tiktok_url: '   ', facebook_url: null, website_url: null, instagram_handle: null })).toEqual(RIEN);
   });
 
   it('et une adresse renseignée part sans ses espaces', () => {
@@ -47,6 +48,7 @@ describe('ce qui part au serveur', () => {
         tiktok_url: null,
         facebook_url: null,
         website_url: null,
+        instagram_handle: null,
       }),
     ).toEqual({ ...RIEN, instagram_url: 'https://instagram.com/vela' });
   });

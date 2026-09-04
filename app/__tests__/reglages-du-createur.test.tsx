@@ -445,3 +445,78 @@ describe('compter, ou se taire', () => {
     expect(compterOuRien(Array.from({ length: PAGE }, enCours) as never)).toBeNull();
   });
 });
+
+/**
+ * Ce qu'une créatrice déclare d'elle-même.
+ *
+ * **La route existait depuis toujours et personne ne l'appelait.** Le serveur
+ * lit et écrit ces quatre champs avec onze tests derrière ; il manquait le
+ * client, donc l'écran, donc les données — `bio` et `city` étaient nulles pour
+ * toutes les créatrices, y compris celles de la démonstration.
+ */
+describe('le profil déclaré', () => {
+  /** Le profil tel que le serveur le rend, mutable au fil d'un test. */
+  let profil = { first_name: 'Rebecca', last_name: 'Alvarez', city: 'Wynwood', bio: null as string | null };
+  /** Ce que le dernier PATCH a envoyé, pour l'éprouver. */
+  let envoye: unknown = null;
+
+  function serveurAvecProfil() {
+    return serveurDe({
+      '/me/profile': (init?: RequestInit) => {
+        if (init?.method === 'PATCH') {
+          envoye = JSON.parse(String(init.body ?? '{}'));
+          profil = { ...profil, ...(envoye as object) };
+        }
+        return { status: 200, corps: profil };
+      },
+    });
+  }
+
+  beforeEach(() => {
+    profil = { first_name: 'Rebecca', last_name: 'Alvarez', city: 'Wynwood', bio: null };
+    envoye = null;
+  });
+
+  it('montre ce que le serveur a déjà, et non des champs vides', async () => {
+    await poser(serveurAvecProfil());
+    await waitFor(() => expect(screen.getByTestId('mon-profil-declare')).toBeTruthy());
+
+    expect(screen.getByTestId('champ-prenom').props.value).toBe('Rebecca');
+    expect(screen.getByTestId('champ-ville').props.value).toBe('Wynwood');
+    // La bio est nulle côté serveur : le champ est vide, il n'écrit pas « null ».
+    expect(screen.getByTestId('champ-bio').props.value).toBe('');
+  });
+
+  it("n'offre d'enregistrer qu'une fois quelque chose changé", async () => {
+    await poser(serveurAvecProfil());
+    await waitFor(() => expect(screen.getByTestId('mon-profil-declare')).toBeTruthy());
+
+    // **Le pendant, et c'est lui qui prouve quelque chose.** Un bouton toujours
+    // absent passerait la première moitié de ce test ; un bouton toujours
+    // présent passerait la seconde. Il faut les deux.
+    expect(screen.queryByTestId('enregistrer-mon-profil')).toBeNull();
+
+    await fireEvent.changeText(screen.getByTestId('champ-bio'), 'Nails and skin, Wynwood.');
+    expect(screen.getByTestId('enregistrer-mon-profil')).toBeTruthy();
+  });
+
+  it('envoie la bio saisie, et la chaîne vide part en nulle', async () => {
+    await poser(serveurAvecProfil());
+    await waitFor(() => expect(screen.getByTestId('mon-profil-declare')).toBeTruthy());
+
+    await fireEvent.changeText(screen.getByTestId('champ-bio'), '  Nails and skin, Wynwood.  ');
+    await fireEvent.press(screen.getByTestId('enregistrer-mon-profil'));
+
+    await waitFor(() => expect(envoye).not.toBeNull());
+    // Trimé, et pas seulement transmis : c'est la conversion de `aEnvoyer`.
+    expect((envoye as { bio: string }).bio).toBe('Nails and skin, Wynwood.');
+
+    // **L'autre sens.** Une ville effacée part en `null`, jamais en `""` — sans
+    // quoi le serveur rangerait une chaîne vide que l'annuaire rendrait comme
+    // une ville qui existe.
+    await fireEvent.changeText(screen.getByTestId('champ-ville'), '   ');
+    await fireEvent.press(screen.getByTestId('enregistrer-mon-profil'));
+    await waitFor(() => expect((envoye as { city: string | null }).city).toBeNull());
+  });
+
+});

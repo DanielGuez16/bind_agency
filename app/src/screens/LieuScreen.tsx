@@ -118,6 +118,7 @@ export function LieuScreen({
           tiktok_url: commerce.tiktok_url,
           facebook_url: commerce.facebook_url,
           website_url: commerce.website_url,
+          instagram_handle: commerce.instagram_handle,
         },
         items,
         semaine: { regles, exceptions },

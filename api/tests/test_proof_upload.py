@@ -143,18 +143,36 @@ async def test_sans_authentification_rien_ne_se_depose(client: AsyncClient) -> N
     assert reponse.status_code == 401
 
 
-@pytest.mark.parametrize("signature", [b"\x89PNG\r\n\x1a\n", b"\xff\xd8\xff", b"RIFF"])
-async def test_les_trois_formats_acceptes_passent(
-    client: AsyncClient, session, signature: bytes
-) -> None:
+#: Les charges acceptées, **en entier et non en préfixe**.
+#:
+#: La forme « signature + contenu » ne pouvait pas exprimer MP4, dont l'en-tête
+#: `ftyp` commence au **cinquième** octet — les quatre premiers portent la
+#: taille de la boîte. C'est exactement ce qu'un `startswith` ne sait pas dire,
+#: et c'est pourquoi la route lit maintenant `type_du_contenu`.
+CHARGES_ACCEPTEES = [
+    b"\x89PNG\r\n\x1a\n" + b"contenu quelconque",
+    b"\xff\xd8\xff" + b"contenu quelconque",
+    b"RIFF" + b"contenu quelconque",
+    b"\x00\x00\x00\x20ftypisom" + b"contenu quelconque",
+]
+
+
+@pytest.mark.parametrize("charge", CHARGES_ACCEPTEES)
+async def test_les_formats_acceptes_passent(client: AsyncClient, session, charge: bytes) -> None:
     """L'autre sens. Une liste qui refuserait tout passerait les tests de refus
-    sans rien garantir, et personne ne pourrait envoyer sa preuve."""
+    sans rien garantir, et personne ne pourrait envoyer sa preuve.
+
+    **La vidéo en fait partie depuis qu'un reel se prouve par son média.** Deux
+    des trois `ContentFormat` sont vidéo par nature ; la route les refusait en
+    415, donc la créatrice à qui l'on demandait un reel ne pouvait déposer que
+    la capture d'écran de sa vidéo.
+    """
     entetes = await creatrice(client, session)
 
     reponse = await client.post(
         f"{PREFIX}/me/proof-uploads",
         headers=entetes,
-        files={"fichier": ("capture", signature + b"contenu quelconque", "image/png")},
+        files={"fichier": ("capture", charge, "image/png")},
     )
 
     assert reponse.status_code == 201, reponse.text

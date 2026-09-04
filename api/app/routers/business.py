@@ -70,6 +70,7 @@ async def lire_le_commerce(session: AsyncSession, business: Business) -> Busines
         tiktok_url=business.tiktok_url,
         facebook_url=business.facebook_url,
         website_url=business.website_url,
+        instagram_handle=business.instagram_handle,
         status=business.status,
         grace_ends_at=business.grace_ends_at,
         created_at=business.created_at,

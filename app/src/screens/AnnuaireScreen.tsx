@@ -631,6 +631,27 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
             {situation}
           </Texte>
         ) : null}
+        {/* **Ce qu'elle dit d'elle-même, et c'est un renversement assumé.**
+            `champs-servis` portait cette bio en « à instruire » avec une
+            objection sérieuse — du texte libre peut porter un pseudonyme qui
+            contourne la paroi payante — et la direction envisagée était le
+            retrait. Elle est affichée parce que la rangée ne disait que le
+            pseudonyme, la ville et la distance : de quoi reconnaître, pas de
+            quoi choisir. Voir `DECISIONS.md` du 2026-09-04.
+
+            **Deux lignes au plus.** La borne serveur est à mille caractères ;
+            une rangée d'annuaire n'en montre que le début, et c'est voulu —
+            elle sert à trier, la fiche sert à lire. */}
+        {createur.bio ? (
+          <Texte
+            variante="type.caption"
+            couleur="ink.mute"
+            apercuDeProse={2}
+            testID={`bio-${createur.creator_id}`}
+          >
+            {createur.bio}
+          </Texte>
+        ) : null}
       </View>
 
       {/* **De quel réseau, puis où ça mène** : c'est l'ordre de lecture, et les

@@ -29,6 +29,12 @@ from app.services.audit import Actor
 #: moitié de l'histoire invisible à la lecture.
 TIER = "tier"
 SUBSCRIPTION_PLAN = "subscription_plan"
+#: Les critères de publication d'une offre — la mention attendue, le lieu. Ce
+#: sont des valeurs que le commerce change, pas des bascules d'état : l'offre a
+#: déjà son journal d'audit pour l'ouverture et la fermeture, et mêler les deux
+#: rendrait « a retiré l'offre » et « a corrigé le pseudonyme » illisibles l'un
+#: à côté de l'autre.
+TIER_OFFER = "tier_offer"
 
 
 def lisible(valeur: Any) -> str | None:

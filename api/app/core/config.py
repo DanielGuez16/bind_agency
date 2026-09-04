@@ -414,13 +414,22 @@ class Settings(BaseSettings):
     proof_fetch_max_bytes: int = 15 * 1024 * 1024
     proof_fetch_max_redirects: int = 3
 
-    #: Le poids maximal d'une capture téléversée par la créatrice.
+    #: Le poids maximal d'une preuve téléversée par la créatrice.
     #:
-    #: Plus bas que la récupération par URL : celle-ci prend ce que la
-    #: plateforme sert, celle-là ce qu'un téléphone produit — et un téléphone
-    #: récent produit des images de vingt mégaoctets que personne n'a besoin
-    #: d'archiver pour vérifier une mention.
-    proof_upload_max_bytes: int = 8 * 1024 * 1024
+    #: **Relevé à quinze mégaoctets quand la vidéo est devenue acceptable.** Le
+    #: raisonnement d'origine — « un téléphone produit des images de vingt
+    #: mégaoctets que personne n'a besoin d'archiver pour vérifier une
+    #: mention » — vaut d'une image et pas d'un reel, qui est une vidéo par
+    #: nature : huit mégaoctets refusaient la quasi-totalité des vidéos, donc
+    #: le format même qu'on demande.
+    #:
+    #: **Quinze et pas davantage, et ce n'est pas un chiffre rond choisi au
+    #: jugé.** C'est la valeur que `verifier_les_deux_compartiments` éprouve
+    #: réellement au déploiement, par une charge de cette taille : le
+    #: compartiment est donc *vérifié* l'accepter. Monter plus haut sans
+    #: relever cette sonde promettrait un dépôt que l'hébergeur refuserait au
+    #: premier envoi réel — le défaut a déjà été payé une fois, en 413.
+    proof_upload_max_bytes: int = 15 * 1024 * 1024
     proof_fetch_allowed_types: CommaSeparated = [
         "image/jpeg",
         "image/png",
