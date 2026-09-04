@@ -11268,3 +11268,31 @@ résoudre, plutôt que de choisir un côté. La règle du dépôt dit déjà « 
 la version fusionnée » ; ce cas ajoute qu'il faut la **lire**, parce qu'une
 hypothèse vraie à l'écriture peut avoir cessé de l'être entre-temps — et que la
 phrase qui la porte est un commentaire, que rien n'exécute.
+
+---
+
+## 2026-09-03 — `serve` est une dépendance déclarée, pas un téléchargement à l'exécution
+
+**Le `webServer` de Playwright faisait `npx --yes serve`, et `serve` n'était
+déclaré nulle part** — zéro occurrence dans `package.json` comme dans
+`package-lock.json`. Le paquet était donc récupéré depuis npm à chaque
+exécution de la e2e, sous le plafond de 120 s de `webServer.timeout`. Toute
+lenteur du registre rendait la CI rouge sur du code juste.
+
+**Le message ne dit rien de la cause** : « Timed out waiting 120000ms from
+config.webServer », pas un mot sur npm ni sur le réseau. Il se lit comme « votre
+application ne démarre pas », donc il accuse la dernière ligne écrite — et le
+journal de l'API montrait pourtant `Application startup complete` et un
+`GET /api/v1/health 200 OK`.
+
+**Établi par contre-épreuve, pas par raisonnement.** J'ai relancé la e2e de
+`main` sur un commit dont elle était verte : échec, deux fois de suite. Une
+heure plus tard, `main` repassait au vert sans qu'une ligne bouge. Node est
+épinglé par `.nvmrc` (v24.20.0) et `serve` n'avait pas été publié depuis six
+mois — restait le téléchargement. Sans cette contre-épreuve, deux PR auraient
+été soupçonnées à tort ; c'est exactement ce qui allait arriver.
+
+`serve` est donc en `devDependency`, épinglé à 14.2.6, et l'appel est
+`npx serve` sans `--yes` : le binaire vient de `node_modules`, que
+`setup-node` restaure déjà de son cache. Vérifié en local — le serveur répond
+200 en deux secondes, sans aucun appel au registre.
