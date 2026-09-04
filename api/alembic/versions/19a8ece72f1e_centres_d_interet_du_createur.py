@@ -29,6 +29,7 @@ Revises: d4e980bb7072
 Create Date: 2026-09-04 16:23:33.224967+00:00
 
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -36,21 +37,31 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '19a8ece72f1e'
-down_revision: Union[str, Sequence[str], None] = 'd4e980bb7072'
+revision: str = "19a8ece72f1e"
+down_revision: Union[str, Sequence[str], None] = "d4e980bb7072"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.add_column('creator_profile', sa.Column('interests', sa.ARRAY(sa.Text()), nullable=True))
-    op.create_check_constraint(op.f('ck_creator_profile_interets_connus'), 'creator_profile', "interests IS NULL OR interests <@ ARRAY['coiffure', 'ongles', 'soin_du_visage', 'massage_et_spa', 'maquillage', 'restaurant', 'cafe_et_brunch', 'fitness', 'culture', 'famille']::text[]")
-    op.create_check_constraint(op.f('ck_creator_profile_interets_entre_un_et_trois'), 'creator_profile', 'interests IS NULL OR (cardinality(interests) BETWEEN 1 AND 3)')
+    op.add_column("creator_profile", sa.Column("interests", sa.ARRAY(sa.Text()), nullable=True))
+    op.create_check_constraint(
+        op.f("ck_creator_profile_interets_connus"),
+        "creator_profile",
+        "interests IS NULL OR interests <@ ARRAY['coiffure', 'ongles', 'soin_du_visage', 'massage_et_spa', 'maquillage', 'restaurant', 'cafe_et_brunch', 'fitness', 'culture', 'famille']::text[]",
+    )
+    op.create_check_constraint(
+        op.f("ck_creator_profile_interets_entre_un_et_trois"),
+        "creator_profile",
+        "interests IS NULL OR (cardinality(interests) BETWEEN 1 AND 3)",
+    )
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_constraint(op.f('ck_creator_profile_interets_entre_un_et_trois'), 'creator_profile', type_='check')
-    op.drop_constraint(op.f('ck_creator_profile_interets_connus'), 'creator_profile', type_='check')
-    op.drop_column('creator_profile', 'interests')
+    op.drop_constraint(
+        op.f("ck_creator_profile_interets_entre_un_et_trois"), "creator_profile", type_="check"
+    )
+    op.drop_constraint(op.f("ck_creator_profile_interets_connus"), "creator_profile", type_="check")
+    op.drop_column("creator_profile", "interests")

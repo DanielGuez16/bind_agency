@@ -148,9 +148,7 @@ class CreatorProfile(CreatedAt, Base):
     #: La liste vide n'existe pas : le schéma la ramène à `NULL`, sinon
     #: « je n'ai rien déclaré » aurait deux écritures et le filtre devrait
     #: connaître les deux.
-    interests: Mapped[list[str] | None] = mapped_column(
-        sa.ARRAY(sa.Text), nullable=True
-    )
+    interests: Mapped[list[str] | None] = mapped_column(sa.ARRAY(sa.Text), nullable=True)
 
     reliability_score: Mapped[Decimal | None] = mapped_column(
         sa.Numeric(5, 2),

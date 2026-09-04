@@ -218,9 +218,7 @@ class FiltreDAnnuaire:
     interets: frozenset[CentreDInteret] = frozenset()
 
     def __bool__(self) -> bool:
-        return bool(
-            self.paliers or self.reseau or self.distance_max_metres or self.interets
-        )
+        return bool(self.paliers or self.reseau or self.distance_max_metres or self.interets)
 
 
 def _retenue(vu: CreateurVu, filtre: FiltreDAnnuaire) -> bool:

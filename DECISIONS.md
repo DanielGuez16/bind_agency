@@ -11934,3 +11934,83 @@ bascule décorative — affichée, mais non lue par le verrou — laisse passer 
 les autres tests : le bouton marche, l'envoi part, la version est jointe. Un
 seul cas distingue « on demande » de « on affiche », et c'est celui-là qu'il
 fallait écrire.
+
+## 2026-09-04 — Les centres d'intérêt : liste fermée, borne à l'écriture, et le filtre qui n'avait pas d'appelant
+
+**Fermée plutôt que libre.** Même raisonnement que `Neighborhood`, et il tient
+pour la même raison : c'est un axe de navigation. Deux créatrices qui
+écriraient « ongles » et « nail art » ne se compteraient pas ensemble, et le
+filtre annoncerait deux spécialités là où il y en a une. La liste est doublée
+dans une contrainte `CHECK` — une validation Pydantic ne survit pas à un
+`INSERT` écrit à la main, et une valeur inventée traverserait tout l'annuaire
+sans jamais correspondre à un filtre, donc sans jamais se voir.
+
+**Dix valeurs, plus fines que les six catégories de commerce.** La question
+s'est posée de réutiliser `BusinessCategory` : zéro taxonomie inventée, et le
+filtre correspondrait exactement à l'offre. Écartée parce que la catégorie
+décrit ce qu'un commerce **est** — `beauty` couvre le coloriste et la
+prothésiste ongulaire, et le catalogue du semis porte les deux sous cette
+étiquette — alors que l'intérêt décrit ce qu'une créatrice **veut faire**. Les
+confondre aurait ramené le filtre à l'axe qui existe déjà. Chaque valeur
+retombe malgré tout sur une catégorie connue, sinon le filtre promettrait des
+salons qu'aucun commerce ne peut servir.
+
+**« Au moins un » est une règle d'écriture, pas une contrainte de base.** La
+colonne est nullable et aucune ligne existante n'est reprise. L'autre option —
+`NOT NULL` avec remplissage — aurait exigé d'attribuer un intérêt à des
+créatrices qui n'ont rien choisi, et de le leur présenter ensuite comme une
+valeur qu'elles auraient donnée. C'est la règle de `bio`, nulle pour tout le
+monde tant que personne ne l'écrit. **Et la liste vide n'existe pas** : le
+schéma la ramène à `NULL`, comme `_vide_vaut_absent` le fait déjà des chaînes
+juste au dessus, sinon « je n'ai rien déclaré » aurait deux écritures et le
+filtre devrait connaître les deux.
+
+**Trois au plus, et le quatrième ne remplace pas le premier.** Faire tourner la
+sélection aurait été plus permissif et bien pire : la créatrice aurait vu un
+intérêt qu'elle a choisi disparaître sans l'avoir touché. Au dessus de la
+borne, le geste ne fait rien et la ligne d'aide l'explique avant qu'on essaie.
+
+**Ce que l'anonymisation efface, personne ne l'a décidé.** Le test de
+complétude de `test_creator_profile.py` lit les colonnes du modèle et exige que
+le jeu de départ pose chaque colonne personnelle : la colonne neuve l'a fait
+tomber toute seule, avant qu'on se demande si trois intérêts identifient
+quelqu'un. Ils le font, avec un quartier. C'est le second garde-fou de ce
+dépôt qui trouve un oubli sans qu'on l'interroge.
+
+### Le défaut le plus long : un filtre servi que rien n'appelait
+
+`palier`, `reseau` et `distance_max_metres` sont déclarés par la route de
+l'annuaire, appliqués par `_retenue`, et éprouvés par sept tests dont le
+recalcul du total. Côté app, `annuaireDesCreateurs` n'envoyait que `limite` et
+`decalage` — depuis l'origine.
+
+**Rien ne pouvait le signaler.** Le serveur est correct et testé ; le client
+est correct et testé ; la garde des champs servis regarde ce que les écrans
+lisent, pas ce qu'ils envoient. Un paramètre optionnel qui n'est jamais passé
+se comporte exactement comme un paramètre absent, et les deux côtés restent
+verts. C'est le pendant exact du champ servi sans lecteur que ce dépôt attrape
+déjà — la même faute par l'autre bout, et l'outillage ne couvrait que le
+premier.
+
+**Le piège à la couture : la pagination.** Brancher les filtres sans remettre
+`suite` à zéro laissait les pages déjà chargées collées sous une première page
+filtrée — des créatrices que le filtre venait d'écarter, sous un total qui ne
+les comptait plus. La remise à zéro par salon existait déjà ; il lui manquait
+une seconde cause. C'est ce que la mutation C éprouve, et le décor ne le
+prouve que parce que la seconde page rend d'autres créatrices : sans cela,
+« la suite a été jetée » et « la suite est restée » rendaient le même écran.
+
+**`Platform` est déjà celui de React Native.** Importer le type du réseau
+social sans alias dans `api/index.tsx` faisait passer `PlatformIOSStatic` pour
+un réseau, et le typage l'acceptait à moitié — attrapé par `tsc`, pas par
+relecture.
+
+**La garde des clés de traduction passe à 44.** Les dix intérêts se composent à
+deux endroits — la chip qui les fait choisir, la fiche d'annuaire qui les
+montre — et une clé composée ne se résout pas sans exécuter le code. Le
+plafond a été relevé, mais **ce que la garde y perd est rendu ailleurs** :
+`centres-d-interet.test.ts` résout les dix clés dans les deux langues et lit la
+liste dans l'énumération Python plutôt que de la recopier. Une liste recopiée à
+la main aurait été exactement le décor que le code fautif produit — d'accord
+avec ce qu'on vient d'écrire, y compris le jour où une valeur manquerait des
+deux côtés à la fois.
