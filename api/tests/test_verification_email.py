@@ -9,7 +9,7 @@ il ne peut simplement pas engager quelqu'un d'autre.
 """
 
 import uuid
-from datetime import date, UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import sqlalchemy as sa

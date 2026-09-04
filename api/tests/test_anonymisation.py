@@ -138,9 +138,9 @@ async def test_le_compte_perd_toute_donnee_personnelle(
     ).one()
     ligne_complete = (
         await conn.execute(
-            sa.select(
-                User.date_of_birth, User.age_verified_at, User.age_minimum_applique
-            ).where(User.id == user.id)
+            sa.select(User.date_of_birth, User.age_verified_at, User.age_minimum_applique).where(
+                User.id == user.id
+            )
         )
     ).one()
 
@@ -199,12 +199,16 @@ async def test_le_compte_n_a_aucune_colonne_personnelle_oubliee(
     assert personnelles, "la table jumelle doit rester une liste, pas tout absorber"
 
     avant = (
-        await conn.execute(
-            sa.select(*[User.__table__.c[nom] for nom in sorted(personnelles)]).where(
-                User.id == user.id
+        (
+            await conn.execute(
+                sa.select(*[User.__table__.c[nom] for nom in sorted(personnelles)]).where(
+                    User.id == user.id
+                )
             )
         )
-    ).one()._mapping
+        .one()
+        ._mapping
+    )
     jamais_posees = [nom for nom, valeur in avant.items() if valeur is None]
     assert jamais_posees == [], (
         "colonnes personnelles jamais renseignées par ce test : "
@@ -215,12 +219,16 @@ async def test_le_compte_n_a_aucune_colonne_personnelle_oubliee(
     await session.flush()
 
     apres = (
-        await conn.execute(
-            sa.select(*[User.__table__.c[nom] for nom in sorted(personnelles)]).where(
-                User.id == user.id
+        (
+            await conn.execute(
+                sa.select(*[User.__table__.c[nom] for nom in sorted(personnelles)]).where(
+                    User.id == user.id
+                )
             )
         )
-    ).one()._mapping
+        .one()
+        ._mapping
+    )
     restantes = [nom for nom, valeur in apres.items() if valeur is not None]
     assert restantes == [], f"colonnes personnelles non effacées : {restantes}"
 

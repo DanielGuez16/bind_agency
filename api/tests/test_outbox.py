@@ -17,7 +17,7 @@ balayage des rappels, où un service injoignable laissait sans rappel toutes les
 """
 
 import uuid
-from datetime import date, UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import sqlalchemy as sa

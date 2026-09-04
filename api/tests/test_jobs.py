@@ -628,7 +628,12 @@ async def test_la_file_des_jobs_epuises_est_reservee_aux_administrateurs(
         email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
         await client.post(
             f"{PREFIX}/auth/register",
-            json={"email": email, "password": password, "role": role.value, "date_of_birth": "1992-04-17"},
+            json={
+                "email": email,
+                "password": password,
+                "role": role.value,
+                "date_of_birth": "1992-04-17",
+            },
         )
         jetons = (
             await client.post(f"{PREFIX}/auth/login", json={"email": email, "password": password})
@@ -652,7 +657,12 @@ async def test_la_route_de_reprise_refuse_un_job_en_attente(
     email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
     await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": password, "role": UserRole.ADMIN.value, "date_of_birth": "1992-04-17"},
+        json={
+            "email": email,
+            "password": password,
+            "role": UserRole.ADMIN.value,
+            "date_of_birth": "1992-04-17",
+        },
     )
     jetons = (
         await client.post(f"{PREFIX}/auth/login", json={"email": email, "password": password})

@@ -91,10 +91,8 @@ if os.environ.get("PYTEST_XDIST_WORKER"):
     _morceaux.append(os.environ["PYTEST_XDIST_WORKER"])
 os.environ["OBJECT_STORE_LOCAL_ROOT"] = "-".join(_morceaux)
 
-from collections.abc import AsyncIterator, Iterator
-
 import uuid
-from datetime import date
+from collections.abc import AsyncIterator, Iterator
 
 import httpx
 import psycopg

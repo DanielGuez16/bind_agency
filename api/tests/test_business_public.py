@@ -173,7 +173,12 @@ async def test_la_route_est_reservee_aux_createurs(client: AsyncClient) -> None:
         email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
         await client.post(
             f"{PREFIX}/auth/register",
-            json={"email": email, "password": password, "role": role.value, "date_of_birth": "1992-04-17"},
+            json={
+                "email": email,
+                "password": password,
+                "role": role.value,
+                "date_of_birth": "1992-04-17",
+            },
         )
         jetons = (
             await client.post(f"{PREFIX}/auth/login", json={"email": email, "password": password})

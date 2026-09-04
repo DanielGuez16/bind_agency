@@ -58,7 +58,12 @@ def test_aucun_code_d_erreur_ecrit_a_la_main_dans_le_code() -> None:
         (
             "post",
             "/auth/register",
-            {"email": "pas-une-adresse", "password": "x", "role": "creator", "date_of_birth": "1992-04-17"},
+            {
+                "email": "pas-une-adresse",
+                "password": "x",
+                "role": "creator",
+                "date_of_birth": "1992-04-17",
+            },
             422,
         ),
         ("get", "/me", None, 401),
@@ -100,7 +105,12 @@ async def test_un_422_ne_renvoie_jamais_la_valeur_rejetee(client: AsyncClient) -
 
     response = await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": "x@example.com", "password": mot_de_passe[:5], "role": "creator", "date_of_birth": "1992-04-17"},
+        json={
+            "email": "x@example.com",
+            "password": mot_de_passe[:5],
+            "role": "creator",
+            "date_of_birth": "1992-04-17",
+        },
     )
 
     assert response.status_code == 422
@@ -124,7 +134,12 @@ async def test_un_422_porte_le_code_du_refus(client: AsyncClient) -> None:
     # variété, six caractères distincts exigés.
     response = await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": "x@example.com", "password": "aaaabbbbcccc", "role": "creator", "date_of_birth": "1992-04-17"},
+        json={
+            "email": "x@example.com",
+            "password": "aaaabbbbcccc",
+            "role": "creator",
+            "date_of_birth": "1992-04-17",
+        },
     )
 
     assert response.status_code == 422
@@ -259,7 +274,12 @@ async def test_la_locale_est_modifiable_par_le_compte(client: AsyncClient) -> No
     password = "tourbillon-cactus-91-vermeil"
     await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": password, "role": "creator", "date_of_birth": "1992-04-17"},
+        json={
+            "email": email,
+            "password": password,
+            "role": "creator",
+            "date_of_birth": "1992-04-17",
+        },
     )
     tokens = (
         await client.post(f"{PREFIX}/auth/login", json={"email": email, "password": password})
