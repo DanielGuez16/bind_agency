@@ -11503,3 +11503,60 @@ clic-milieu, ni nouvel onglet, ni « copier l'adresse », et un
 `window.open` hors ancre reste à la merci d'un bloqueur. Onze appels du
 produit ont cette forme ; celui de l'annuaire admin est migré, les dix
 autres attendent.
+
+## 2026-09-03 — Un échec sans assertion n'est pas un échec de code
+
+Quatre exécutions de la même suite jest, sur le même arbre, à quelques
+minutes d'intervalle : **50 échecs, puis 19, puis 13, puis 0.** Les
+fichiers nommés changeaient à chaque fois. Rien dans la sortie ne disait
+que la machine était en cause — elle disait que des tests échouaient, et
+elle donnait des noms.
+
+Le tri tient en deux commandes, et il coûte trente secondes :
+
+```
+grep -c "Exceeded timeout" journal.log     # les échecs d'attente
+grep -E "expect\(received" journal.log     # les échecs d'assertion
+```
+
+**Zéro assertion et N dépassements, c'est la machine.** Une seule
+assertion, c'est le code. Ce soir-là : 100 dépassements, zéro assertion —
+deux suites jest tournaient en parallèle, et des fichiers qui s'exécutent
+en 2 s en mettaient 157.
+
+**La règle générale.** Un échec d'attente — dépassement, connexion
+refusée, base absente, serveur qui ne répond pas — **nomme toujours celui
+qui attendait, jamais celui qui manquait.** Le symptôme désigne l'endroit
+où l'on regarde, pas l'endroit où c'est cassé. Et l'endroit où l'on
+regarde est presque toujours la dernière chose écrite, ce qui rend le
+faux coupable très convaincant.
+
+Trois cas de la même soirée, dans trois registres :
+
+1. **La CI de la PR #447 était rouge sur `e2e`, verte sur `app`.** Même
+   arbre, même commit, et le seul job qui tombait était celui qui attend
+   un serveur : `Timed out waiting 120000ms from config.webServer`, trois
+   lignes de journal, aucune autre erreur. La cause était l'absence de
+   `serve` dans les dépendances — un téléchargement npm sous plafond de
+   120 s, corrigé par la #448 d'une autre session. Sans son annonce
+   préalable, j'aurais bisecté `Ecran.tsx` et `gabarit.tsx`, deux
+   fichiers que tout l'écran traverse, donc les premiers suspects.
+2. **Côté api, 57 erreurs sur `test_seed.py`** — toutes des `ERROR` de
+   montage groupées sur un fichier, **zéro `FAILED` avec assertion**. Un
+   `ERROR` groupé sans un seul `assert` en échec est un défaut de
+   montage : la machine, ou une session voisine. C'était le dépôt
+   d'objets local, suffixé par le seul `PYTEST_XDIST_WORKER`, donc
+   partagé entre deux suites simultanées.
+3. **Et la contre-épreuve coûteuse, qu'il faut savoir ne pas faire.**
+   Établir « ce n'est pas mon code » en relançant la CI d'un commit connu
+   vert, deux fois, puis en attendant qu'elle repasse seule, a coûté près
+   d'une heure de CI. Le grep ci-dessus tranchait sur le premier journal.
+
+**Le corollaire, qui est le vrai coût.** Devant un symptôme mal attribué,
+le remède plausible supprime le symptôme sans toucher la cause — et
+**clôt la question**, ce qui est pire que de ne rien faire. Deux fois ce
+soir : monter `max_connections` aurait rendu la suite verte un jour sur
+deux, alors que le pic mesuré était de 17 sur 100 ; et une garde de
+largeur écrite en même temps que le code qu'elle vérifie a reproduit son
+omission, donc elle est passée au vert sur un écran encore coupé. Dans
+les deux cas, plus personne ne cherche ensuite.
