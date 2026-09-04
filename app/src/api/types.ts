@@ -1073,21 +1073,6 @@ export type Collaboration = {
   item_name: string | null;
   platform: Platform | null;
   proofs: Preuve[];
-  /**
-   * De quoi nommer le dossier : le salon, la prestation, le réseau.
-   *
-   * **Servis depuis toujours et absents de ce type.** `CollaborationRead` les
-   * porte — le serveur les assemble depuis `contexte_de` — mais rien ici ne
-   * les déclarait, donc l'écran de preuve passait `null` en dur au panneau du
-   * brief. La ligne du lieu, conditionnée par `required_geotag && nomDuSalon`,
-   * ne s'affichait alors **jamais**.
-   *
-   * Nullables comme côté serveur : le contexte manque quand la créatrice a
-   * fermé son compte.
-   */
-  business_name: string | null;
-  item_name: string | null;
-  platform: Platform | null;
 };
 
 export type DerniereSoumission = {
