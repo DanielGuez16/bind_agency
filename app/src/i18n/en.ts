@@ -217,6 +217,19 @@ export const en = {
     sansPseudonyme: 'Your profile',
     abonnes: '{{n}} followers',
     mesPublications: 'My posts',
+    // --- ce qu'une créatrice déclare d'elle-même ---
+    declareTitre: 'About you',
+    // **Le lecteur, nommé avant les champs.** Écrire une bio sans savoir où
+    // elle atterrit fait écrire trop, ou rien.
+    declareQuiLit: 'Salons see this when they look you up in their directory.',
+    declarePrenom: 'First name',
+    declareNom: 'Last name',
+    declareVille: 'City',
+    declareVillePlaceholder: 'Wynwood',
+    declareBio: 'Bio',
+    declareBioPlaceholder: 'Nails and skin, mostly Wynwood and Little Havana.',
+    declareBioAide: 'What you shoot, and where. A couple of lines is plenty.',
+    declareIllisible: 'We could not load your profile just now.',
     publicationOuvrir: 'Open the post for {{prestation}}',
     favoris: 'Favourites',
     monAudience: 'My audience',

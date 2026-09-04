@@ -78,6 +78,27 @@ export type TexteProps = Omit<TextPropsNatif, 'style'> & {
    * dit plus ce qu'il fait, et un statut tronqué ment.
    */
   ellipseSurNomPropre?: boolean;
+  /**
+   * Combien de lignes d'une **prose libre** on montre en aperçu.
+   *
+   * **Un second passage nommé, pour la même raison que le premier.** La règle
+   * interdit de tronquer une action ou un statut, et `numberOfLines` est
+   * réservé à ce fichier pour qu'on ne le pose pas par distraction. Mais une
+   * bio n'est ni une action ni un statut : c'est du texte que quelqu'un a écrit
+   * librement, jusqu'à mille caractères, et dont une liste montre le début pour
+   * qu'on décide s'il vaut la peine d'ouvrir.
+   *
+   * **Ce n'est pas `ellipseSurNomPropre` avec un nombre**, et les confondre
+   * ferait mentir le nom : un nom propre se coupe parce qu'il ne tient pas sur
+   * une ligne et qu'on le reconnaît quand même ; une prose se coupe parce
+   * qu'elle est longue par nature et qu'un aperçu suffit à trier. Deux gestes,
+   * deux raisons, deux noms.
+   *
+   * **Jamais sur ce qui doit être lu en entier.** Un aperçu suppose qu'il
+   * existe un endroit où le texte est complet. S'il n'y en a pas, ce prop est
+   * le mauvais outil.
+   */
+  apercuDeProse?: number;
   style?: TextPropsNatif['style'];
 };
 
@@ -86,6 +107,7 @@ export function Texte({
   couleur = 'ink.default',
   align,
   ellipseSurNomPropre,
+  apercuDeProse,
   style,
   ...reste
 }: TexteProps) {
@@ -105,8 +127,11 @@ export function Texte({
   return (
     <TextNatif
       {...reste}
-      numberOfLines={ellipseSurNomPropre ? 1 : undefined}
-      ellipsizeMode={ellipseSurNomPropre ? 'tail' : undefined}
+      // **Le nom propre l'emporte s'il est posé.** Les deux ensemble n'ont pas
+      // de sens — on ne coupe pas une prose *et* un nom sur le même nœud — et
+      // trancher ici évite d'avoir à s'en souvenir à chaque appel.
+      numberOfLines={ellipseSurNomPropre ? 1 : apercuDeProse}
+      ellipsizeMode={ellipseSurNomPropre || apercuDeProse ? 'tail' : undefined}
       style={[
         {
           fontSize: echelle.fontSize,

@@ -67,6 +67,7 @@ import type {
   AnnuaireDuCommerce,
   CommerceDeLUtilisateur,
   CreateurDeLAnnuaire,
+  MonProfilDeclare,
   PageDeLaCarte,
   PhotoDuCommerce,
   EtatDeLaComposition,
@@ -1130,6 +1131,33 @@ export class Api {
     return this.client.request<unknown>(routes.modifierLeCommerce(businessId), {
       methode: 'PATCH',
       corps: liens,
+    });
+  }
+
+  /**
+   * Ce que la créatrice a déclaré d'elle-même.
+   *
+   * **La route existait depuis le début et personne ne l'appelait.** Le
+   * serveur sait lire et écrire ces quatre champs, avec onze tests derrière,
+   * depuis que le profil existe ; il manquait le client, donc l'écran, donc
+   * les données — `bio` et `city` sont nulles pour tout le monde aujourd'hui.
+   */
+  monProfil(signal?: AbortSignal) {
+    return this.client.request<MonProfilDeclare>(routes.monProfil(), { signal });
+  }
+
+  /**
+   * Écrit ce que la créatrice change, et rien d'autre.
+   *
+   * **Partiel, et le serveur le prend au mot.** Un champ absent du corps n'est
+   * pas touché ; un champ à `null` est effacé. C'est `exclude_unset` côté
+   * Pydantic, donc envoyer l'objet entier effacerait ce que l'écran n'a pas
+   * chargé — d'où l'objet complet à chaque fois ici, jamais un fragment.
+   */
+  mettreAJourMonProfil(champs: MonProfilDeclare) {
+    return this.client.request<MonProfilDeclare>(routes.monProfil(), {
+      methode: 'PATCH',
+      corps: champs,
     });
   }
 

@@ -1692,6 +1692,26 @@ export type PalierAccessibleIci = {
   content_format: ContentFormat;
 };
 
+/**
+ * Ce qu'une créatrice déclare d'elle-même, et qu'elle seule peut écrire.
+ *
+ * **Quatre champs, et le type s'arrête là.** La réponse du serveur en porte
+ * quatre autres — score de fiabilité, compte de collaborations, nouveauté,
+ * instant d'anonymisation — qui sont des faits calculés, pas des déclarations.
+ * L'écran de saisie n'en a rien à faire, et les déclarer ici obligerait à
+ * inscrire quatre champs sans lecteur dans la table de `champs-servis`.
+ *
+ * **Le score se lit ailleurs**, sur l'écran qui l'explique (`Fiabilite`), et
+ * non au milieu d'un formulaire où il se lirait comme une note sur ce qu'on
+ * vient d'écrire.
+ */
+export type MonProfilDeclare = {
+  first_name: string | null;
+  last_name: string | null;
+  city: string | null;
+  bio: string | null;
+};
+
 export type CreateurDeLAnnuaire = {
   creator_id: string;
   /**
