@@ -1378,6 +1378,30 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       par un , qui prouverait qu'on sait copier une
       base — pas que la commande repart d'un état rempli. C'est le plancher, et
       il est le sujet d'un test, pas son coût*
+- [x] **Une base de test par exécution, et plus seulement par worker**
+      *Le complément du point ci-dessus, et la moitié qui manquait. Le worker
+      sépare les processus d'une même exécution, jamais deux exécutions entre
+      elles : deux sessions parallèles dans le même répertoire ont chacune un
+      `gw0` et se détruisaient la base l'une à l'autre en pleine course. Le
+      symptôme — « database bind_test_gw0 does not exist », `AdminShutdown` —
+      accuse toujours la dernière ligne écrite. Trois fois en deux jours, jamais
+      compris avant un `pgrep -f pytest` qui en a montré cinq.*
+
+      *L'empreinte vient de `PYTEST_XDIST_TESTRUNUID`, que xdist pose déjà dans
+      chaque worker d'une même exécution — la réponse existait dans une variable
+      que personne ne lisait. `BIND_TEST_SESSION` la précède, le pid la remplace
+      en série. **Aucune n'est tirée au hasard** : un `uuid4()` rendrait les
+      noms bien distincts et la base introuvable au premier test. Muté dans les
+      deux sens, six tests, deux jeux qui ne se recouvrent qu'en partie.*
+
+      ***Et le dépôt d'objets avec, ce qui manquait au premier jet.*
+      `OBJECT_STORE_LOCAL_ROOT` ne portait que le worker : deux processus qui
+      sèment ensemble écrivent la même clé — c'est l'empreinte du contenu — et
+      se volent leur fichier `.partiel`. 57 erreurs sur `test_seed.py` en
+      tournant à côté d'une autre session, zéro seul. **Le diagnostic était parti
+      sur un plafond de connexions Postgres** : mesuré à 17 connexions de pic
+      sur 100, l'hypothèse est morte avant d'être écrite. La cause était dans le
+      commentaire qui expliquait pourquoi le suffixe existait.*
 - [ ] **`SOCIAL_PROVIDER` et `API_PUBLIC_BASE_URL` à poser chez Render**
       *Le seul des trois bloquants que le code ne peut pas corriger seul. Depuis
       cette tranche, l'API refuse de démarrer sans elles plutôt que de répondre

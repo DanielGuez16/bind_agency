@@ -11389,3 +11389,66 @@ pas bougé — un diagnostic qu'on ne trouve qu'en comptant les processus `pytes
 La règle qui en sort tient en une ligne : **ajouter les fichiers par leur
 chemin, jamais `-A`**, et lire un échec de base comme une collision avant de le
 lire comme un défaut.
+## 2026-09-03 — Une base de test par exécution, et non par worker seulement
+
+**Le nom ne portait que le worker, et c'est un demi-isolement qui se lit comme
+un isolement complet.** `PYTEST_XDIST_WORKER` sépare les processus d'une même
+exécution ; il ne dit rien de l'exécution elle-même. Deux exécutions parallèles
+— le cas normal dès que deux conversations avancent dans le même répertoire —
+ont chacune un `gw0`, donc visaient la même base. Chacune commence par
+`DROP DATABASE ... WITH (FORCE)` : la seconde emportait celle de la première en
+pleine exécution.
+
+**Le symptôme accuse toujours la mauvaise chose.** L'échec ressort en « database
+bind_test_gw0 does not exist », ou en `AdminShutdown: terminating connection due
+to administrator command`, sur du code qui n'a pas bougé — donc sur la dernière
+ligne qu'on vient d'écrire. Rencontré trois fois en deux jours, et jamais
+compris avant d'avoir compté les processus `pytest` : `pgrep -f pytest` en
+renvoyait cinq. Aucune trace, aucun message, aucun test ne le disait.
+
+**L'empreinte vient de ce qui existe déjà, pas d'un mécanisme neuf.**
+`PYTEST_XDIST_TESTRUNUID` est posée par xdist dans **chaque worker** d'une même
+exécution, avec une valeur unique par exécution : c'est exactement la question,
+et elle avait déjà sa réponse dans une variable que personne ne lisait.
+`BIND_TEST_SESSION` la précède pour qui veut un nom à soi, et le numéro de
+processus prend le relais en série, où xdist ne pose rien.
+
+**Aucune des trois n'est tirée au hasard, et c'est la propriété qu'on éprouve.**
+Un `uuid4()` dans la dérivation rendrait les deux tests de distinction verts —
+les noms seraient bien différents — et le produit inutilisable : la base créée
+au démarrage ne serait plus celle qu'on cherche au premier test. Les deux
+familles d'implémentation ne divergent que sur la stabilité, d'où un test qui
+appelle deux fois et compare, en plus de ceux qui comparent deux exécutions.
+Vérifié par mutation dans les deux sens : le worker seul fait tomber trois
+tests, l'identifiant aléatoire trois autres, et les deux jeux ne se recouvrent
+qu'en partie.
+
+**Le dépôt d'objets avait le même défaut, une ligne plus haut, et sa propre
+docstring affirmait la question réglée.** `OBJECT_STORE_LOCAL_ROOT` n'était
+suffixé que par le worker. La clé d'un objet est l'empreinte de son contenu :
+deux processus qui sèment en même temps écrivent donc le **même** fichier, l'un
+renomme `X.partiel` en `X`, l'autre ne retrouve plus le sien. C'est une
+demi-correction, et une demi-correction est pire qu'aucune — elle protégeait les
+workers d'une exécution, laissait deux exécutions se voler leurs fichiers, et le
+commentaire au-dessus disait le problème résolu.
+
+**Le diagnostic est parti sur la mauvaise piste, et c'est la mesure qui l'a
+arrêté.** J'avais annoncé un plafond de connexions Postgres et j'allais monter
+`max_connections`. Mesuré avant d'écrire : **pic de 17 connexions pour une suite
+complète, sur un plafond de 100.** Le réglage n'aurait rien réglé, et il aurait
+clos la question — le pire résultat possible. La vraie cause était écrite depuis
+des semaines dans le fichier même, dans le commentaire qui expliquait pourquoi le
+suffixe existait.
+
+**L'empreinte est appelée, jamais recopiée.** Elle sert à la base et au dépôt.
+Deux définitions de « quelle exécution suis-je » finiraient par diverger, et
+c'est la seconde qu'on oublierait de corriger — la leçon est déjà écrite trois
+fois dans ce fichier. Elle vit donc en tête de `conftest.py`, au-dessus des
+imports, parce que le dépôt d'objets doit être posé avant que la configuration
+ne soit construite ; d'où l'exemption `E402` sur ce seul fichier, avec sa raison.
+
+**Ce que ça coûte.** Une exécution tuée par un `kill -9` laisse sa base derrière
+elle, là où un nom fixe était repris au passage suivant. La commande de ramassage
+est dans la docstring d'`empreinte_de_l_execution`. C'est le prix de l'isolement,
+et il est plus bas que trois quarts d'heure de diagnostic sur un défaut qui
+n'existe pas.

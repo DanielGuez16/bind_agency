@@ -64,6 +64,17 @@ select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC"]
 # Fichiers produits par l'autogénération Alembic : on relit leur contenu, pas
 # leur mise en forme. Les règles de fond (imports inutilisés, bugs) restent.
 "alembic/versions/*.py" = ["E501", "I001", "UP007", "UP035"]
+# **Ce fichier doit exécuter du code avant ses imports, et c'est le sujet.** Il
+# pose `OBJECT_STORE_LOCAL_ROOT` — suffixé par l'exécution et le worker — avant
+# le premier import d'`app` : `get_settings` est mis en cache au premier appel,
+# et le poser après n'aurait d'effet sur rien. La fonction qui calcule
+# l'empreinte vit donc en tête, au-dessus des imports.
+#
+# E402 tolérait déjà l'ancienne forme — un simple `if` — et refuse un `def`. La
+# règle n'a pas changé d'avis sur le fond ; c'est la forme du correctif qui a
+# changé, parce que la même empreinte sert maintenant à la base et au dépôt
+# d'objets et qu'on ne la calcule qu'une fois.
+"tests/conftest.py" = ["E402"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
