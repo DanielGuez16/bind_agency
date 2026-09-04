@@ -86,7 +86,13 @@ export function FavorisScreen({
   onVoirMesPaliers,
 }: {
   onRetour: () => void;
-  onOuvrirLeCommerce: (businessId: string) => void;
+  /**
+   * Ouvre le salon d'un favori. **Absent depuis la pile du profil** : la fiche
+   * mène à la réservation, qui appartient au parcours, et l'ouvrir d'ici y
+   * enfermerait sans suite. La rangée cesse alors d'être pressable — elle ne
+   * reçoit pas une fonction vide.
+   */
+  onOuvrirLeCommerce?: (businessId: string) => void;
   onVoirMesPaliers: () => void;
 }) {
   const { api } = useApi();
@@ -166,7 +172,9 @@ export function FavorisScreen({
               <LigneDuFavori
                 key={favori.catalog_item_id}
                 favori={favori}
-                onOuvrir={() => onOuvrirLeCommerce(favori.business_id)}
+                onOuvrir={
+                  onOuvrirLeCommerce && (() => onOuvrirLeCommerce(favori.business_id))
+                }
                 onRetirer={() => retirer(favori.catalog_item_id, favori.name)}
                 onVoirMesPaliers={onVoirMesPaliers}
               />
@@ -184,7 +192,8 @@ function LigneDuFavori({
   onVoirMesPaliers,
 }: {
   favori: Favori;
-  onOuvrir: () => void;
+  /** Absent : la rangée n'ouvre rien, donc elle n'est pas un bouton. */
+  onOuvrir?: () => void;
   onRetirer: () => void;
   onVoirMesPaliers: () => void;
 }) {
@@ -206,6 +215,36 @@ function LigneDuFavori({
   const manquants =
     palier?.abonnes_manquants == null ? null : formatNumber(palier.abonnes_manquants, locale);
 
+  /**
+   * Ce que la rangée montre, pressable ou non.
+   *
+   * Écrit une fois : le recopier dans les deux branches les laisserait
+   * diverger, et c'est celle qu'on regarde le moins qui vieillirait.
+   */
+  const identite = (
+    <>
+      <Photo
+        uri={api.urlDeLaVignette(favori.photo_key)}
+        hauteur={VIGNETTE}
+        style={{ width: VIGNETTE, borderRadius: radius['radius.photo'] }}
+        testID={`favori-photo-${favori.catalog_item_id}`}
+      />
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <Texte variante="type.bodyStrong">{favori.name}</Texte>
+        <Texte variante="type.caption" couleur="ink.soft">
+          {[
+            favori.business_name,
+            favori.duration_minutes === null
+              ? null
+              : t('favoris.duree', { n: String(favori.duration_minutes) }),
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </Texte>
+      </View>
+    </>
+  );
+
   return (
     <View
       testID={`favori-${favori.catalog_item_id}`}
@@ -222,42 +261,40 @@ function LigneDuFavori({
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        {/* **La ligne entière ouvre le salon.** C'était réservé au bandeau des
-            états non réservables : sur une prestation qu'on peut réserver — le
-            cas le plus fréquent — la liste ne menait nulle part. */}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${favori.name} — ${favori.business_name}`}
-          onPress={onOuvrir}
-          style={({ pressed }) => ({
-            flex: 1,
-            minWidth: 0,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 12,
-            opacity: pressed ? 0.7 : 1,
-          })}
-        >
-          <Photo
-            uri={api.urlDeLaVignette(favori.photo_key)}
-            hauteur={VIGNETTE}
-            style={{ width: VIGNETTE, borderRadius: radius['radius.photo'] }}
-            testID={`favori-photo-${favori.catalog_item_id}`}
-          />
-          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-            <Texte variante="type.bodyStrong">{favori.name}</Texte>
-            <Texte variante="type.caption" couleur="ink.soft">
-              {[
-                favori.business_name,
-                favori.duration_minutes === null
-                  ? null
-                  : t('favoris.duree', { n: String(favori.duration_minutes) }),
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-            </Texte>
+        {/* **La ligne entière ouvre le salon — quand il y a un salon à
+            ouvrir.** C'était réservé au bandeau des états non réservables : sur
+            une prestation qu'on peut réserver — le cas le plus fréquent — la
+            liste ne menait nulle part.
+
+            **Et depuis le profil, il n'y en a pas.** La fiche mène à la
+            réservation, qui appartient au parcours ; l'ouvrir depuis la pile du
+            profil y enfermerait sans suite. Cette pile passait donc une
+            fonction vide, et la rangée restait pressable : un contrôle qui
+            répond au doigt et n'ouvre rien apprend à ne plus essayer, et
+            annonce un bouton à la lecture d'écran là où il n'y en a pas. Sans
+            destination, la rangée n'est plus un bouton du tout — c'est la règle
+            que la liste des salons applique déjà. */}
+        {onOuvrir ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${favori.name} — ${favori.business_name}`}
+            onPress={onOuvrir}
+            style={({ pressed }) => ({
+              flex: 1,
+              minWidth: 0,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            {identite}
+          </Pressable>
+        ) : (
+          <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            {identite}
           </View>
-        </Pressable>
+        )}
 
         {/* **Le cœur se presse ici aussi, et il le fallait.** Il était
             décoratif — « retirer se fait là où l'on a posé » — et c'était faux
