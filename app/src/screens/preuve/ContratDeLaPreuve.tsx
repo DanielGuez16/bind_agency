@@ -33,7 +33,7 @@ import { View } from 'react-native';
 
 import type { Collaboration } from '../../api';
 import { Icone, LigneDeContrepartie, Texte, vibration } from '../../components';
-import { nomDeJour } from '../../format';
+
 import { useI18n } from '../../i18n';
 import { elevationDeCarte, radius, useTheme } from '../../theme';
 
@@ -264,13 +264,41 @@ function LigneCopiable({
   );
 }
 
-/** L'échéance, en jour nommé et heure. Jamais un délai à compter. */
+/**
+ * L'échéance, en jour nommé et heure. Jamais un délai à compter.
+ *
+ * **Le mois y est, et il manquait.** La forme rendue était « Thursday 3, 4:26
+ * PM » : `nomDeJour(…, 'long')` ne demande que `weekday` et `day`. Sur une
+ * échéance à plusieurs semaines, rien ne distinguait le 3 de ce mois-ci du 3
+ * du suivant — et c'est la seule date du produit qu'on lit pour ne pas la
+ * manquer.
+ *
+ * **L'année n'apparaît que si elle change.** L'écrire toujours ajouterait
+ * quatre chiffres qu'on ne lit pas onze mois sur douze ; l'omettre toujours
+ * rendrait « January 3 » ambigu depuis décembre, ce qui est exactement le cas
+ * où l'échéance se manque. Elle suit donc l'année en cours dans le fuseau du
+ * commerce, pas celle de la machine.
+ */
 function echeance(isoUtc: string, locale: 'en' | 'es', timezone: string): string {
-  const jourNu = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, dateStyle: 'short' }).format(
-    new Date(isoUtc),
-  );
+  const quand = new Date(isoUtc);
+  const anneeDeLEcheance = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+  }).format(quand);
+  const anneeCourante = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+  }).format(new Date());
+
+  const jour = new Intl.DateTimeFormat(locale, {
+    timeZone: timezone,
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    ...(anneeDeLEcheance === anneeCourante ? {} : { year: 'numeric' }),
+  }).format(quand);
   const heure = new Intl.DateTimeFormat(locale, { timeStyle: 'short', timeZone: timezone }).format(
-    new Date(isoUtc),
+    quand,
   );
-  return `${nomDeJour(jourNu, locale, 'long')}, ${heure}`;
+  return `${jour}, ${heure}`;
 }
