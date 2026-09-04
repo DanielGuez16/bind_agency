@@ -240,6 +240,10 @@ async function reserverDepuisLeFil() {
   const groupe = screen.getByTestId('matin');
   await fireEvent.press(within(groupe).getAllByRole('button')[0]);
   await waitFor(() => expect(screen.getByTestId('confirmer')).toBeTruthy());
+  // **Le consentement fait partie du parcours depuis qu'il est obligatoire.**
+  // Sans ce geste, le bouton reste verrouillé et ce test presserait un bouton
+  // mort — il n'éprouverait plus l'atterrissage qu'il prétend éprouver.
+  await fireEvent.press(screen.getByTestId('bascule-engagement'));
   await fireEvent.press(screen.getByTestId('confirmer'));
 }
 
@@ -275,6 +279,10 @@ it('atterrit sur la liste des réservations, pas sur le code', async () => {
   const groupe = screen.getByTestId('matin');
   await fireEvent.press(within(groupe).getAllByRole('button')[0]);
   await waitFor(() => expect(screen.getByTestId('confirmer')).toBeTruthy());
+  // **Le consentement fait partie du parcours depuis qu'il est obligatoire.**
+  // Sans ce geste, le bouton reste verrouillé et ce test presserait un bouton
+  // mort — il n'éprouverait plus l'atterrissage qu'il prétend éprouver.
+  await fireEvent.press(screen.getByTestId('bascule-engagement'));
   await fireEvent.press(screen.getByTestId('confirmer'));
 
   // La liste : elle confirme que la place est prise, elle porte la date, et

@@ -462,6 +462,7 @@ export const es: Catalogue = {
     creneauxEngagementTitre: 'A qué te comprometes',
     creneauxEngagementCiter: 'Etiqueta y menciona a {{quoi}}',
     creneauxEngagementPublierAvant: 'Publica antes del ',
+    creneauxConditions: 'Acepto las condiciones de BIND (versión {{version}}) y me comprometo a publicar',
     creneauxAnnulationTitre: 'Si no puedes venir',
     creneauxAnnulationCorps: 'Cancela gratis hasta {{heures}} h antes. Después, o si no te presentas, cuenta en tu puntuación de fiabilidad.',
     creneauxAnnulationScore: 'La puntuación es gradual y se recupera al cumplir las siguientes.',
@@ -1515,6 +1516,8 @@ export const es: Catalogue = {
     support_access_out_of_scope: 'Este acceso no abre esa pantalla. Abre uno que sí.',
     handover_terms_outdated:
       'Las condiciones han cambiado desde que se abrió la página. Recárgala y vuelve a leerlas.',
+    booking_terms_outdated:
+      'Las condiciones han cambiado mientras reservabas. Vuelve y elige tu hora de nuevo.',
     catalog_duration_mismatch:
       'Un artículo reservable necesita una duración, y uno que no se reserva no debe tenerla.',
     catalog_item_not_bookable:

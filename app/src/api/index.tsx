@@ -399,9 +399,17 @@ export class Api {
     });
   }
 
-  confirmerLaReservation(bookingId: string) {
+  /**
+   * Confirmer, **et s'engager dans le même geste**.
+   *
+   * La version envoyée est celle que l'écran a montrée, pas celle en vigueur au
+   * moment de l'envoi : le serveur refuse l'écart plutôt que d'enregistrer une
+   * acceptation que personne n'a produite.
+   */
+  confirmerLaReservation(bookingId: string, versionDesConditions: string) {
     return this.client.request<Booking>(routes.confirmerLaReservation(bookingId), {
       methode: 'POST',
+      corps: { terms_version: versionDesConditions },
     });
   }
 

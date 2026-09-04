@@ -616,6 +616,16 @@ export type OffreDeLaFiche = {
 };
 
 export type FichePublique = {
+  /**
+   * La version des conditions en vigueur, celle que l'écran de réservation
+   * montre avant de faire accepter.
+   *
+   * **Servie et non écrite en dur.** Ce que l'écran fait accepter doit être ce
+   * qu'il a montré : une version constante dans l'app annoncerait encore
+   * l'ancienne le jour où le texte change, et le serveur refuserait l'écart —
+   * ce refus n'a de sens que si la version vient de lui.
+   */
+  terms_version: string;
   business_id: string;
   name: string;
   category: BusinessCategory;

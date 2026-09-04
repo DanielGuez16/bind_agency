@@ -1414,6 +1414,29 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       d'origine : « des mots pour la seconde » a tenu six semaines sans suffire.
       `attenteDe` n'est pas retirée — elle devient la définition serveur du
       quatrième onglet.*
+- [x] **C3 — la réservation demande un engagement, elle ne le suppose pas**
+      *Le bouton s'appelait déjà « Confirm booking » et rien n'était confirmé :
+      l'écran montrait « à quoi tu t'engages » puis laissait réserver d'un appui,
+      sans trace. Le motif existait déjà côté commerce — bascule, version des
+      conditions, refus de l'écart, journal d'audit — et nulle part côté
+      créatrice.*
+
+      ***À la confirmation, pas à la pose du garde** : `SPEC.md` §4.1 nomme
+      l'acte, et le `held` est un verrou de capacité qui expire seul en dix
+      minutes. **Exigé à la route, facultatif au service** : `confirmer` a
+      soixante-trois appelants dont aucun ne parle de conditions, et leur
+      imposer une version leur ferait fabriquer une preuve qu'aucun humain n'a
+      produite. **Zéro test cassé**, comme l'audit l'annonçait.*
+
+      ***La preuve au journal d'audit, pas sur la réservation** — le journal est
+      immuable. La version servie sur la fiche et non sur l'offre : un objet par
+      écran contre une ligne par prestation. Code d'erreur distinct de la prise
+      en main : « rechargez cette page » ne veut rien dire sur un écran de
+      créneau.*
+
+      ***La mutation a montré ce qu'une relecture n'aurait pas vu*** : *une
+      bascule décorative — affichée, non lue par le verrou — passe tous les
+      autres tests. Un seul cas distingue « on demande » de « on affiche ».*
 
 - [x] **La suite en parallèle** — 651 s à 300 s, mesuré
       *`pytest-xdist` avec `--dist loadgroup`. Les deux tests de concurrence

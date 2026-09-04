@@ -47,6 +47,10 @@ test('réserver un créneau, puis retrouver son code', async ({ page }) => {
   await expect(creneau, 'aucun créneau libre dans l’horizon').toBeVisible();
   await creneau.click();
 
+  // **Le consentement est un geste, et il est obligatoire depuis C3.** Sans lui
+  // le bouton reste verrouillé : le test attendait deux minutes sur un bouton
+  // mort, et c'est le seul endroit du parcours de bout en bout qui l'aurait dit.
+  await page.getByTestId('ecran-creneaux').getByTestId('bascule-engagement').click();
   await page.getByTestId('ecran-creneaux').getByTestId('confirmer').click();
 
   // **On atterrit sur la liste, pas sur le code.** La prestation est dans

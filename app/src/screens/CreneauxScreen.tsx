@@ -43,6 +43,7 @@ import {
   SlotPicker,
   StatusMessage,
   Texte,
+  Toggle,
   vibration,
 } from '../components';
 import { formatHeure, formatNumber, jourCivil, nomDeJour } from '../format';
@@ -94,6 +95,20 @@ export function CreneauxScreen({
   const { api, messageDErreur } = useApi();
   const { t, locale } = useI18n();
   const { color: c, density } = useTheme();
+
+  /**
+   * Ce que la créatrice accepte en confirmant.
+   *
+   * **Une bascule, pas une case pré-cochée** — la même règle que la prise en
+   * main d'une fiche, et pour la même raison : ce qui est accepté ici est écrit
+   * au journal avec la version et l'instant, et une acceptation posée d'avance
+   * n'aurait aucune valeur le jour où on la produit.
+   *
+   * **Elle clôt le bloc d'engagement au lieu de le répéter.** « À quoi tu
+   * t'engages » est juste au-dessus, en trois lignes ; la bascule ne redit rien,
+   * elle demande de le reconnaître.
+   */
+  const [accepte, setAccepte] = useState(false);
 
   const [jourChoisi, setJourChoisi] = useState<string | null>(null);
   const [choisi, setChoisi] = useState<string | undefined>();
@@ -197,7 +212,7 @@ export function CreneauxScreen({
         social_account_id: offre.social_account_id,
         starts_at: offre.requires_booking ? creneau : null,
       });
-      await api.confirmerLaReservation(booking.id);
+      await api.confirmerLaReservation(booking.id, fiche.terms_version);
       vibration.reussite();
       onReserve(booking.id);
     } catch (erreur) {
@@ -281,12 +296,42 @@ export function CreneauxScreen({
                 d'être pris. Il n'apparaît qu'une fois l'heure choisie : avant,
                 il annoncerait une échéance qu'on ne peut pas calculer. */}
             {pretAReserver ? (
-              <Engagement
-                offre={offre}
-                quand={choisi ?? null}
-                nomDuSalon={fiche.name}
-                timezone={fiche.timezone}
-              />
+              <>
+                <Engagement
+                  offre={offre}
+                  quand={choisi ?? null}
+                  nomDuSalon={fiche.name}
+                  timezone={fiche.timezone}
+                />
+
+                {/* **Elle clôt le bloc d'engagement, elle ne le répète pas.**
+                    Ce qui est dû est écrit juste au-dessus ; ici on demande de
+                    le reconnaître. Une bascule et non une case pré-cochée : ce
+                    qui est accepté part au journal avec sa version et son
+                    instant, et une acceptation posée d'avance n'aurait aucune
+                    valeur le jour où on la produit. */}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    minHeight: 44,
+                  }}
+                >
+                  <Texte style={{ flex: 1 }} variante="type.body">
+                    {t('parcours.creneauxConditions', { version: fiche.terms_version })}
+                  </Texte>
+                  <Toggle
+                    value={accepte}
+                    onChange={setAccepte}
+                    accessibilityLabel={t('parcours.creneauxConditions', {
+                      version: fiche.terms_version,
+                    })}
+                    testID="bascule-engagement"
+                  />
+                </View>
+              </>
             ) : null}
 
             {/* **Le créneau pris, et ce qui reste au plus près.** La créatrice
@@ -322,6 +367,9 @@ export function CreneauxScreen({
                       variant="secondary"
                       fullWidth={false}
                       loading={envoi}
+                      // Le même verrou que le bouton principal : sans lui, le
+                      // consentement se contournerait d'un appui sur une reprise.
+                      disabled={!accepte}
                       onPress={() => void reserver(autre.starts_at)}
                       testID={`reprendre-${autre.starts_at}`}
                     />
@@ -390,7 +438,11 @@ export function CreneauxScreen({
             <Button
               label={t('parcours.confirmer')}
               loading={envoi}
-              disabled={!pretAReserver}
+              // **Deux conditions et non une.** `pretAReserver` dit qu'il y a
+              // quelque chose à réserver ; `accepte` dit que la créatrice a
+              // reconnu ce qu'elle doit en retour. Les confondre rendrait la
+              // bascule décorative.
+              disabled={!pretAReserver || !accepte}
               fullWidth={false}
               // **Enveloppé, et ce n'est pas cosmétique.** `reserver` prend
               // désormais un créneau facultatif : passé directement, `onPress`
