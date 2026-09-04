@@ -972,6 +972,27 @@ function Offre({
         <CoeurDeLOffre offre={offre} favoris={favoris} />
       </View>
 
+      {/* **La description, enfin lue.** Le salon l'écrivait depuis toujours —
+          `CatalogueScreen` la lui demande — et aucun écran créatrice ne la
+          rendait : le seul lecteur de ce champ était celui qui l'édite.
+          Pire, la recherche du fil l'indexe déjà : on pouvait donc trouver une
+          prestation par un mot que rien n'affichait ensuite.
+
+          **Sur toute la largeur, sous le nom.** Dans la colonne de gauche elle
+          se serait serrée contre la vignette, où une phrase se lit mal ; ici
+          elle prend la carte entière, au-dessus du filet — c'est ce qu'on
+          prend, et la contrepartie reste ce qu'on rend.
+
+          **Rendue aussi sur une prestation fermée**, et c'est là qu'elle sert
+          le plus : le bloc dit lui-même qu'une prestation fermée « est
+          décrite, pas offerte ». Sans elle, la description manquait à celle
+          qui n'a rien d'autre à lire. */}
+      {offre.description ? (
+        <Texte variante="type.body" couleur="ink.soft" testID="offre-description">
+          {offre.description}
+        </Texte>
+      ) : null}
+
       {/* **Ce qu'on donne est dans le bloc du service, sous un filet.**
           Séparée du nom par un simple écart, la contrepartie flottait entre
           deux prestations : on ne savait plus laquelle des deux elle

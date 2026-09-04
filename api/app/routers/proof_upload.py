@@ -24,18 +24,27 @@ from pydantic import BaseModel
 from app.core.config import get_settings
 from app.core.dependencies import CurrentUser
 from app.core.errors import ErrorCode, api_error
-from app.integrations.object_store import ObjectStoreError, get_object_store
+from app.integrations.object_store import ObjectStoreError, get_object_store, type_du_contenu
 from app.models.enums import UserRole
 
 router = APIRouter(tags=["proofs"])
 
-#: Les signatures acceptées. Fermée : un format qu'on ne sait pas relire ne
+#: Les types acceptés en preuve. Fermée : un format qu'on ne sait pas relire ne
 #: sert pas de preuve, et l'accepter le ferait découvrir au contrôle.
-SIGNATURES = (
-    (b"\x89PNG\r\n\x1a\n", "image/png"),
-    (b"\xff\xd8\xff", "image/jpeg"),
-    (b"RIFF", "image/webp"),
-)
+#:
+#: **La vidéo y entre, et ce n'était pas un oubli anodin.** `ContentFormat`
+#: vaut `story | post | reel` : un reel est une vidéo par nature, une story le
+#: plus souvent. La liste n'acceptait que des images, donc la créatrice à qui
+#: l'on demandait un reel ne pouvait déposer que la capture d'écran de sa
+#: vidéo — le niveau de preuve le plus faible, pour un format où l'on aurait pu
+#: avoir le média.
+#:
+#: **Les signatures ne sont pas recopiées ici.** `object_store.type_du_contenu`
+#: les porte déjà, MP4 compris — dont l'en-tête ne commence pas au premier
+#: octet, ce qu'un `startswith` ne sait pas exprimer et ce que la version
+#: précédente de ce fichier ne pouvait donc pas faire. Deux tables auraient
+#: divergé au premier format ajouté d'un seul côté.
+TYPES_ACCEPTES = frozenset({"image/png", "image/jpeg", "image/webp", "video/mp4"})
 
 #: La taille des tranches de lecture. Assez grande pour ne pas multiplier les
 #: allers-retours, assez petite pour que le dépassement se voie vite.
@@ -84,8 +93,9 @@ async def televerser(
     if not contenu:
         raise api_error(status.HTTP_422_UNPROCESSABLE_CONTENT, ErrorCode.VALIDATION_FAILED)
 
-    if not any(contenu.startswith(signature) for signature, _ in SIGNATURES):
-        # Le type déclaré n'est pas consulté : il est fourni par l'appelant.
+    # Le type déclaré n'est pas consulté : il est fourni par l'appelant. On lit
+    # les octets, par la même fonction que le dépôt d'objets.
+    if type_du_contenu(contenu) not in TYPES_ACCEPTES:
         raise api_error(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, ErrorCode.PROOF_UNSUPPORTED_TYPE)
 
     try:

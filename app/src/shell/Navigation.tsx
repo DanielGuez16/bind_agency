@@ -545,6 +545,14 @@ export function PileDesReservations() {
             // qu'immédiatement après la confirmation : fermer l'application le
             // faisait perdre jusqu'au rendez-vous, alors que c'est la seule
             // chose à montrer au comptoir.
+            // **Vers la fiche, par l'onglet qui la porte.** `Fiche` vit dans
+            // la pile du fil et nulle part ailleurs ; la dupliquer ici
+            // amènerait aussi `Creneaux`, donc tout le parcours de
+            // réservation dans un onglet qui n'en est pas un. Le saut
+            // d'onglet est celui que `onReserve` fait déjà en sens inverse.
+            onOuvrirLeCommerce={(businessId) =>
+              navigation.navigate('parcours', { screen: 'Fiche', params: { businessId } })
+            }
             onOuvrir={(reservation) => {
               const cible = destination(reservation);
               if (cible === 'code') {
@@ -1148,13 +1156,15 @@ function OngletsAdmin() {
       {/* **Le mode terrain.** Il n'est pas rangé derrière un autre écran : la
           fondatrice l'ouvre debout dans un salon, entre deux clients, et deux
           gestes de plus pour l'atteindre suffisent à ne pas le sortir. */}
-      <Onglets.Screen name="terrain" options={onglet(t('onglets.terrain'), 'personne')}>
-        {() => (
-          <TerrainScreen
-            onEntrerEnReprise={(businessId, nom, detail) => setReprise({ businessId, nom, detail })}
-          />
-        )}
-      </Onglets.Screen>
+      {/* **Sans reprise de compte.** Elle y était offerte et se lisait comme
+          une capacité du démarchage — « on prend le contrôle des salons qu'on
+          visite » — alors que c'est l'accès de support. Elle reste sur
+          l'écran des salons, au-dessus. */}
+      <Onglets.Screen
+        name="terrain"
+        component={TerrainScreen}
+        options={onglet(t('onglets.terrain'), 'personne')}
+      />
       <Onglets.Screen
         name="reglages"
         component={ReglagesScreen}

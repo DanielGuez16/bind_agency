@@ -15,7 +15,13 @@ import { ThemeProvider } from '../src/theme';
 
 // Typé, et non inféré : sans annotation TypeScript déduit `null` pur de chaque
 // champ, et l'étalement qui pose une adresse ne compile plus.
-const RIEN: LiensPublics = { instagram_url: null, tiktok_url: null, website_url: null };
+const RIEN: LiensPublics = {
+  instagram_url: null,
+  tiktok_url: null,
+  facebook_url: null,
+  website_url: null,
+  instagram_handle: null,
+};
 
 async function monter(liens: LiensPublics) {
   return await render(
@@ -32,12 +38,18 @@ describe('ce qui part au serveur', () => {
     // **Le cas divergent.** Sans la conversion, `''` part tel quel : la fiche
     // rendrait alors un lien vers nulle part, et le salon croirait l'avoir
     // retiré. Une chaîne vide et `null` sont deux choses pour le serveur.
-    expect(aEnvoyer({ instagram_url: '', tiktok_url: '   ', website_url: null })).toEqual(RIEN);
+    expect(aEnvoyer({ instagram_url: '', tiktok_url: '   ', facebook_url: null, website_url: null, instagram_handle: null })).toEqual(RIEN);
   });
 
   it('et une adresse renseignée part sans ses espaces', () => {
     expect(
-      aEnvoyer({ instagram_url: '  https://instagram.com/vela  ', tiktok_url: null, website_url: null }),
+      aEnvoyer({
+        instagram_url: '  https://instagram.com/vela  ',
+        tiktok_url: null,
+        facebook_url: null,
+        website_url: null,
+        instagram_handle: null,
+      }),
     ).toEqual({ ...RIEN, instagram_url: 'https://instagram.com/vela' });
   });
 });
@@ -52,6 +64,18 @@ describe('ce que la fiche montre', () => {
     await monter({ ...RIEN, instagram_url: 'https://instagram.com/vela' });
     expect(screen.getByTestId('liens-du-salon-instagram')).toBeTruthy();
     expect(screen.queryByTestId('liens-du-salon-tiktok')).toBeNull();
+    expect(screen.queryByTestId('liens-du-salon-facebook')).toBeNull();
     expect(screen.queryByTestId('liens-du-salon-site')).toBeNull();
+  });
+
+  it('Facebook compris, qui n’existait nulle part dans le produit', async () => {
+    // **Le quatrième réseau ne se déduit d'aucun autre.** Un salon peut n'avoir
+    // qu'une page Facebook : si elle ne se rendait pas seule, la demande de
+    // Rebecca — cliquer pour ouvrir la page du commerce — resterait sans
+    // réponse pour exactement ceux qui n'ont que ça.
+    await monter({ ...RIEN, facebook_url: 'https://facebook.com/vela' });
+
+    expect(screen.getByTestId('liens-du-salon-facebook')).toBeTruthy();
+    expect(screen.queryByTestId('liens-du-salon-instagram')).toBeNull();
   });
 });

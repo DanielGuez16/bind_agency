@@ -82,8 +82,23 @@ export default defineConfig({
   // Le build est produit avant, par la commande de lancement : l'exporter ici
   // rendrait chaque exécution de test dépendante d'un bundler de trois
   // minutes.
+  // **`serve` est une devDependency, et l'appel est local.** Il était lancé par
+  // `npx --yes serve`, donc téléchargé depuis npm à chaque exécution, sous ce
+  // plafond de 120 s. Une lenteur du registre rendait alors la CI rouge sur du
+  // code juste, sous « Timed out waiting from config.webServer » — un message
+  // qui ne parle ni de npm ni du réseau, et qui accuse la dernière ligne
+  // écrite.
+  //
+  // Mesuré plutôt que supposé : `main`, à un commit dont l'e2e était vert, a
+  // échoué deux fois de suite à la relance, puis est repassé vert une heure
+  // plus tard sans qu'une ligne bouge. Node est épinglé par `.nvmrc` et `serve`
+  // n'avait pas été publié depuis six mois — restait le téléchargement.
+  //
+  // `npx` sans `--yes` prend maintenant le binaire de `node_modules`, que
+  // `setup-node` restaure déjà de son cache. Plus aucun appel au registre au
+  // moment des tests.
   webServer: {
-    command: `npx --yes serve --no-clipboard --single --listen ${PORT} dist-e2e`,
+    command: `npx serve --no-clipboard --single --listen ${PORT} dist-e2e`,
     url: `http://127.0.0.1:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

@@ -73,14 +73,41 @@ TRANSITIONS: dict[BookingStatus, frozenset[BookingStatus]] = {
     BookingStatus.CONFIRMED: frozenset(
         {BookingStatus.CONSUMED, BookingStatus.CANCELLED, BookingStatus.NO_SHOW}
     ),
+    # **`consumed` n'est pas terminal, et l'avoir cru était le défaut.** Une
+    # prestation servie ouvre une contrepartie ; tant qu'elle n'a pas d'issue,
+    # l'échange court. Sans cette flèche la réservation restait `consumed` pour
+    # toujours — publiée, acceptée, ou jamais rendue, c'était le même état — et
+    # deux écrans en héritaient : un compteur « à envoyer » qui ne redescendait
+    # jamais, et un onglet des terminées qu'aucune prestation honorée
+    # n'atteignait.
+    #
+    # **Une seule flèche, et surtout pas vers `no_show`.** Voir la garde de
+    # `test_booking_states` : une place consommée qui pourrait devenir une
+    # absence mettrait un événement de fiabilité négatif au débit d'une
+    # créatrice qui s'est présentée et qu'on a servie.
+    BookingStatus.CONSUMED: frozenset({BookingStatus.CLOSED}),
     # Les quatre états terminaux. Déclarés vides plutôt qu'absents : un `get`
     # sur une clé manquante et un ensemble vide se ressemblent trop, et la
     # différence entre « terminal » et « oublié » doit se voir.
-    BookingStatus.CONSUMED: frozenset(),
+    BookingStatus.CLOSED: frozenset(),
     BookingStatus.CANCELLED: frozenset(),
     BookingStatus.NO_SHOW: frozenset(),
     BookingStatus.EXPIRED: frozenset(),
 }
+
+#: Les réservations où la prestation **a réellement été livrée**.
+#:
+#: **Nommé plutôt qu'épelé, et c'est ce qui rend `closed` sûr.** Huit requêtes
+#: — le rapport du commerce, la valeur offerte, la popularité d'un quartier —
+#: écrivaient `status == CONSUMED` pour dire « le salon a donné cette
+#: prestation ». Ajouter un état de sortie sans les toucher aurait fait
+#: disparaître du rapport chaque prestation dont la publication a été tranchée :
+#: le salon aurait vu fondre ce qu'il croyait avoir donné, au fur et à mesure
+#: que les dossiers se ferment.
+#:
+#: L'ensemble porte donc l'intention, là où l'égalité la laissait deviner. Un
+#: état de sortie ajouté demain se déclare ici, et les huit lectures suivent.
+STATUTS_SERVIS = frozenset({BookingStatus.CONSUMED, BookingStatus.CLOSED})
 
 
 class BookingStateError(Exception):
@@ -566,6 +593,40 @@ async def consommer(session: AsyncSession, *, booking: Booking, actor: audit.Act
     )
     await collaboration.creer(session, booking=consomme)
     return consomme
+
+
+async def clore(
+    session: AsyncSession, *, booking: Booking, actor: audit.Actor, reason: str
+) -> Booking:
+    """L'autre bout de `consommer` : la contrepartie a une issue, l'échange finit.
+
+    **Appelé depuis la contrepartie, jamais depuis une route.** C'est elle qui
+    sait quand elle se ferme — approuvée, non honorée, fermée sans faute — et
+    les trois portes mènent ici. Le laisser à l'appelant HTTP produirait la
+    quatrième porte qu'on oublie, et une réservation qui reste « à envoyer »
+    pour toujours après un dossier tranché : c'est exactement le défaut qu'on
+    corrige.
+
+    **Idempotent par le silence, pas par une exception.** Une contrepartie peut
+    atteindre un état terminal alors que la réservation a été close par un autre
+    chemin ; refuser bruyamment ferait échouer une décision de salon parfaitement
+    valide pour une écriture qui n'avait plus lieu d'être. Ce qui reste interdit
+    — passer de `cancelled` ou de `no_show` à `closed` — l'est toujours, et
+    `transitionner` le refuse.
+
+    **`reason` est exigé, là où `consommer` s'en passe.** La boucle d'échéance
+    ferme des dossiers sans personne devant l'écran, et le journal d'audit
+    refuse une transition système muette — à juste titre : « fermée par le
+    système » sans sa cause est indéfendable trois mois plus tard. L'exiger de
+    tous les appelants évite d'avoir à se rappeler lequel est automatique, et
+    c'est le compilateur qui le rappelle plutôt qu'une exception au premier
+    passage du balayage.
+    """
+    if booking.status is BookingStatus.CLOSED:
+        return booking
+    return await transitionner(
+        session, booking=booking, vers=BookingStatus.CLOSED, actor=actor, reason=reason
+    )
 
 
 def _est_depassee(booking: Booking, *, maintenant: datetime | None = None) -> bool:

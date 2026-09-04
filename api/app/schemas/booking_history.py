@@ -88,6 +88,12 @@ class ReservationDuCreateurRead(BaseModel):
     #: dans celui du téléphone. Un rendez-vous se prend là où il a lieu.
     business_timezone: str
     business_cover_photo_key: str | None
+    #: Les liens publics du salon. Voir la remarque du service : le glyphe de
+    #: la carte dit la plateforme de la contrepartie, ces liens disent le salon.
+    business_instagram_url: str | None
+    business_tiktok_url: str | None
+    business_facebook_url: str | None
+    business_website_url: str | None
     item_name: str
     item_photo_key: str | None
     duration_minutes: int | None
@@ -108,6 +114,10 @@ class HistoriqueDuCreateurRead(BaseModel):
     #: Tous les statuts sont présents, à zéro s'il le faut : l'app affiche ses
     #: onglets sans connaître la liste, et un onglet vide reste un onglet.
     compteurs: dict[BookingStatus, int]
+    #: Le badge de l'onglet « à envoyer » : ce qui attend un geste de la
+    #: créatrice, et rien d'autre. Voir le service — un dossier en contrôle est
+    #: `consumed` lui aussi, et n'attend personne de ce côté.
+    a_envoyer: int
 
 
 class CompteDeLaCreatriceRead(BaseModel):

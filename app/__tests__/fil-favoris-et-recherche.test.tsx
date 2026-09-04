@@ -155,3 +155,34 @@ describe('la recherche existait et n’avait aucun bouton', () => {
     expect(ouvertures).toEqual(['favoris']);
   });
 });
+
+describe('le rayon se règle au kilomètre', () => {
+  it('envoie le rayon choisi au serveur, et seulement au relâchement', async () => {
+    /**
+     * **Deux choses en un test, parce qu'elles sont la même.** Le curseur ne
+     * vaut que s'il atteint la requête ; et s'il l'atteignait à chaque position
+     * rendue, un seul geste enverrait une trentaine d'appels dont les réponses
+     * reviendraient dans le désordre. Le libellé suit le doigt, la requête
+     * attend le relâchement.
+     */
+    const { appels } = await monter();
+    const avant = appels.length;
+
+    const curseur = screen.getByTestId('rayon-de-recherche-curseur');
+
+    // Le doigt glisse : l'écran répond, le réseau se tait.
+    await act(async () => {
+      await fireEvent(curseur, 'valueChange', 32);
+    });
+    expect(screen.getByTestId('rayon-de-recherche-valeur')).toHaveTextContent(/32/);
+    expect(appels.length).toBe(avant);
+
+    // Il se lève : la requête part, avec le rayon en mètres.
+    await act(async () => {
+      await fireEvent(curseur, 'slidingComplete', 32);
+    });
+    await waitFor(() =>
+      expect(appels.some((a) => a.url.includes('rayon_metres=32000'))).toBe(true),
+    );
+  });
+});

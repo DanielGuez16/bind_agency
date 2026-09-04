@@ -53,6 +53,38 @@ class CoordinatesPayload(BaseModel):
 #: aucune bibliothèque ne l'évite.
 TELEPHONE = r"^\+[1-9]\d{7,14}$"
 
+#: Trente caractères, la borne d'Instagram, plus le `@` qu'on garde.
+HANDLE_MAX = 31
+
+#: Ce qu'un pseudonyme Instagram accepte : lettres, chiffres, point, tiret bas.
+#: Le `@` n'en fait pas partie — il est retiré avant de vérifier, puis remis.
+HANDLE = r"^[A-Za-z0-9._]{1,30}$"
+
+
+def _normaliser_le_handle(valeur: str | None) -> str | None:
+    """Un pseudonyme rangé sous une seule forme, `@` compris.
+
+    **Le `@` est posé par nous, pas par la personne.** Un salon écrit tantôt
+    `@maison.rivage`, tantôt `maison.rivage`, tantôt l'adresse complète. Les
+    trois désignent le même compte ; les stocker tels quels ferait trois
+    valeurs différentes pour une même chose, et la mention proposée à la
+    créatrice changerait d'un salon à l'autre sans raison.
+
+    **Une adresse collée est refusée plutôt que rognée.** `instagram.com/x`
+    contient une barre oblique, que le motif écarte : on rend une erreur nommée
+    au lieu de deviner. Deviner produirait un pseudonyme faux et silencieux, et
+    c'est la créatrice qui citerait le mauvais compte — la seule à ne pas
+    pouvoir s'en apercevoir.
+    """
+    if valeur is None:
+        return None
+    nu = valeur.strip().removeprefix("@")
+    if not nu:
+        return None
+    if not re.match(HANDLE, nu):
+        raise ValueError("handle_invalid")
+    return f"@{nu}"
+
 
 def _normaliser_le_telephone(valeur: str | None) -> str | None:
     """Retire ce qu'on tape pour lire, garde ce qui compose.
@@ -126,7 +158,12 @@ class BusinessCreate(BaseModel):
     #: l'adresse qu'il veut montrer.
     instagram_url: str | None = Field(default=None, max_length=1000)
     tiktok_url: str | None = Field(default=None, max_length=1000)
+    facebook_url: str | None = Field(default=None, max_length=1000)
     website_url: str | None = Field(default=None, max_length=1000)
+    #: Le compte Instagram du salon — le pseudonyme, pas l'adresse. Il sert de
+    #: valeur par défaut quand le commerce compose une offre : ce qu'une
+    #: publication doit citer vit sur l'offre, pas ici.
+    instagram_handle: str | None = Field(default=None, max_length=HANDLE_MAX)
 
     @field_validator("currency")
     @classmethod
@@ -144,6 +181,11 @@ class BusinessCreate(BaseModel):
     @classmethod
     def _telephone_composable(cls, value: str | None) -> str | None:
         return _normaliser_le_telephone(value)
+
+    @field_validator("instagram_handle")
+    @classmethod
+    def _handle_range(cls, value: str | None) -> str | None:
+        return _normaliser_le_handle(value)
 
     @field_validator("name")
     @classmethod
@@ -190,12 +232,22 @@ class BusinessUpdate(BaseModel):
     #: l'adresse qu'il veut montrer.
     instagram_url: str | None = Field(default=None, max_length=1000)
     tiktok_url: str | None = Field(default=None, max_length=1000)
+    facebook_url: str | None = Field(default=None, max_length=1000)
     website_url: str | None = Field(default=None, max_length=1000)
+    #: Le compte Instagram du salon — le pseudonyme, pas l'adresse. Il sert de
+    #: valeur par défaut quand le commerce compose une offre : ce qu'une
+    #: publication doit citer vit sur l'offre, pas ici.
+    instagram_handle: str | None = Field(default=None, max_length=HANDLE_MAX)
 
     @field_validator("timezone")
     @classmethod
     def _timezone_exists(cls, value: str | None) -> str | None:
         return _check_timezone(value)
+
+    @field_validator("instagram_handle")
+    @classmethod
+    def _handle_range(cls, value: str | None) -> str | None:
+        return _normaliser_le_handle(value)
 
 
 class CommerceDeLAppartenance(BaseModel):
@@ -256,7 +308,9 @@ class BusinessRead(BaseModel):
     menu_url: str | None
     instagram_url: str | None
     tiktok_url: str | None
+    facebook_url: str | None
     website_url: str | None
+    instagram_handle: str | None
     status: BusinessStatus
     #: Quand la période de grâce se ferme, et le salon quitte le fil.
     #:

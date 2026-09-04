@@ -32,7 +32,16 @@ export type BookingStatus =
   /** La créatrice a confirmé, le salon n'a pas encore tranché. */
   | 'awaiting_business'
   | 'confirmed'
+  /** Servie, et la publication est encore due. */
   | 'consumed'
+  /**
+   * L'échange est clos des deux côtés : servie, et la contrepartie tranchée.
+   *
+   * **Il ne dit pas laquelle des trois issues** — honorée, non honorée, fermée
+   * sans faute. Celle-là est portée par `contrepartie.status`, qui est le seul
+   * objet à la connaître.
+   */
+  | 'closed'
   | 'cancelled'
   | 'no_show'
   | 'expired';
@@ -632,6 +641,7 @@ export type FichePublique = {
    */
   instagram_url: string | null;
   tiktok_url: string | null;
+  facebook_url: string | null;
   website_url: string | null;
   cover_photo_key: string | null;
   /** La galerie, dans l'ordre choisi par le commerce. Elle montre le lieu. */
@@ -812,6 +822,20 @@ export type ReservationDuCreateur = {
   /** L'heure s'affiche dans le fuseau du commerce, pas dans celui du téléphone. */
   business_timezone: string;
   business_cover_photo_key: string | null;
+  /**
+   * Où le salon se montre ailleurs.
+   *
+   * **À ne pas confondre avec `platform` ci-dessous**, et c'est tout l'objet :
+   * `platform` est le réseau de la *contrepartie*, là où la créatrice va
+   * publier. Ces liens-ci sont les comptes du salon. Les deux s'affichent avec
+   * des logos qui se ressemblent et ne disent pas la même chose — le glyphe de
+   * la carte n'a jamais été cliquable parce qu'il ne mène nulle part : une
+   * plateforme n'est pas une adresse.
+   */
+  business_instagram_url: string | null;
+  business_tiktok_url: string | null;
+  business_facebook_url: string | null;
+  business_website_url: string | null;
   item_name: string;
   item_photo_key: string | null;
   duration_minutes: number | null;
@@ -831,6 +855,17 @@ export type HistoriqueDuCreateur = {
   items: ReservationDuCreateur[];
   /** Tous les statuts, à zéro s'il le faut, calculés sur tout l'historique. */
   compteurs: Record<BookingStatus, number>;
+  /**
+   * Le badge de l'onglet « à envoyer » : **ce qui attend un geste de la
+   * créatrice**, et rien d'autre.
+   *
+   * **Servi, et non sommé depuis `compteurs`.** L'écran additionnait les
+   * statuts de l'onglet, ce qui répondait à une autre question : une
+   * publication soumise et en cours de contrôle est `consumed` elle aussi, et
+   * n'attend personne de ce côté. Le badge réclamait donc une action sur des
+   * dossiers où elle ne peut rien faire.
+   */
+  a_envoyer: number;
 };
 
 /**
@@ -1025,6 +1060,18 @@ export type Collaboration = {
    * `LigneDeFile.dernier_motif` côté commerce : deux lecteurs, une vérité.
    */
   dernier_motif: string | null;
+  /**
+   * Le salon, la prestation et le réseau — **servis depuis longtemps, déclarés
+   * seulement maintenant.** L'écran de preuve les câblait à `null` faute de les
+   * voir dans le contrat : la ligne du lieu ne se rendait donc jamais, et la
+   * phrase du format tombait sur sa variante courte, « One story within 48 h »,
+   * sans dire sur quel réseau publier.
+   *
+   * Nullables : la contrepartie peut être lue sans son contexte.
+   */
+  business_name: string | null;
+  item_name: string | null;
+  platform: Platform | null;
   proofs: Preuve[];
 };
 
@@ -1509,6 +1556,17 @@ export type OffreDePalier = {
   platform: Platform;
   content_format: ContentFormat;
   item_name: string;
+  /**
+   * Ce que le salon attend de la publication. **Écrivables depuis le `PATCH`** :
+   * les deux existaient en base et dans toutes les lectures sans qu'aucun
+   * schéma d'écriture ne les accepte, si bien que `required_mention` valait
+   * `null` partout et que l'interface qui l'affiche ne se rendait jamais.
+   *
+   * Recopiés sur la contrepartie à la consommation et figés là : les corriger
+   * ici ne touche pas un dossier déjà ouvert.
+   */
+  required_mention: string | null;
+  required_geotag: boolean;
   is_active: boolean;
   is_effectively_offered: boolean;
   created_at: string;
@@ -1655,6 +1713,26 @@ export type PalierAccessibleIci = {
   tier_id: string;
   platform: Platform;
   content_format: ContentFormat;
+};
+
+/**
+ * Ce qu'une créatrice déclare d'elle-même, et qu'elle seule peut écrire.
+ *
+ * **Quatre champs, et le type s'arrête là.** La réponse du serveur en porte
+ * quatre autres — score de fiabilité, compte de collaborations, nouveauté,
+ * instant d'anonymisation — qui sont des faits calculés, pas des déclarations.
+ * L'écran de saisie n'en a rien à faire, et les déclarer ici obligerait à
+ * inscrire quatre champs sans lecteur dans la table de `champs-servis`.
+ *
+ * **Le score se lit ailleurs**, sur l'écran qui l'explique (`Fiabilite`), et
+ * non au milieu d'un formulaire où il se lirait comme une note sur ce qu'on
+ * vient d'écrire.
+ */
+export type MonProfilDeclare = {
+  first_name: string | null;
+  last_name: string | null;
+  city: string | null;
+  bio: string | null;
 };
 
 export type CreateurDeLAnnuaire = {

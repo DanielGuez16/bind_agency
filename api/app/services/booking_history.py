@@ -61,6 +61,7 @@ from app.models.enums import (
 from app.services import availability, directory, eligibility, support
 from app.services.audit import AuditedEntity
 from app.services.booking_states import fin_de_l_annulation_libre, ouverture_de_l_absence
+from app.services.collaboration import ATTENDENT_LA_CREATRICE
 
 #: Une page d'historique. Au-delà, l'app pagine par `avant`.
 PAGE_PAR_DEFAUT = 50
@@ -166,6 +167,15 @@ class ReservationDuCreateur:
     business_address: str | None
     business_timezone: str
     business_cover_photo_key: str | None
+    #: **Où le salon se montre ailleurs.** Servis ici et pas seulement sur la
+    #: fiche : le glyphe de la carte dit la plateforme de la *contrepartie* —
+    #: où la créatrice va publier — et non les comptes du salon. Les deux se
+    #: ressemblent et ne disent pas la même chose ; sans ces liens, la carte
+    #: n'offrait aucun moyen d'aller voir le salon avant de s'engager.
+    business_instagram_url: str | None
+    business_tiktok_url: str | None
+    business_facebook_url: str | None
+    business_website_url: str | None
     item_name: str
     item_photo_key: str | None
     duration_minutes: int | None
@@ -184,6 +194,19 @@ class HistoriqueDuCreateur:
     #: trois ment dès la seconde. Les statuts sans réservation valent zéro et
     #: sont présents dans la clé : l'app n'a pas à connaître la liste.
     compteurs: dict[BookingStatus, int]
+    #: Combien de dossiers attendent **un geste de la créatrice**.
+    #:
+    #: **Servi, et non déduit d'un compteur de statuts.** Le badge de l'onglet
+    #: « à envoyer » sommait `compteurs['consumed']`, ce qui répondait à une
+    #: autre question : une publication soumise et en cours de contrôle est
+    #: `consumed` elle aussi, et elle n'attend personne de ce côté. Le badge
+    #: réclamait donc une action pour des dossiers où la créatrice ne peut rien
+    #: faire — et un chiffre qui demande sans qu'on puisse répondre finit par
+    #: ne plus rien demander du tout.
+    #:
+    #: Deux états seulement le nourrissent : le dossier jamais soumis, et celui
+    #: qu'on a renvoyé corriger.
+    a_envoyer: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -494,6 +517,10 @@ async def historique_du_createur(
             Business.address.label("business_address"),
             Business.timezone.label("business_timezone"),
             Business.cover_photo_key.label("business_cover_photo_key"),
+            Business.instagram_url.label("business_instagram_url"),
+            Business.tiktok_url.label("business_tiktok_url"),
+            Business.facebook_url.label("business_facebook_url"),
+            Business.website_url.label("business_website_url"),
         ).join(Business, Business.id == Booking.business_id)
     ).where(
         Booking.creator_id == creator_id,
@@ -524,6 +551,20 @@ async def historique_du_createur(
     ):
         compteurs[status] = nombre
 
+    # **Ce qui attend un geste, et non ce qui est consommé.** Voir
+    # `HistoriqueDuCreateur.a_envoyer` : les deux se confondaient, et le badge
+    # comptait des dossiers en contrôle sur lesquels personne ne peut agir.
+    a_envoyer = (
+        await session.scalar(
+            sa.select(sa.func.count(Collaboration.id))
+            .join(Booking, Booking.id == Collaboration.booking_id)
+            .where(
+                Booking.creator_id == creator_id,
+                Collaboration.status.in_(ATTENDENT_LA_CREATRICE),
+            )
+        )
+    ) or 0
+
     return HistoriqueDuCreateur(
         items=tuple(
             ReservationDuCreateur(
@@ -543,6 +584,10 @@ async def historique_du_createur(
                 business_address=ligne.business_address,
                 business_timezone=ligne.business_timezone,
                 business_cover_photo_key=ligne.business_cover_photo_key,
+                business_instagram_url=ligne.business_instagram_url,
+                business_tiktok_url=ligne.business_tiktok_url,
+                business_facebook_url=ligne.business_facebook_url,
+                business_website_url=ligne.business_website_url,
                 item_name=ligne.item_name,
                 item_photo_key=ligne.item_photo_key,
                 duration_minutes=ligne.duration_minutes,
@@ -553,6 +598,7 @@ async def historique_du_createur(
             for ligne in lignes
         ),
         compteurs=compteurs,
+        a_envoyer=a_envoyer,
     )
 
 

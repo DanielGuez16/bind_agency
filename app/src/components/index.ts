@@ -78,6 +78,7 @@ export {
   QrBlock,
 } from './PickupCode';
 export { DayPicker, SlotPicker, type Creneau, type Jour } from './SlotPicker';
+export { LienExterne, type LienExterneProps } from './LienExterne';
 export {
   BandeDeChiffres,
   Cartouche,

@@ -641,6 +641,49 @@ function LignePrestation({
   }
 
   /**
+   * Ce que le salon attend de la publication.
+   *
+   * **Le champ existait en base et personne ne pouvait l'écrire.** La colonne,
+   * la migration, les lectures — fiche, contrepartie, file du commerce — tout
+   * était là depuis des semaines ; il manquait le schéma d'écriture et cet
+   * écran. `required_mention` valait donc `null` partout, et l'interface qui
+   * l'affiche, gardée par `required_mention ? … : null`, ne se rendait jamais.
+   * Vu de l'écran créatrice, ça se lisait « le badge est peu clair ».
+   *
+   * **Le pseudonyme du salon vit ailleurs, sur l'écran du lieu.** Il y est saisi
+   * une fois ; ici on écrit ce que *cette* offre demande, qui peut être une
+   * autre marque que le compte principal. Le proposer en valeur de départ
+   * demanderait de faire descendre le commerce jusqu'à cette carte, à travers
+   * deux niveaux qui n'en ont aucun autre besoin — ça se fera le jour où un
+   * second champ le réclamera aussi.
+   */
+  const [mention, setMention] = useState(offre?.required_mention ?? '');
+  const [lieu, setLieu] = useState(offre?.required_geotag ?? false);
+  const [criteres, setCriteres] = useState(false);
+
+  const criteresChanges =
+    offre !== undefined &&
+    ((mention.trim() || null) !== (offre.required_mention ?? null) ||
+      lieu !== offre.required_geotag);
+
+  async function enregistrerLesCriteres() {
+    if (!offre) return;
+    setEchec(null);
+    setCriteres(true);
+    try {
+      await api.modifierUneOffre(businessId, offre.id, {
+        required_mention: mention.trim() || null,
+        required_geotag: lieu,
+      });
+      onChange();
+    } catch (erreur) {
+      setEchec(messageDErreur(erreur));
+    } finally {
+      setCriteres(false);
+    }
+  }
+
+  /**
    * Retirer, et le mot dépend de ce que la prestation a derrière elle.
    *
    * **Jamais réservée : elle se supprime vraiment.** Rien ne la cite, rien ne
@@ -918,7 +961,50 @@ function LignePrestation({
               {t('composition.offreFermeeCorps')}
             </Texte>
           )}
-          <View style={{ flexDirection: 'row' }}>
+          {/* **Ce que la publication doit citer.** Le seul endroit du produit
+              où ça s'écrit ; sans lui la créatrice voit un format et rien
+              d'autre. */}
+          <TextField
+            label={t('composition.mentionLabel')}
+            helpText={t('composition.mentionAide')}
+            placeholder="@"
+            value={mention}
+            onChangeText={setMention}
+            maxLength={60}
+            testID={`mention-${offre.id}`}
+          />
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              minHeight: 44,
+            }}
+          >
+            <Texte style={{ flex: 1 }} variante="type.body">
+              {t('composition.lieuLabel')}
+            </Texte>
+            <Toggle
+              value={lieu}
+              onChange={setLieu}
+              accessibilityLabel={t('composition.lieuLabel')}
+              testID={`lieu-${offre.id}`}
+            />
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {/* Retiré tant que rien n'a changé, jamais grisé : c'est la règle
+                de forme de cet écran, et la même que sur les liens publics. */}
+            {criteresChanges ? (
+              <Button
+                label={t('composition.enregistrerLesCriteres')}
+                fullWidth={false}
+                loading={criteres}
+                onPress={() => void enregistrerLesCriteres()}
+                testID={`enregistrer-criteres-${offre.id}`}
+              />
+            ) : null}
             <Button
               label={t(offre.is_active ? 'composition.fermerLOffre' : 'composition.rouvrirLOffre')}
               variant="secondary"

@@ -498,8 +498,12 @@ function ServisDuJour({ businessId, depuis }: { businessId: string; depuis: stri
   // n'y a rien, et le panneau se rend alors avec sa phrase de début de journée
   // plutôt qu'avec un squelette — c'est un journal, pas le contenu de l'écran.
   const journee = 'donnees' in requete ? requete.donnees : null;
-  const servis = (journee?.items ?? []).filter(
-    (r: ReservationDuCommerce) => r.status === 'consumed',
+  // **`closed` autant que `consumed`.** Le journal dit ce que le comptoir a
+  // servi aujourd'hui ; qu'un dossier de publication se soit fermé entre-temps
+  // ne retire rien à la prestation rendue. L'égalité faisait disparaître du
+  // journal les prestations servies le matin et tranchées l'après-midi.
+  const servis = (journee?.items ?? []).filter((r: ReservationDuCommerce) =>
+    r.status === 'consumed' || r.status === 'closed',
   );
 
   return (

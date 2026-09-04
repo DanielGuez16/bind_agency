@@ -34,7 +34,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { ReprendreLeCompte } from './reprise/ReprendreLeCompte';
 import QRCode from 'react-native-qrcode-svg';
 
 import {
@@ -141,7 +140,6 @@ const EN_COURS = new Set<EtatDeLaTournee>([
 ]);
 
 export function TerrainScreen({
-  onEntrerEnReprise,
 }: {
   /**
    * Naviguer dans le commerce qu'on vient de reprendre depuis le terrain.
@@ -150,7 +148,6 @@ export function TerrainScreen({
    * l'administration sous onglets, qui tient la bascule, a de quoi en faire
    * quelque chose.
    */
-  onEntrerEnReprise?: (businessId: string, nom: string, detail?: RepriseOuverte) => void;
 }) {
   const { t, locale } = useI18n();
   const c = useColors();
@@ -277,6 +274,9 @@ export function TerrainScreen({
     <Ecran
       requete={requete}
       titre={t('terrain.titre')}
+      // **984 points de colonnes, 672 offerts par le repli `merchant`.** L'état
+      // de la tournée et le délai d'attente tombaient hors du cadre.
+      nature="reports"
       // **Le nom de l'écran, et il manquait.** Un parcours de bout en bout se
       // porte par l'écran qu'il éprouve — la garde des sélecteurs l'exige — et
       // sans ce nom il ne pouvait pas s'y porter du tout : l'exploration a dû
@@ -293,6 +293,19 @@ export function TerrainScreen({
     >
       {(fiches) => (
         <View style={{ gap: 20 }}>
+          {/* **Le pourquoi de cet écran, et il ne disparaît plus.** Cette
+              phrase n'existait que dans l'état vide : dès qu'une fiche était
+              préparée, la seule explication du mécanisme s'en allait pour ne
+              jamais revenir. Quelqu'un qui arrive sur un écran déjà rempli
+              n'avait donc structurellement aucun moyen de la lire, et lisait
+              « préparer une page » comme une chose qu'on fait à la place d'un
+              salon sans savoir pourquoi. C'est ce qui a été relevé.
+
+              Même clé qu'à l'état vide : deux formulations du même contexte
+              finiraient par diverger. */}
+          <Texte variante="type.body" couleur="ink.soft" testID="terrain-contexte">
+            {t('terrain.videCorps')}
+          </Texte>
 
           {/* Le lien qu'on vient d'émettre, en grand. Il ne se relit pas. */}
           {lien ? (
@@ -395,7 +408,6 @@ export function TerrainScreen({
                   }
                   onEmettre={() => void emettre(fiche)}
                   onRevoquer={() => void revoquer(fiche)}
-                  onEntrerEnReprise={onEntrerEnReprise}
                 />
               ))}
             </View>
@@ -487,7 +499,6 @@ function LigneDeFiche({
   onOuvrir,
   onEmettre,
   onRevoquer,
-  onEntrerEnReprise,
 }: {
   fiche: FichePreparee;
   colonnes: Colonne[];
@@ -495,12 +506,10 @@ function LigneDeFiche({
   onOuvrir: () => void;
   onEmettre: () => void;
   onRevoquer: () => void;
-  onEntrerEnReprise?: (businessId: string, nom: string, detail?: RepriseOuverte) => void;
 }) {
   const { t, locale } = useI18n();
   const etat = fiche.etat;
   const mains = mainsDeLaFiche(fiche);
-  const [reprise, setReprise] = useState(false);
 
   /**
    * L'attente, lue à l'ouverture de l'écran.
@@ -578,33 +587,18 @@ function LigneDeFiche({
             </Texte>
           ) : null}
 
-      {etat === 'claimed' ? (
-        reprise ? (
-          <ReprendreLeCompte
-            businessId={fiche.business_id}
-            nomDuSalon={fiche.name}
-            // Même bascule qu'à l'écran des salons : entrer sans second geste,
-            // et le motif rejoint le bandeau de `EcranDeReprise` plutôt que de
-            // s'afficher un instant sur une ligne qu'on quitte aussitôt.
-            //
-            // **Nommé `detail`, pas `reprise` : le composant tient déjà un
-            // état booléen de ce nom** — un paramètre qui l'aurait masqué se
-            // serait lu juste ici et aurait cassé `setReprise` plus bas.
-            onOuverte={(detail) => onEntrerEnReprise?.(fiche.business_id, fiche.name, detail)}
-          />
-        ) : (
-          <View style={{ flexDirection: 'row' }}>
-            <Button
-              label={t('reprise.entrer')}
-              size="sm"
-              variant="ghost"
-              fullWidth={false}
-              onPress={() => setReprise(true)}
-              testID={`reprendre-${fiche.business_id}`}
-            />
-          </View>
-        )
-      ) : (
+      {/* **La reprise de compte a quitté cet écran.** Elle y était offerte
+          sur les fiches déjà reprises par leur gérant — donc des salons qui
+          ont un vrai compte — et c'est l'accès de support, le même qu'à
+          l'écran des salons. Mais posée au milieu d'un écran de démarchage,
+          elle se lisait comme une capacité du démarchage : « on prend le
+          contrôle des salons qu'on visite ». Deux registres mélangés sans
+          être nommés. Elle reste à sa place, sur l'écran des salons.
+
+          Une fiche reprise ne propose donc plus rien ici : la remise a eu
+          lieu, le gérant a son compte, et lui réémettre un lien d'accueil
+          n'aurait aucun sens. */}
+      {etat === 'claimed' ? null : (
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Button
             label={t(EN_COURS.has(etat) ? 'terrain.reemettre' : 'terrain.emettre')}

@@ -38,7 +38,7 @@
  * relief ; les gestes et le contexte à droite, où il y a la place de les poser.
  */
 import { useState, type ReactNode } from 'react';
-import { Linking, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import {
   type JourDeDecisions,
@@ -54,6 +54,7 @@ import {
   EmptyState,
   Filet,
   Icone,
+  LienExterne,
   LigneDeContrepartie,
   PiluleDeProfil,
   Photo,
@@ -603,7 +604,7 @@ function momentRelatif(
  * texte, même poids, même couleur. Un planning où le passé et le présent se
  * ressemblent oblige à lire chaque ligne pour savoir où l'on en est.
  */
-const TERMINES = new Set(['consumed', 'cancelled', 'no_show', 'expired']);
+const TERMINES = new Set(['consumed', 'closed', 'cancelled', 'no_show', 'expired']);
 
 /** Ce dont l'état mérite d'être teinté. Le reste reste neutre. */
 const TEINTE: Record<string, ColorName> = {
@@ -839,15 +840,13 @@ function ReseauxDeLaCreatrice({ reservation }: { reservation: ReservationDuComme
         );
 
         return mene ? (
-          <Pressable
+          <LienExterne
             key={`${compte.platform}-${compte.handle ?? rang}`}
-            accessibilityRole="link"
-            onPress={() => void Linking.openURL(reservation.creator_profil_url as string)}
+            url={reservation.creator_profil_url as string}
             testID={`profil-${reservation.booking_id}`}
-            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
             {corps}
-          </Pressable>
+          </LienExterne>
         ) : (
           <View
             key={`${compte.platform}-${compte.handle ?? rang}`}
@@ -888,18 +887,24 @@ function LigneDuCreateur({
     minHeight: 64,
   };
 
-  if (url === null) return <View style={rangee}>{children}</View>;
-
+  // **La branche « sans adresse » est passée dans `LienExterne`.** Elle rendait
+  // ici la même rangée sans geste, et deux autres écrans en portaient une copie.
+  //
+  // **Le repère nomme le lien, pas la rangée** — et l'omettre est ce que faisait
+  // déjà le code d'avant. `journee-v3` l'éprouve : « n'invente ni cadre ni lien
+  // quand ils manquent » cherche l'absence de `profil-*` pour affirmer qu'aucune
+  // porte n'est offerte. Le poser sur une rangée inerte ferait passer ce test
+  // pour un lien qui n'existe pas — il l'a d'ailleurs attrapé à la première
+  // exécution après cette migration.
   return (
-    <Pressable
-      accessibilityRole="link"
+    <LienExterne
+      url={url}
       accessibilityLabel={libelle}
-      onPress={() => void Linking.openURL(url)}
-      testID={testID}
-      style={({ pressed }) => ({ ...rangee, opacity: pressed ? 0.7 : 1 })}
+      testID={url === null ? undefined : testID}
+      style={rangee}
     >
       {children}
-    </Pressable>
+    </LienExterne>
   );
 }
 

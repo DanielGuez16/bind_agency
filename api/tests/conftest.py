@@ -11,17 +11,85 @@ la migration réelle qui est testée, pas les modèles.
 
 import os
 
-# **Le dépôt d'objets suit le worker, comme la base.** Posé ici, avant tout
-# import qui construirait la configuration : `get_settings` est mis en cache au
-# premier appel, et une fixture arriverait trop tard.
+
+def empreinte_de_l_execution() -> str:
+    """Ce qui distingue cette exécution de pytest de celle qui tourne à côté.
+
+    **Définie tout en haut, avant le premier import d'`app`**, parce que le
+    dépôt d'objets s'en sert juste en dessous et que ce réglage-là doit être
+    posé avant que la configuration ne soit construite.
+
+    **Le worker ne suffisait pas, et ça se paie en heures.** Deux exécutions
+    parallèles — le cas normal dès que deux conversations avancent dans le même
+    répertoire — ont chacune un `gw0`, donc visaient la **même** base : chacune
+    commence par `DROP DATABASE ... WITH (FORCE)`, et la seconde emportait celle
+    de la première en pleine exécution. L'échec ressort en « database
+    bind_test_gw0 does not exist » ou en `AdminShutdown`, sur du code qui n'a
+    pas bougé — le pire des symptômes, puisqu'il accuse la dernière ligne
+    écrite. Vu trois fois en deux jours, et jamais compris avant d'avoir compté
+    les processus `pytest`.
+
+    Trois sources, dans cet ordre :
+
+    - `BIND_TEST_SESSION`, quand on veut un nom à soi, stable et reconnaissable.
+      C'est aussi la porte de sortie si les deux autres se révèlent fausses un
+      jour ;
+    - `PYTEST_XDIST_TESTRUNUID`, que xdist pose dans **chaque worker** d'une même
+      exécution : une seule valeur par exécution, différente à la suivante.
+      C'est exactement la question posée, et xdist y répond déjà ;
+    - le numéro de processus, en série, où xdist ne pose rien.
+
+    **Aucune des trois n'est tirée au hasard**, et c'est la propriété qui compte :
+    la fonction doit rendre la même chose à chaque appel d'une même exécution,
+    sans quoi la base créée au démarrage n'est plus celle qu'on cherche ensuite.
+
+    Une exécution tuée par un `kill -9` laisse sa base derrière elle — la
+    purge de fin ne tourne pas. Elles se ramassent d'une commande :
+
+        psql -h localhost -p 5434 -U bind -d postgres -tAc \\
+          "select 'drop database ' || quote_ident(datname) || ' with (force);'
+             from pg_database where datname like 'bind\\_test\\_%'" | psql ...
+    """
+    explicite = os.environ.get("BIND_TEST_SESSION")
+    if explicite:
+        return explicite
+
+    uid = os.environ.get("PYTEST_XDIST_TESTRUNUID")
+    if uid:
+        # Huit caractères suffisent à distinguer deux exécutions simultanées, et
+        # un identifiant de base Postgres est borné à 63 octets — auxquels
+        # s'ajoutent encore le worker et, pour `test_seed.py`, `_seed_probe`.
+        return uid[:8]
+
+    return f"p{os.getpid()}"
+
+
+# **Le dépôt d'objets suit l'exécution *et* le worker, exactement comme la
+# base.** Posé ici, avant tout import qui construirait la configuration :
+# `get_settings` est mis en cache au premier appel, et une fixture arriverait
+# trop tard.
 #
-# Deux workers qui sèment en même temps écrivent la **même** clé — le nom est
-# l'empreinte du contenu, donc identique d'un processus à l'autre. L'un renomme
+# Deux processus qui sèment en même temps écrivent la **même** clé — le nom est
+# l'empreinte du contenu, donc identique de l'un à l'autre. L'un renomme
 # `X.partiel` en `X`, l'autre ne retrouve plus le sien : `FileNotFoundError` sur
-# trente-six tests du semis, et rien dans le message ne parle de parallélisme.
+# les tests du semis, et rien dans le message ne parle de parallélisme.
+#
+# **Le worker seul ne couvrait que la moitié du problème, et c'est ce qui rend
+# cette demi-correction pire qu'aucune** : elle protégeait les workers d'une
+# même exécution, laissait deux exécutions se voler leurs fichiers, et sa
+# docstring affirmait la question réglée. Mesuré — 57 erreurs sur `test_seed.py`
+# en tournant à côté d'une autre session, zéro seul —, et cherché d'abord du
+# côté d'un plafond de connexions Postgres qui n'y était pour rien : le pic
+# d'une suite entière est de 17 connexions sur 100.
+#
+# L'empreinte est la même que celle de la base, appelée et non recopiée : deux
+# définitions de « quelle exécution suis-je » finiraient par diverger, et c'est
+# la seconde qu'on oublierait de corriger.
+_racine = os.environ.get("OBJECT_STORE_LOCAL_ROOT", "/tmp/bind-objets")
+_morceaux = [_racine, empreinte_de_l_execution()]
 if os.environ.get("PYTEST_XDIST_WORKER"):
-    _racine = os.environ.get("OBJECT_STORE_LOCAL_ROOT", "/tmp/bind-objets")
-    os.environ["OBJECT_STORE_LOCAL_ROOT"] = f"{_racine}-{os.environ['PYTEST_XDIST_WORKER']}"
+    _morceaux.append(os.environ["PYTEST_XDIST_WORKER"])
+os.environ["OBJECT_STORE_LOCAL_ROOT"] = "-".join(_morceaux)
 
 from collections.abc import AsyncIterator, Iterator
 
@@ -84,21 +152,19 @@ def test_database_url() -> str:
     ):
         pytest.exit("TEST_DATABASE_URL désigne la base de développement.", returncode=1)
 
-    return _base_du_worker(test).render_as_string(hide_password=False)
+    return _base_de_cette_execution(test).render_as_string(hide_password=False)
 
 
-def _base_du_worker(url: URL) -> URL:
-    """Une base par worker, dérivée de son nom.
+def _base_de_cette_execution(url: URL) -> URL:
+    """Une base par exécution **et** par worker, dérivée du nom configuré.
 
-    **C'est ce qui rend le parallélisme possible.** Chaque worker crée, migre et
-    détruit *sa* base au démarrage ; sur un nom commun, ils se la détruisaient
-    l'un l'autre — la seconde exécution emportait la base de la première entre
-    sa création et son premier appel, et l'échec ressortait en « database does
-    not exist » sur du code qui n'avait pas bougé.
+    **Les deux moitiés, et aucune ne remplace l'autre.** Le worker sépare les
+    processus d'une même exécution — c'est ce qui rend le parallélisme possible,
+    chacun crée, migre et détruit la sienne. L'empreinte sépare les exécutions
+    entre elles, ce que le worker ne pouvait pas faire : deux exécutions
+    parallèles ont toutes les deux un `gw0`.
 
     `PYTEST_XDIST_WORKER` vaut `gw0`, `gw1`… sous xdist, et est absente en série.
-    Le nom est donc **inchangé** hors parallélisme : une exécution simple garde
-    exactement la base qu'elle avait, et rien de ce qui dépend du nom ne bouge.
 
     **Et le rendu se fait avec `render_as_string(hide_password=False)`.** C'est
     le détail qui a fait échouer la première tentative de parallélisme, il y a
@@ -110,10 +176,11 @@ def _base_du_worker(url: URL) -> URL:
     nom, elle a rendu une adresse sans mot de passe. Le parallélisme n'y était
     pour rien.
     """
+    morceaux = [url.database, empreinte_de_l_execution()]
     worker = os.environ.get("PYTEST_XDIST_WORKER")
-    if not worker:
-        return url
-    return url.set(database=f"{url.database}_{worker}")
+    if worker:
+        morceaux.append(worker)
+    return url.set(database="_".join(morceaux))
 
 
 @pytest.fixture(scope="session", autouse=True)

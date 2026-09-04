@@ -534,6 +534,8 @@ async def _creer(
     locale: Locale = Locale.EN,
     prenom: str | None = None,
     nom: str | None = None,
+    ville: str | None = None,
+    bio: str | None = None,
     media_count: int | None = None,
     token_ttl: timedelta = timedelta(days=60),
 ) -> tuple[User, SocialAccount]:
@@ -541,13 +543,30 @@ async def _creer(
     user = await _inscrire_verifie(
         session, email=email, password=MOT_DE_PASSE, role=UserRole.CREATOR, locale=locale
     )
-    if prenom or nom:
-        # Le nom est exigé à la première réservation, et il sert au contrôle de
-        # cohérence. Un créateur sans nom ne peut pas réserver : le poser ici,
-        # par le service, évite d'avoir des profils qui bloquent en démonstration.
-        await profile_service.update_profile(
-            session, user_id=user.id, modifications={"first_name": prenom, "last_name": nom}
+    # **Le profil déclaratif, en une seule écriture.** Le nom est exigé à la
+    # première réservation et sert au contrôle de cohérence : un créateur sans
+    # nom ne peut pas réserver, donc le poser ici évite des profils qui bloquent
+    # en démonstration.
+    #
+    # **La ville et la bio y entrent depuis le 2026-09-04**, et sans elles
+    # l'annuaire n'avait rien à montrer : les deux colonnes étaient nulles pour
+    # les cinq créatrices, si bien que la rangée se réduisait à la distance.
+    # Un écran qu'on vient d'apprendre à afficher se démontre mal sur du vide.
+    #
+    # Le dictionnaire se construit par ce qui est fourni : `update_profile`
+    # écrit tout ce qu'on lui passe, donc un `None` non voulu effacerait.
+    declare = {
+        cle: valeur
+        for cle, valeur in (
+            ("first_name", prenom),
+            ("last_name", nom),
+            ("city", ville),
+            ("bio", bio),
         )
+        if valeur is not None
+    }
+    if declare:
+        await profile_service.update_profile(session, user_id=user.id, modifications=declare)
 
     fournisseur = DemoSocialProvider(
         platform=Platform.INSTAGRAM,
@@ -586,6 +605,8 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
         locale=Locale.ES,
         prenom="Camila",
         nom="Rojas",
+        ville="Little Havana",
+        bio="Recién empiezo. Uñas y peinados, y me encanta grabar el antes y el después.",
     )
 
     # 2. Confirmée : tous les paliers ouverts, et c'est elle qui parcourra le
@@ -597,6 +618,8 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
         followers=64_000,
         prenom="Rebecca",
         nom="Alvarez",
+        ville="Wynwood",
+        bio="Beauty and wellness in Wynwood and Little Haiti. Reels first, always same-day.",
     )
 
     # 3. Plafonnée : l'audience ouvrirait tout, le score ferme le haut. Le score
@@ -609,6 +632,8 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
         locale=Locale.ES,
         prenom="Mateo",
         nom="Duarte",
+        ville="Wynwood",
+        bio="Barbería y cuidado masculino. Grabo en corto, publico el mismo día.",
     )
 
     # 4. En vérification : l'écran persistant, daté, sans promesse de délai.
@@ -619,6 +644,8 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
         followers=11_500,
         prenom="Sofía",
         nom="Iglesias",
+        ville="Brickell",
+        bio="Spa y bienestar en Brickell. Prefiero formatos tranquilos, sin prisa.",
         # Peu de publications pour un compte de cette taille : c'est le signal
         # de volume qui manque, et le contrôle de cohérence le relève de
         # lui-même. Rien n'est forcé.
@@ -635,6 +662,8 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
         followers=31_000,
         prenom="Nina",
         nom="Costa",
+        ville="Design District",
+        bio="Design District. Nails, skin, and the occasional coffee shop.",
         # **Le jeton est vivant ici, et meurt plus bas.** Il naissait périmé, ce
         # qui interdisait à Nina de réserver quoi que ce soit : son écran de
         # paliers montrait un obstacle sur une créatrice qui n'avait jamais rien
@@ -2208,6 +2237,51 @@ async def vieillir_un_releve(session: AsyncSession, createurs: dict) -> None:
     )
 
 
+#: De combien on éloigne l'échéance des dossiers d'arbitrage. Voir
+#: `eloigner_les_echeances_d_arbitrage`.
+#:
+#: Trente jours, et le nombre n'a rien de fin : ce qui compte est qu'il dépasse
+#: franchement l'écart entre deux semis. Une valeur juste au-dessus — deux
+#: jours, une semaine — rouvrirait le même défaut le jour où le semis
+#: automatique s'arrête sans que personne s'en aperçoive.
+ECHEANCE_D_ARBITRAGE = timedelta(days=30)
+
+
+async def eloigner_les_echeances_d_arbitrage(session: AsyncSession) -> int:
+    """Repousse l'échéance des dossiers en revue humaine. **Sinon la file se vide.**
+
+    Une exception nommée, comme `vieillir_un_releve` juste au-dessus, et pour la
+    même raison : aucun service ne sait déplacer le temps, et le seul autre
+    moyen serait d'attendre.
+
+    **Le défaut qu'elle répare.** Un dossier arrive en revue humaine par trois
+    demandes de nouvelle soumission, et la troisième pose une échéance à
+    `collaboration_resubmit_seconds` — douze heures. Ce statut,
+    `resubmit_requested`, est dans `EXPIRABLES` : douze heures après le semis, le
+    balayage des échéances fait tomber les quatre dossiers en `unfulfilled`, et
+    `file_de_revue_humaine` exclut ce statut. La file d'arbitrage était donc
+    pleine une demi-journée puis vide pour toujours, et personne ne pouvait la
+    montrer sans rejouer les scénarios à la main.
+
+    **On repousse plutôt qu'on ne rejoue.** Le compteur de tentatives, le drapeau
+    de revue humaine et les trois motifs sont produits par les services, comme le
+    reste du jeu ; seule l'échéance est déplacée, et c'est le seul champ qu'aucun
+    service ne peut poser où on en a besoin.
+    """
+    resultat = await session.execute(
+        sa.update(Collaboration)
+        .where(
+            Collaboration.needs_human_review.is_(True),
+            # Les mêmes statuts que `collaboration.EXPIRABLES`, et pour cause :
+            # ce sont exactement ceux que le balayage fait tomber. Un dossier
+            # déjà approuvé ou déjà tombé n'a pas d'échéance à défendre.
+            Collaboration.status.in_(collaboration_service.EXPIRABLES),
+        )
+        .values(deadline_at=datetime.now(UTC) + ECHEANCE_D_ARBITRAGE)
+    )
+    return resultat.rowcount
+
+
 async def enrichir(session: AsyncSession) -> ResumeDemo:
     """Tout l'enrichissement, dans l'ordre où les dépendances l'imposent."""
     photos = await poser_les_photos(session)
@@ -2222,6 +2296,9 @@ async def enrichir(session: AsyncSession) -> ResumeDemo:
     # sans aucune histoire — un obstacle sans passé ne s'explique pas. La
     # dégradation se constate donc sur un compte qui a vécu.
     await marquer_les_etats_de_compte(session, createurs)
+    # **Après les parcours, forcément** : les dossiers d'arbitrage n'existent
+    # qu'une fois menés jusqu'à leur troisième demande de nouvelle soumission.
+    await eloigner_les_echeances_d_arbitrage(session)
     await recalculer_les_scores(session, createurs)
     await vieillir_un_releve(session, createurs)
     favoris = await poser_les_favoris(session, createurs)

@@ -52,6 +52,11 @@ const OFFRE = (format: ContentFormat, extra: Record<string, unknown> = {}) => ({
   platform: 'instagram' as const,
   content_format: format,
   item_name: 'Gel manicure',
+  // Les critères de publication, sans lesquels le décor n'est plus une offre.
+  // Nuls et faux : ce fichier mesure les premiers pas d'un salon, pas ce qu'il
+  // exige d'une publication.
+  required_mention: null,
+  required_geotag: false,
   is_active: true,
   is_effectively_offered: true,
   created_at: '2026-08-01T00:00:00Z',

@@ -114,7 +114,38 @@ class Business(UUIDPrimaryKey, CreatedAt, Base):
     #: qu'il veut montrer, qui peut être une page de marque et non un compte.
     instagram_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     tiktok_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    #: **Le quatrième réseau, et c'est exactement ce que la remarque ci-dessus
+    #: annonçait.** Une colonne de plus, pas une migration de données.
+    #:
+    #: **Un lien, jamais une plateforme de publication.** `Platform` désigne là
+    #: où une créatrice publie et où l'on vérifie — `SPEC.md` §4 : « le palier
+    #: est défini par le couple plateforme + format », et chaque plateforme doit
+    #: implémenter les quatre opérations d'un fournisseur. Rien de tout cela
+    #: n'existe pour Facebook, et l'y ajouter ouvrirait un palier qu'aucune
+    #: preuve ne pourrait vérifier. Ici, c'est l'adresse que le salon montre.
+    facebook_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     website_url: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
+    #: Le compte Instagram du salon, **et non son adresse**. C'est ce qu'une
+    #: créatrice tape dans sa publication pour citer le lieu, `@` compris.
+    #:
+    #: **Distinct d'`instagram_url`, et le commentaire ci-dessus dit pourquoi :**
+    #: « le salon donne l'adresse qu'il veut montrer, qui peut être une page de
+    #: marque et non un compte ». On ne peut donc pas dériver l'un de l'autre —
+    #: `instagram.com/maison.rivage` peut mener à une page dont le pseudonyme
+    #: n'est pas `@maison.rivage`, et une créatrice qui recopierait l'adresse
+    #: citerait le mauvais compte.
+    #:
+    #: **Une valeur par défaut, jamais une contrainte.** Ce que la publication
+    #: doit citer est `tier_offer.required_mention`, figé sur la contrepartie à
+    #: la consommation : un salon qui change de pseudonyme ne doit pas faire
+    #: tomber les publications déjà demandées. Ce champ sert à composer, pas à
+    #: contrôler.
+    #:
+    #: **Instagram seul, délibérément.** TikTok n'a pas d'intégration (Phase 0),
+    #: et le jour où il en aura une, c'est une colonne de plus — la même règle
+    #: que les liens, énoncée juste au-dessus.
+    instagram_handle: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
 
     status: Mapped[BusinessStatus] = mapped_column(
         enum_column(BusinessStatus, "business_status"),

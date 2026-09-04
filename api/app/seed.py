@@ -207,8 +207,16 @@ class SalonDuMarche:
     #: Le numéro de la couverture portrait, dans `couvertures-portrait/`.
     couverture: str
     locale: Locale
-    #: `(nom, prix en centimes, durée en minutes ou None)`.
-    items: tuple[tuple[str, int, int | None], ...]
+    #: `(nom, prix en centimes, durée en minutes ou None[, description])`.
+    #:
+    #: **Le quatrième membre est facultatif, et c'est délibéré.** La description
+    #: est une donnée de commerce : la plupart des salons n'en écrivent pas, et
+    #: exiger un `None` sur quarante items pour en décrire cinq ferait du bruit
+    #: là où il n'y a rien à dire. Un 3-uplet vaut « pas de description ».
+    #:
+    #: Elle est dans la langue du salon, comme le nom de la prestation : ce sont
+    #: ses mots, pas les nôtres, et le produit ne les traduit pas.
+    items: tuple[tuple[str, int, int | None] | tuple[str, int, int | None, str], ...]
     #: `(plateforme, format, index dans `items`)`.
     offres: tuple[tuple[Platform, ContentFormat, int], ...]
     ouverture: tuple[str, str] = ("09:00:00", "19:00:00")
@@ -242,7 +250,11 @@ MARCHE: tuple[SalonDuMarche, ...] = (
         latitude=25.7654,
         couverture="05",
         locale=Locale.ES,
-        items=(("Corte clásico", 4500, 30), ("Corte y barba", 6500, 45), ("Afeitado", 3500, 20)),
+        items=(
+            ("Corte clásico", 4500, 30),
+            ("Corte y barba", 6500, 45, "Corte, arreglo de barba y toalla caliente."),
+            ("Afeitado", 3500, 20),
+        ),
         offres=(
             (Platform.INSTAGRAM, ContentFormat.STORY, 0),
             (Platform.TIKTOK, ContentFormat.REEL, 1),
@@ -260,7 +272,12 @@ MARCHE: tuple[SalonDuMarche, ...] = (
         couverture="06",
         locale=Locale.EN,
         items=(
-            ("Signature facial", 12000, 60),
+            (
+                "Signature facial",
+                12000,
+                60,
+                "Cleanse, exfoliation and massage, adjusted to your skin on the day.",
+            ),
             ("Deep cleanse", 9000, 45),
             ("LED add-on", 4000, 20),
             ("Peel", 15000, 75),
@@ -380,8 +397,13 @@ MARCHE: tuple[SalonDuMarche, ...] = (
         couverture="12",
         locale=Locale.EN,
         items=(
-            ("Drop-in session", 3000, 60),
-            ("Personal training", 8000, 60),
+            ("Drop-in session", 3000, 60, "One class, no membership. Mats and bands provided."),
+            (
+                "Personal training",
+                8000,
+                60,
+                "One hour with a coach, on your goals. Say what you are training for.",
+            ),
             ("Assessment", 5000, 45),
         ),
         offres=(
@@ -435,7 +457,15 @@ MARCHE: tuple[SalonDuMarche, ...] = (
         latitude=25.8420,
         couverture="15",
         locale=Locale.ES,
-        items=(("Visita guiada", 1500, 60), ("Entrada general", 900, None)),
+        items=(
+            (
+                "Visita guiada",
+                1500,
+                60,
+                "Una hora por la colección con alguien del equipo. Grupos de seis como máximo.",
+            ),
+            ("Entrada general", 900, None),
+        ),
         offres=((Platform.INSTAGRAM, ContentFormat.POST, 0),),
         ouverture=("11:00:00", "19:00:00"),
         places=15,
@@ -564,13 +594,15 @@ async def _semer_un_salon(
     )
 
     items: list[CatalogItem] = []
-    for rang, (nom, prix, duree) in enumerate(fiche.items):
+    for rang, item in enumerate(fiche.items):
+        nom, prix, duree, *reste = item
         items.append(
             await catalog_service.create_item(
                 session,
                 business=business,
                 payload=CatalogItemCreate(
                     name=nom,
+                    description=reste[0] if reste else None,
                     price_cents=prix,
                     duration_minutes=duree,
                     requires_booking=duree is not None,

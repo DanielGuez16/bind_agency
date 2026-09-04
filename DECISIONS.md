@@ -11197,3 +11197,586 @@ web resteront indisponibles tant que la clé VAPID n'est pas configurée. C'est
 un choix en attente de la décision Expo/EAS, pas un renoncement — le jour où
 la clé est posée dans `app.json`, `pushDisponible()` rend vrai sans qu'on
 touche à une ligne.
+## 2026-09-04 — `consumed` disait deux choses, et l'écran héritait des deux
+
+**Le défaut.** `BookingStatus.CONSUMED` n'avait aucun état de sortie —
+`frozenset()`, déclaré terminal. Une réservation servie gardait donc le même
+statut qu'elle ait été publiée et acceptée, refusée, ou jamais rendue. Deux
+écrans en héritaient : le compteur « à envoyer » de la créatrice grossissait
+sans jamais redescendre, et l'onglet des terminées ne recevait jamais une
+prestation honorée. Le badge « Honoured » que cet onglet sait dessiner était
+donc du code que rien ne pouvait atteindre.
+
+**Un seul état de sortie, et il ne dit pas l'issue.** `closed` répond à « reste-
+t-il quelque chose à faire », qui est la question des onglets. *Laquelle* des
+trois issues — approuvée, non honorée, fermée sans faute — reste portée par la
+contrepartie, seul objet à la connaître. Deux états de sortie auraient recopié
+sur la réservation un fait qui vit ailleurs, et deux sources du même fait
+finissent par diverger.
+
+**Ce qui a coûté le plus n'est pas l'état, c'est ce qui le lisait.** Huit
+requêtes écrivaient `status == CONSUMED` pour dire « le salon a donné cette
+prestation » — rapport, valeur offerte, popularité d'un quartier, occupation
+d'un créneau. Ajouter la sortie sans les toucher aurait fait **fondre le rapport
+du commerce au fur et à mesure que ses dossiers se ferment** : un chiffre juste
+hier, faux aujourd'hui, et rien pour le signaler. D'où `STATUTS_SERVIS`, qui
+nomme l'intention là où l'égalité la laissait deviner.
+
+**Et la mutation a dit que ce trou n'était pas gardé.** En retirant `closed` de
+`STATUTS_SERVIS`, les **soixante-douze** tests de rapport, de fil et de
+disponibilité restaient verts : aucun ne passait par une réservation close,
+parce qu'aucune n'existait avant ce jour. Le risque le plus cher du changement
+était donc le seul entièrement non protégé, et seule la mutation l'a montré —
+la relecture avait pourtant listé les huit sites un par un.
+
+**Un défaut trouvé en chemin, et il vivait derrière du code mort.** L'onglet des
+terminées écrivait « Accepted » sur une coche verte pour *toutes* ses lignes —
+annulation, absence et expiration comprises. `issueDe` existait depuis le début
+pour dire laquelle des quatre fins, et n'était appelée que par `LigneNue`, un
+composant que plus rien ne montait : la fonction *paraissait* branchée. Un test
+avait même figé le défaut, en affirmant qu'une réservation annulée affiche
+« Accepted » — le décor attendait la valeur que le défaut produit.
+
+La leçon n'est pas « supprimer le code mort », elle est plus précise : **une
+fonction encore appelée par un composant orphelin ne se distingue pas, à la
+relecture, d'une fonction branchée.** Le seul signal fiable était de partir du
+rendu et de remonter, jamais de partir de la fonction et de chercher ses
+appelants.
+
+**Une mutation a aussi condamné un de mes propres décors.** Trois tests
+vérifiaient que l'onglet des terminées montre la publication ; retirer `closed`
+de la liste de statuts de l'onglet les laissait tous verts, parce que le montage
+répond les mêmes lignes quelle que soit la requête. Il a fallu un test qui
+observe l'URL appelée — le seul endroit où cette liste est observable.
+
+**Et le rebase a trouvé ce qu'aucune suite n'aurait vu.** Pendant ce travail,
+une autre conversation a fusionné « My posts : le filtre part au serveur »
+(#437), qui fait demander au serveur les seules réservations `consumed` — avec
+en commentaire la justification exacte : *« vérifié en base, aucune contrepartie
+approuvée ne porte un autre statut de réservation »*. C'était vrai le jour où
+elle l'a écrit.
+
+La clôture le rend faux : une publication approuvée porte désormais `closed`.
+Les deux changements sont justes séparément, et leur rencontre **vide l'écran
+des publications en entier** — toutes, tout le temps, sans erreur nulle part.
+Ni la suite de #437 ni la mienne ne pouvaient le voir : chacune était verte sur
+sa propre branche, et le conflit git ne portait que sur les lignes voisines du
+crochet extrait, pas sur le filtre.
+
+Ce qui l'a attrapé est d'avoir lu ce que la version fusionnée *fait* avant de
+résoudre, plutôt que de choisir un côté. La règle du dépôt dit déjà « on garde
+la version fusionnée » ; ce cas ajoute qu'il faut la **lire**, parce qu'une
+hypothèse vraie à l'écriture peut avoir cessé de l'être entre-temps — et que la
+phrase qui la porte est un commentaire, que rien n'exécute.
+
+---
+
+## 2026-09-03 — `serve` est une dépendance déclarée, pas un téléchargement à l'exécution
+
+**Le `webServer` de Playwright faisait `npx --yes serve`, et `serve` n'était
+déclaré nulle part** — zéro occurrence dans `package.json` comme dans
+`package-lock.json`. Le paquet était donc récupéré depuis npm à chaque
+exécution de la e2e, sous le plafond de 120 s de `webServer.timeout`. Toute
+lenteur du registre rendait la CI rouge sur du code juste.
+
+**Le message ne dit rien de la cause** : « Timed out waiting 120000ms from
+config.webServer », pas un mot sur npm ni sur le réseau. Il se lit comme « votre
+application ne démarre pas », donc il accuse la dernière ligne écrite — et le
+journal de l'API montrait pourtant `Application startup complete` et un
+`GET /api/v1/health 200 OK`.
+
+**Établi par contre-épreuve, pas par raisonnement.** J'ai relancé la e2e de
+`main` sur un commit dont elle était verte : échec, deux fois de suite. Une
+heure plus tard, `main` repassait au vert sans qu'une ligne bouge. Node est
+épinglé par `.nvmrc` (v24.20.0) et `serve` n'avait pas été publié depuis six
+mois — restait le téléchargement. Sans cette contre-épreuve, deux PR auraient
+été soupçonnées à tort ; c'est exactement ce qui allait arriver.
+
+`serve` est donc en `devDependency`, épinglé à 14.2.6, et l'appel est
+`npx serve` sans `--yes` : le binaire vient de `node_modules`, que
+`setup-node` restaure déjà de son cache. Vérifié en local — le serveur répond
+200 en deux secondes, sans aucun appel au registre.
+---
+
+## 2026-09-03 — Le semis de nuit, et l'échéance d'arbitrage éloignée par le jeu lui-même
+
+**La file d'arbitrage se vide douze heures après chaque semis, et la cause est
+un délai de configuration, pas un défaut.** Mesuré sur la base plutôt que
+déduit : les quatre dossiers `needs_human_review` du jeu de démonstration sont
+en `resubmit_requested` avec une échéance à 11 h 58 du moment de la lecture —
+c'est-à-dire `COLLABORATION_RESUBMIT_SECONDS`, douze heures, posé par
+`demander_une_nouvelle_soumission` au troisième passage. `EXPIRABLES` contient
+`resubmit_requested` : le balayage des échéances les fait donc tomber en
+`unfulfilled`, et `file_de_revue_humaine` exclut ce statut. La file est pleine
+pendant douze heures, puis vide pour toujours.
+
+**Deux corrections, et elles ne se remplacent pas.** L'une remplit la file,
+l'autre rafraîchit tout le reste : prendre la seconde seule laissait la file se
+vider entre deux semis, prendre la première seule laissait le jeu vieillir sans
+jamais repartir.
+
+**1. Le jeu de données éloigne lui-même l'échéance de ses dossiers
+d'arbitrage.** `eloigner_les_echeances_d_arbitrage` la porte à trente jours, sur
+les seules lignes `needs_human_review` dont le statut est dans `EXPIRABLES` — et
+cette liste est **importée** de `collaboration.EXPIRABLES`, jamais recopiée,
+parce que la propriété défendue est exactement « ce que le balayage ferait
+tomber ». C'est une exception nommée, comme `vieillir_un_releve` juste
+au-dessus : aucun service ne sait déplacer le temps, et le seul autre moyen
+serait d'attendre. Le compteur de tentatives, le drapeau de revue humaine et les
+trois motifs restent produits par les services, comme le reste du jeu.
+
+Trente jours n'a rien de fin : ce qui compte est que le nombre dépasse
+franchement l'écart entre deux semis. Une valeur juste au-dessus — deux jours,
+une semaine — rouvrirait le même défaut le jour où le semis automatique
+s'arrêterait sans que personne s'en aperçoive.
+
+**2. Le semis automatique est nocturne, et non périodique.** `DEMO_RESEED_HOUR`
+porte une heure locale de Miami — 4 chez Render — au lieu d'une période. Une
+période tombe à une heure différente chaque jour, donc finit mécaniquement par
+tomber en pleine démonstration ; une heure de nuit tombe toujours quand personne
+ne regarde. C'est ce qui rend acceptable ce que ce semis coûte.
+
+**Le démarrage ne sème pas, et ne fait pas non plus sauter une nuit.**
+`_jour_deja_seme` pose le jour en cours comme déjà semé si son heure est passée,
+la veille sinon. Les deux moitiés divergent et comptent : poser « aujourd'hui »
+dans les deux cas ferait attendre vingt-cinq heures à un service redémarré à
+trois heures du matin ; poser « la veille » dans les deux ferait table rase dans
+la minute à chaque fusion sur `main`, c'est-à-dire en plein jour. C'est le seul
+endroit du dispositif où une erreur détruit des données au mauvais moment, d'où
+deux cas de test qui se contredisent plutôt qu'un seul qui passerait sur les
+deux implémentations.
+
+**Un semis automatique écrase tout, sans alternative, et c'est la seule réponse
+honnête à « est-ce que ça consomme ce que quelqu'un manipulait ».**
+`seed.reset_schema()` exécute `TABLE_RASE`, qui `DROP TABLE ... CASCADE` sur
+chaque table de `public` non rattachée à une extension — trente-sept sur la base
+locale, `spatial_ref_sys` de PostGIS exceptée. Compté avant d'affirmer :
+`app_user` 27 lignes, `booking` 248, `collaboration` 51, `creator_favorite` 5,
+toutes supprimées. Il n'existe aucun mode partiel, aucun `ON CONFLICT`, aucune
+notion de « ce qui a été ajouté depuis » : le jeu de données est écrit sur une
+base neuve, c'est ce qui le rend rejouable, et c'est exactement ce qui le rend
+destructeur. S'y ajoute une fenêtre d'une minute où l'application ne répond plus
+rien d'utile — les tables sont supprimées, les migrations tournent — et où les
+jetons d'accès en circulation désignent des comptes qui n'existent plus.
+
+**Le coût est donc accepté, pas évité — et c'est l'heure qui le rend
+acceptable.** Le défaut du code reste inerte : `demo_reseed_hour` vaut `None`,
+et `.env.example` la laisse vide. Un défaut « raisonnable » aurait été emporté
+par tout environnement neuf sans que personne ne le décide. Seul `render.yaml`
+la pose à 4, pour la démonstration et pour elle seule.
+
+**Le semis vit dans la boucle du worker, pas dans un job de la file, et ce n'est
+pas un choix de style.** Un traitement tourne dans la transaction qui tient le
+verrou de réclamation de sa propre ligne de `job` ; `TABLE_RASE` demande un
+verrou exclusif sur cette même table. Le job attendrait sa propre transaction,
+indéfiniment, et la boucle serait morte sans rien dire. Les vérifications
+reprises sont celles de `scripts.deploiement`, dans le même ordre :
+`verifier_la_cible` d'abord — un refus après table rase donnerait le même
+message sur une base déjà détruite —, puis les deux compartiments d'objets,
+parce que le semis y dépose des photos et échouerait *après* avoir effacé.
+
+**`SEED_DATABASE_NAME` entre chez le worker, où un commentaire disait « il ne
+sème pas ».** Elle ne déclenche rien : elle fait que l'activation échoue sur une
+décision et non sur « SEED_DATABASE_NAME doit nommer explicitement la base ».
+
+**Ce que le dépôt partagé a coûté ce jour-là, et qui n'est pas anecdotique.**
+Trois sessions travaillaient dans le même répertoire. Un `git add -A` a happé le
+fichier de travail d'une voisine dans un commit qui n'avait rien à voir ; sorti
+à la main, mais rien ne l'aurait dit. Et la base de test est partagée : la suite
+d'à côté supprimait `bind_test_gw0` pendant que la mienne s'y connectait, ce qui
+ressort en `AdminShutdown` ou en « database does not exist » sur du code qui n'a
+pas bougé — un diagnostic qu'on ne trouve qu'en comptant les processus `pytest`.
+La règle qui en sort tient en une ligne : **ajouter les fichiers par leur
+chemin, jamais `-A`**, et lire un échec de base comme une collision avant de le
+lire comme un défaut.
+## 2026-09-03 — Une base de test par exécution, et non par worker seulement
+
+**Le nom ne portait que le worker, et c'est un demi-isolement qui se lit comme
+un isolement complet.** `PYTEST_XDIST_WORKER` sépare les processus d'une même
+exécution ; il ne dit rien de l'exécution elle-même. Deux exécutions parallèles
+— le cas normal dès que deux conversations avancent dans le même répertoire —
+ont chacune un `gw0`, donc visaient la même base. Chacune commence par
+`DROP DATABASE ... WITH (FORCE)` : la seconde emportait celle de la première en
+pleine exécution.
+
+**Le symptôme accuse toujours la mauvaise chose.** L'échec ressort en « database
+bind_test_gw0 does not exist », ou en `AdminShutdown: terminating connection due
+to administrator command`, sur du code qui n'a pas bougé — donc sur la dernière
+ligne qu'on vient d'écrire. Rencontré trois fois en deux jours, et jamais
+compris avant d'avoir compté les processus `pytest` : `pgrep -f pytest` en
+renvoyait cinq. Aucune trace, aucun message, aucun test ne le disait.
+
+**L'empreinte vient de ce qui existe déjà, pas d'un mécanisme neuf.**
+`PYTEST_XDIST_TESTRUNUID` est posée par xdist dans **chaque worker** d'une même
+exécution, avec une valeur unique par exécution : c'est exactement la question,
+et elle avait déjà sa réponse dans une variable que personne ne lisait.
+`BIND_TEST_SESSION` la précède pour qui veut un nom à soi, et le numéro de
+processus prend le relais en série, où xdist ne pose rien.
+
+**Aucune des trois n'est tirée au hasard, et c'est la propriété qu'on éprouve.**
+Un `uuid4()` dans la dérivation rendrait les deux tests de distinction verts —
+les noms seraient bien différents — et le produit inutilisable : la base créée
+au démarrage ne serait plus celle qu'on cherche au premier test. Les deux
+familles d'implémentation ne divergent que sur la stabilité, d'où un test qui
+appelle deux fois et compare, en plus de ceux qui comparent deux exécutions.
+Vérifié par mutation dans les deux sens : le worker seul fait tomber trois
+tests, l'identifiant aléatoire trois autres, et les deux jeux ne se recouvrent
+qu'en partie.
+
+**Le dépôt d'objets avait le même défaut, une ligne plus haut, et sa propre
+docstring affirmait la question réglée.** `OBJECT_STORE_LOCAL_ROOT` n'était
+suffixé que par le worker. La clé d'un objet est l'empreinte de son contenu :
+deux processus qui sèment en même temps écrivent donc le **même** fichier, l'un
+renomme `X.partiel` en `X`, l'autre ne retrouve plus le sien. C'est une
+demi-correction, et une demi-correction est pire qu'aucune — elle protégeait les
+workers d'une exécution, laissait deux exécutions se voler leurs fichiers, et le
+commentaire au-dessus disait le problème résolu.
+
+**Le diagnostic est parti sur la mauvaise piste, et c'est la mesure qui l'a
+arrêté.** J'avais annoncé un plafond de connexions Postgres et j'allais monter
+`max_connections`. Mesuré avant d'écrire : **pic de 17 connexions pour une suite
+complète, sur un plafond de 100.** Le réglage n'aurait rien réglé, et il aurait
+clos la question — le pire résultat possible. La vraie cause était écrite depuis
+des semaines dans le fichier même, dans le commentaire qui expliquait pourquoi le
+suffixe existait.
+
+**L'empreinte est appelée, jamais recopiée.** Elle sert à la base et au dépôt.
+Deux définitions de « quelle exécution suis-je » finiraient par diverger, et
+c'est la seconde qu'on oublierait de corriger — la leçon est déjà écrite trois
+fois dans ce fichier. Elle vit donc en tête de `conftest.py`, au-dessus des
+imports, parce que le dépôt d'objets doit être posé avant que la configuration
+ne soit construite ; d'où l'exemption `E402` sur ce seul fichier, avec sa raison.
+
+**Ce que ça coûte.** Une exécution tuée par un `kill -9` laisse sa base derrière
+elle, là où un nom fixe était repris au passage suivant. La commande de ramassage
+est dans la docstring d'`empreinte_de_l_execution`. C'est le prix de l'isolement,
+et il est plus bas que trois quarts d'heure de diagnostic sur un défaut qui
+n'existe pas.
+
+## 2026-09-03 — Une borne de largeur ne se vérifie pas contre elle-même
+
+Rebecca a rapporté trois défauts sur l'administration — « barre de
+recherche mal cadrée, tableau coupé, dates illisibles ». Les trois
+avaient la même cause, et deux choses méritent d'être écrites : ce
+qu'elle était, et pourquoi rien ne l'avait vue.
+
+**La cause.** `Ecran` borne son contenu selon la `nature` que l'écran
+déclare, et retombe sur `merchant` — 720 points, 672 utiles — quand
+l'écran n'en déclare aucune. Quatre des cinq écrans de l'administration
+n'en déclaraient pas, pour des tables de 888 à 984 points. Le cadre est
+en `overflow: 'hidden'` et aucun de ces écrans n'a de défilement
+horizontal : **ce qui dépasse n'est pas mal placé, il n'existe pas.**
+Salons y perdait sa colonne d'action, c'est-à-dire le seul geste de
+l'écran ; Creators le lien de profil, ce qui explique des « liens
+Instagram qui ne marchent pas » alors que les liens fonctionnaient.
+
+**Pourquoi rien ne l'avait vue.** Les tests rendent l'arbre sans mise en
+page : une colonne hors cadre y est présente et interrogeable. La e2e ne
+visite pas ces écrans. Le défaut ne pouvait se voir que dans un
+navigateur, et il s'est vu en trente secondes dès qu'on en a ouvert un.
+
+**Et la garde écrite pour l'empêcher est passée au vert sur un écran
+encore coupé.** L'arbitrage déclarait déjà `reports` et restait coupé :
+son panneau de détail prend 440 points fixes, donc la file recevait 712
+pour 760. La borne `adminListeDetail` a été posée pour ça — et sa
+première version oubliait les marges que `Ecran` pose *à l'intérieur*
+d'elle. L'assertion écrite dans la foulée reproduisait la même omission,
+donc elle confirmait le calcul au lieu de le confronter : verte, écran
+cassé. C'est le navigateur qui a tranché.
+
+La formulation qui reste : **une garde qui recalcule la formule qu'elle
+doit vérifier n'éprouve que sa propre arithmétique.** Ce qu'il fallait
+confronter n'était pas « la somme est-elle cohérente » mais « la place
+réelle suffit-elle », et cette question a une seule réponse fiable, qui
+est de la mesurer là où elle se pose.
+
+Deux défauts ne se voyaient que parce que le premier les masquait : la
+colonne d'action de Salons était comptée deux fois — déclarée dans
+`COLONNES` *et* rendue par `fin`, donc la rangée dépassait son en-tête
+de 168 points, exactement ce que le commentaire de `LARGEUR_ACTION`
+jurait impossible — et son libellé se repliait sur deux lignes. Corriger
+un cadrage rend visible ce qu'il cachait ; il faut donc regarder l'écran
+après, pas seulement la mesure.
+
+**`LienExterne`, enfin.** `Pressable` + `Linking.openURL` rend un
+`<div role="link">` sur le web : le clic marche et rien d'autre — ni
+clic-milieu, ni nouvel onglet, ni « copier l'adresse », et un
+`window.open` hors ancre reste à la merci d'un bloqueur. Onze appels du
+produit ont cette forme ; celui de l'annuaire admin est migré, les dix
+autres attendent.
+
+## 2026-09-03 — Un échec sans assertion n'est pas un échec de code
+
+Quatre exécutions de la même suite jest, sur le même arbre, à quelques
+minutes d'intervalle : **50 échecs, puis 19, puis 13, puis 0.** Les
+fichiers nommés changeaient à chaque fois. Rien dans la sortie ne disait
+que la machine était en cause — elle disait que des tests échouaient, et
+elle donnait des noms.
+
+Le tri tient en deux commandes, et il coûte trente secondes :
+
+```
+grep -c "Exceeded timeout" journal.log     # les échecs d'attente
+grep -E "expect\(received" journal.log     # les échecs d'assertion
+```
+
+**Zéro assertion et N dépassements, c'est la machine.** Une seule
+assertion, c'est le code. Ce soir-là : 100 dépassements, zéro assertion —
+deux suites jest tournaient en parallèle, et des fichiers qui s'exécutent
+en 2 s en mettaient 157.
+
+**La règle générale.** Un échec d'attente — dépassement, connexion
+refusée, base absente, serveur qui ne répond pas — **nomme toujours celui
+qui attendait, jamais celui qui manquait.** Le symptôme désigne l'endroit
+où l'on regarde, pas l'endroit où c'est cassé. Et l'endroit où l'on
+regarde est presque toujours la dernière chose écrite, ce qui rend le
+faux coupable très convaincant.
+
+Trois cas de la même soirée, dans trois registres :
+
+1. **La CI de la PR #447 était rouge sur `e2e`, verte sur `app`.** Même
+   arbre, même commit, et le seul job qui tombait était celui qui attend
+   un serveur : `Timed out waiting 120000ms from config.webServer`, trois
+   lignes de journal, aucune autre erreur. La cause était l'absence de
+   `serve` dans les dépendances — un téléchargement npm sous plafond de
+   120 s, corrigé par la #448 d'une autre session. Sans son annonce
+   préalable, j'aurais bisecté `Ecran.tsx` et `gabarit.tsx`, deux
+   fichiers que tout l'écran traverse, donc les premiers suspects.
+2. **Côté api, 57 erreurs sur `test_seed.py`** — toutes des `ERROR` de
+   montage groupées sur un fichier, **zéro `FAILED` avec assertion**. Un
+   `ERROR` groupé sans un seul `assert` en échec est un défaut de
+   montage : la machine, ou une session voisine. C'était le dépôt
+   d'objets local, suffixé par le seul `PYTEST_XDIST_WORKER`, donc
+   partagé entre deux suites simultanées.
+3. **Et la contre-épreuve coûteuse, qu'il faut savoir ne pas faire.**
+   Établir « ce n'est pas mon code » en relançant la CI d'un commit connu
+   vert, deux fois, puis en attendant qu'elle repasse seule, a coûté près
+   d'une heure de CI. Le grep ci-dessus tranchait sur le premier journal.
+
+**Le corollaire, qui est le vrai coût.** Devant un symptôme mal attribué,
+le remède plausible supprime le symptôme sans toucher la cause — et
+**clôt la question**, ce qui est pire que de ne rien faire. Deux fois ce
+soir : monter `max_connections` aurait rendu la suite verte un jour sur
+deux, alors que le pic mesuré était de 17 sur 100 ; et une garde de
+largeur écrite en même temps que le code qu'elle vérifie a reproduit son
+omission, donc elle est passée au vert sur un écran encore coupé. Dans
+les deux cas, plus personne ne cherche ensuite.
+
+### Complément — le troisième angle, celui qui parle quand tout est rouge
+
+Les deux commandes ci-dessus se lisent **dans** un journal, et la colonne
+des jobs se lit **entre** deux jobs du même run. Il reste un cas où ni
+l'une ni l'autre ne répond : quand tous les jobs sont rouges, et qu'on
+n'a qu'un seul run sous les yeux.
+
+La question qui tranche alors vient de `bind-agency-1a`, et elle ne
+demande aucun journal :
+
+> **Est-ce que ça n'arrive qu'à moi ?**
+
+Trois PR de trois branches différentes portant la même erreur au même
+moment désignent l'infrastructure, sans qu'on ait à ouvrir quoi que ce
+soit. C'est ce qui a établi la panne de `serve` : la même ligne
+`Timed out waiting 120000ms from config.webServer` sur des travaux qui
+n'avaient rien en commun.
+
+Les trois angles répondent à la même question par des chemins différents,
+et il est utile qu'ils soient trois — on n'a pas toujours les trois vues :
+
+| Angle | Ce qu'on regarde | Muet quand |
+|---|---|---|
+| Assertions contre dépassements | un journal | on n'a pas encore le journal |
+| Un job vert, un job rouge | un run | tous les jobs sont rouges |
+| Plusieurs PR, même erreur | plusieurs runs | on est seul à livrer |
+
+## 2026-09-04 — Fusionner une pile : ce qui ferme la PR enfant
+
+Deux PR empilées — la seconde basée sur la branche de la première — se
+fusionnent dans l'ordre, et deux pièges attendent au même moment. Le
+premier coûte un rebase, le second est irréversible.
+
+**Le piège cher, mesuré.** `gh pr merge <base> --delete-branch` a fermé
+la PR enfant. Le journal d'événements de la #449 ne laisse pas de place à
+l'interprétation :
+
+```
+base_ref_deleted · 2026-09-04T02:27:35Z
+closed           · 2026-09-04T02:27:35Z
+```
+
+La même seconde. GitHub ferme une PR dont la base disparaît — et une PR
+fermée dont la base n'existe plus **ne se rouvre pas** : `reopen` refuse,
+et `--base main` répond `Cannot change the base branch of a closed pull
+request`. Il a fallu en ouvrir une nouvelle, la #450, pour du travail
+déjà écrit, testé et vert.
+
+**Ce n'est pas `--delete-branch` qui ferme, c'est la suppression
+effective de la base** — et la nuance est venue d'un contre-exemple.
+`bind-agency-1a` avait fusionné une base avec le même drapeau sans que
+son enfant ferme. Vérification : sa branche de base **existait encore**.
+Le geste dangereux n'avait pas eu lieu.
+
+**Pourquoi il n'avait pas eu lieu — hypothèse étayée, pas mécanisme
+établi.** Le réglage du dépôt est `delete_branch_on_merge = false` :
+personne ne supprime automatiquement. `gh` supprime lui-même, côté
+client, **après** la fusion — donc seulement s'il est encore là quand
+elle aboutit. Trois observations concordent :
+
+| Fusion | Mode | Branche distante | Enfant |
+|---|---|---|---|
+| #438 | `--delete-branch` | existe encore | resté ouvert |
+| #444 | `--auto --delete-branch` | existe encore | — |
+| #447 | `--delete-branch`, **synchrone** | **supprimée** | **fermé** |
+
+Concordantes, mais **la variable n'a pas été isolée** : il faudrait une
+fusion `--auto` sur une PR immédiatement fusionnable pour séparer « `gh`
+est parti » de « la fusion a tardé ». C'est écrit comme hypothèse parce
+que trois observations qui vont dans le même sens ne sont pas une
+expérience — et que se faire prendre par cette confusion est le sujet de
+l'entrée précédente.
+
+**La conduite, elle, ne dépend pas de l'hypothèse : sur une pile, ne pas
+demander la suppression avant la dernière PR.** Elle coûte une branche
+morte à nettoyer plus tard ; l'inverse coûte une PR.
+
+**Et le piège qui ne coûte qu'un rebase.** Après une fusion *squash*, la
+branche enfant se met en conflit : git rejoue des commits déjà présents
+sous une autre identité. `git rebase origin/main` s'en sort en signalant
+`patch contents already upstream` et en les laissant tomber — c'est ce
+qui a marché ici. Viser explicitement l'ancêtre commun marche aussi, et
+c'est la même idée que la règle déjà écrite plus haut sur
+`git reset --soft "$(git merge-base HEAD origin/main)"` : **désigner le
+point de divergence plutôt que supposer `origin/main`.** Deux remèdes
+voisins pour deux pièges voisins — assez proches pour qu'une session les
+ait confondus ce soir, et ait annoncé dans `CLAUDE.md` un `rebase --onto`
+qui ne s'y trouve pas.
+
+## 2026-09-04 — La bio d'une créatrice s'affiche, et l'objection qui la retenait reste vraie
+
+**Renversement explicite.** `champs-servis.test.ts` portait
+`CreateurDeLAnnuaire.bio` en « à instruire » depuis le contrat
+commerce-scopé, avec une objection précise : la bio est du **texte
+libre**, et le produit a déjà constaté qu'un champ libre peut porter un
+pseudonyme — donc une adresse de contact hors BIND, donc un
+contournement de la paroi payante que l'abonnement existe pour tenir.
+La direction envisagée était le **retrait de la réponse**, pas
+l'affichage.
+
+**Elle s'affiche quand même, et l'objection n'est pas réfutée : elle est
+payée.** Ce qui a tranché est ce que la rangée d'annuaire disait sans
+elle — un pseudonyme, une ville, une distance. De quoi **reconnaître**
+quelqu'un dont on a déjà entendu parler ; rien pour **choisir** entre
+deux personnes qu'on découvre. Or choisir est la seule chose que cet
+écran sert à faire, et c'est ce qu'un salon paie.
+
+Le contournement reste possible et n'est pas mitigé ici. Ce qui rend le
+coût acceptable : il existe déjà par le pseudonyme lui-même, que
+l'annuaire affiche depuis toujours et qui suffit à retrouver quelqu'un
+sur sa plateforme. La bio n'ouvre pas une porte fermée, elle élargit une
+porte ouverte.
+
+**Ce que ça a révélé, et qui était le vrai défaut.** La route
+`PATCH /me/profile` existe depuis la création du profil, avec onze tests
+derrière — et **aucun client ne l'appelait**. `monProfil` était déclarée
+dans `app/src/api/routes.ts` sans méthode d'`Api`, donc sans écran, donc
+sans données : `bio` et `city` étaient **nulles pour toutes les
+créatrices**, jeu de démonstration compris. Afficher la bio sans
+construire l'écran de saisie n'aurait donc rien affiché du tout.
+
+Le chantier réel n'était pas « rendre un champ servi », c'était « fermer
+un circuit ouvert aux deux bouts ». La garde `routes-sans-appelant` ne
+pouvait pas le voir : elle inspecte les **méthodes** d'`Api`, pas les
+entrées de `routes.ts`, et une route déclarée sans méthode lui est
+invisible. C'est un angle mort connu de plus, du même genre que les
+homonymies textuelles de `champs-servis`.
+
+**Le formulaire vit dans `screens/reglages/` et non en `*Screen.tsx`.**
+Cinq gardes de registre — couverture des écrans, quatre états, blocs,
+squelettes, sélecteurs — s'appliquent au premier niveau de `screens/` et
+ne sont pas récursives. Un sous-composant de réglages y échappe
+légitimement : il n'est pas un écran, il n'a ni route ni retour, et
+l'inscrire aux cinq registres aurait décrit une navigation qui n'existe
+pas.
+---
+
+## 2026-09-04 — La mention attendue : un champ qui existait partout sauf là où on l'écrit
+
+**Le défaut tenait en une phrase, et il était invisible depuis chaque bout.**
+`tier_offer.required_mention` et `required_geotag` avaient leur colonne, leur
+migration, leur recopie sur la contrepartie, et leur place dans **cinq** schémas
+de lecture — fiche publique, contrepartie, file du commerce, journée, historique.
+Ce qui manquait : `TierOfferCreate` était en `extra="forbid"` **sans les
+champs**, il n'existait aucun `TierOfferUpdate`, aucune route ne les acceptait,
+et le semis ne les posait pas.
+
+Conséquence : `required_mention` valait `NULL` sur chaque ligne de chaque
+environnement depuis la création de la colonne. Tout l'affichage étant gardé par
+`required_mention ? … : null`, **il ne s'est jamais rendu une seule fois**. Vu
+de l'écran de la créatrice, ça se lisait « le badge est peu clair » — un défaut
+d'apparence, alors que la cause était qu'il n'y avait rien à afficher.
+
+**Ce que ça dit du garde-fou qui aurait dû l'attraper.**
+`test_schemas_ecrits.py` vérifie que tout champ d'un schéma d'écriture apparaît
+en position d'écriture quelque part. Il ne pouvait pas voir ce défaut-ci :
+`required_mention=` existe bel et bien dans le code — à
+`collaboration.py:193`, où la contrepartie **recopie** l'offre. La garde
+cherchait le nom, elle a trouvé le nom, et le nom appartenait à une lecture. Une
+garde qui cherche une chaîne trouve les homonymes ; c'est le même mode d'échec
+que la garde de traduction qui se satisfaisait d'une feuille sans son domaine.
+
+**Trois asymétries, toutes dans le même sens : la créatrice en sait moins que
+tout le monde.**
+
+1. **L'email en disait plus que l'écran.** `collaboration.requirements.mention`
+   porte « Mention {mention} in your post. » — la seule phrase impérative du
+   produit — et n'était injectée que dans `collaboration.opened.body`. Le
+   **rappel d'échéance** et la **demande de reprise** transportaient déjà la
+   valeur jusqu'à la boîte d'envoi et ne l'écrivaient pas : deux gabarits à
+   corriger, zéro ligne de Python. Or le rappel est précisément le message qu'on
+   lit au moment de publier.
+2. **Le commerce était mieux légendé que la personne qui exécute.** Côté
+   commerce : « Expected mention », « What you asked for ». Côté créatrice, la
+   valeur était posée **nue** — `@velanailstudio` suivi d'un bouton `COPY`, sans
+   un mot pour dire ce que c'est ni ce qu'il faut en faire.
+3. **Trois champs servis et câblés à `null`.** `business_name`, `item_name` et
+   `platform` étaient assemblés par `CollaborationRead` et absents du type
+   TypeScript ; l'écran passait donc `null` en dur. La ligne du lieu ne se
+   rendait jamais — elle est gardée par le nom du salon — et la phrase du format
+   tombait sur sa variante courte, sans dire sur quel réseau publier.
+
+**Le test qui annonçait sa propre chute n'est pas tombé, et c'est le plus
+instructif de la journée.** `la-preuve-v3.test.tsx` affirmait « le lieu ne se
+rend pas tant que le nom du salon n'est pas servi », avec ce commentaire : « Ce
+test tombera le jour où le champ arrivera, et c'est voulu ». Le champ est
+arrivé, et le test est resté vert — son décor est casté (`as unknown as
+Collaboration`) et ne portait pas `business_name`. `nomDuSalon` valait donc
+`undefined` **avant comme après**, et l'assertion ne distinguait rien. Il a
+fallu corriger le décor en même temps que le code. C'est exactement la règle du
+dépôt sur les décors qui survivent à la mutation, rencontrée sur un test qui
+prétendait par écrit être prêt à tomber.
+
+**`instagram_handle` est un champ neuf, et distinct d'`instagram_url`.** Le
+modèle disait déjà pourquoi : « le salon donne l'adresse qu'il veut montrer, qui
+peut être une page de marque et non un compte ». On ne peut donc pas dériver le
+pseudonyme de l'adresse, et une créatrice qui recopierait l'adresse citerait le
+mauvais compte. Aucun remplissage rétroactif : il n'existe aucune règle sûre, et
+une valeur devinée serait pire que son absence — elle serait proposée au salon
+comme une valeur qu'il aurait donnée. Instagram seul ; TikTok n'a pas
+d'intégration, et le jour où il en aura une, c'est une colonne de plus.
+
+Nommage convenu avec la session voisine : `handle` nu reste à la créatrice
+(`social_account.handle`, déjà en base et servi par trois schémas), le qualifié
+va au nouveau. Le nom nu à ce qui existe déjà et qui est le plus nombreux.
+
+**Le journal est celui de la configuration, pas celui de l'audit.** Une mention
+est une **valeur** qui change ; ce qu'on relira est « qui a écrit quoi à la
+place de quoi », que `record_transition` ne sait pas dire. L'audit garde les
+bascules de l'offre — ouverte, fermée — et mêler les deux rendrait « a retiré
+l'offre » et « a corrigé le pseudonyme » illisibles l'un à côté de l'autre.
+D'où `CurrentUser` sur le `PATCH` en plus de `CurrentBusiness` : le journal de
+configuration refuse d'écrire sans auteur humain.
+
+**Sans rétroactivité, et c'est la propriété qui protège la créatrice.** Les
+contreparties déjà nées gardent les critères figés à leur création — `SPEC.md`
+§2.5. Changer la consigne sous quelqu'un qui a déjà consommé ferait tomber sa
+publication pour un motif qui n'existait pas quand elle a publié.

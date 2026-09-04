@@ -136,7 +136,9 @@ async def create_business(
         menu_url=payload.menu_url,
         instagram_url=payload.instagram_url,
         tiktok_url=payload.tiktok_url,
+        facebook_url=payload.facebook_url,
         website_url=payload.website_url,
+        instagram_handle=payload.instagram_handle,
         status=BusinessStatus.ONBOARDING,
     )
     session.add(business)
@@ -203,7 +205,12 @@ async def update_business(
         # qui croit avoir enregistré.
         "instagram_url",
         "tiktok_url",
+        "facebook_url",
         "website_url",
+        # Le pseudonyme du salon, dans la liste blanche pour la même raison que
+        # les liens : accepté au schéma et ignoré ici, il rendrait un 200 à qui
+        # croit avoir enregistré.
+        "instagram_handle",
     ):
         if name in fields:
             setattr(business, name, fields[name])

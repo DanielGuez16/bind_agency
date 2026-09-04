@@ -67,6 +67,7 @@ import type {
   AnnuaireDuCommerce,
   CommerceDeLUtilisateur,
   CreateurDeLAnnuaire,
+  MonProfilDeclare,
   PageDeLaCarte,
   PhotoDuCommerce,
   EtatDeLaComposition,
@@ -892,7 +893,10 @@ export class Api {
       menu_url: string | null;
       instagram_url: string | null;
       tiktok_url: string | null;
+      facebook_url: string | null;
       website_url: string | null;
+      /** Le pseudonyme, distinct de l'adresse au-dessus. Voir `LiensPublics`. */
+      instagram_handle: string | null;
     }>(
       routes.commerce(businessId),
       {
@@ -1119,11 +1123,45 @@ export class Api {
    */
   definirLesLiensPublics(
     businessId: string,
-    liens: { instagram_url: string | null; tiktok_url: string | null; website_url: string | null },
+    liens: {
+      instagram_url: string | null;
+      tiktok_url: string | null;
+      facebook_url: string | null;
+      website_url: string | null;
+      /** Le pseudonyme, distinct de l'adresse au-dessus. Voir `LiensPublics`. */
+      instagram_handle: string | null;
+    },
   ) {
     return this.client.request<unknown>(routes.modifierLeCommerce(businessId), {
       methode: 'PATCH',
       corps: liens,
+    });
+  }
+
+  /**
+   * Ce que la créatrice a déclaré d'elle-même.
+   *
+   * **La route existait depuis le début et personne ne l'appelait.** Le
+   * serveur sait lire et écrire ces quatre champs, avec onze tests derrière,
+   * depuis que le profil existe ; il manquait le client, donc l'écran, donc
+   * les données — `bio` et `city` sont nulles pour tout le monde aujourd'hui.
+   */
+  monProfil(signal?: AbortSignal) {
+    return this.client.request<MonProfilDeclare>(routes.monProfil(), { signal });
+  }
+
+  /**
+   * Écrit ce que la créatrice change, et rien d'autre.
+   *
+   * **Partiel, et le serveur le prend au mot.** Un champ absent du corps n'est
+   * pas touché ; un champ à `null` est effacé. C'est `exclude_unset` côté
+   * Pydantic, donc envoyer l'objet entier effacerait ce que l'écran n'a pas
+   * chargé — d'où l'objet complet à chaque fois ici, jamais un fragment.
+   */
+  mettreAJourMonProfil(champs: MonProfilDeclare) {
+    return this.client.request<MonProfilDeclare>(routes.monProfil(), {
+      methode: 'PATCH',
+      corps: champs,
     });
   }
 
@@ -1273,6 +1311,23 @@ export class Api {
     });
   }
 
+  /**
+   * Corrige les critères de publication d'une offre déjà composée.
+   *
+   * **Seulement les critères** : déplacer le palier ou la prestation n'est pas
+   * une correction, c'est une autre offre. Le serveur refuse le reste.
+   */
+  modifierUneOffre(
+    businessId: string,
+    offreId: string,
+    champs: { required_mention?: string | null; required_geotag?: boolean },
+  ) {
+    return this.client.request<OffreDePalier>(routes.uneOffreDePalier(businessId, offreId), {
+      methode: 'PATCH',
+      corps: champs,
+    });
+  }
+
   activerUneOffre(businessId: string, offreId: string, active: boolean) {
     return this.client.request<OffreDePalier>(routes.activationDUneOffre(businessId, offreId), {
       methode: 'PUT',
@@ -1407,7 +1462,9 @@ export function ApiProvider({
         // Une panne de transport n'est pas une erreur d'API : la phrase à dire
         // n'est pas la même, et « réessaie » n'a de sens que dans ce cas-là.
         if (erreur instanceof NetworkError) return t('errors.network');
-        if (erreur instanceof ApiError) return messageDeRefus(t, erreur.code, erreur.champs);
+        if (erreur instanceof ApiError) {
+          return messageDeRefus(t, erreur.code, erreur.champs, erreur.codes);
+        }
         return t('errors.generic');
       },
     }),

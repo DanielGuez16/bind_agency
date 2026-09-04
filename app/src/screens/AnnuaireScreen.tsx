@@ -29,7 +29,7 @@
  */
 import React, { useEffect, useState } from 'react';
 
-import { Linking, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import {
   useApi,
@@ -43,6 +43,7 @@ import {
   EmptyState,
   Filet,
   Icone,
+  LienExterne,
   PiluleDeProfil,
   SkeletonLignes,
   StatusMessage,
@@ -557,9 +558,16 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
      * geste de cet écran est unique — aller voir son travail chez elle — et
      * c'est ce qui permet aux deux glyphes de droite de n'être que des marques.
      */
-    <Pressable
+    <LienExterne
       testID={`createur-${createur.creator_id}`}
-      accessibilityRole={profil ? 'link' : undefined}
+      /* **Une vraie ancre, et c'est cet écran qui en avait le plus besoin.**
+         Le geste est unique — aller voir son travail chez elle — et on le
+         répète sur une liste : ouvrir six profils dans six onglets sans perdre
+         l'annuaire est exactement ce qu'un `<div role="link">` interdisait.
+
+         `url` nul quand aucun compte n'est rattaché : la rangée garde sa forme
+         et ne prétend rien ouvrir, ce que `disabled` faisait ici à la main. */
+      url={profil?.profil_url ?? null}
       /**
        * **Ce que le salon peut en faire, dit et non peint.**
        *
@@ -577,10 +585,7 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
       ]
         .filter(Boolean)
         .join(' — ')}
-      disabled={!profil}
-      onPress={() => profil && void Linking.openURL(profil.profil_url as string)}
-      style={({ pressed }) => ({
-        opacity: pressed ? 0.7 : 1,
+      style={{
         minHeight: 76,
         paddingVertical: 10,
         flexDirection: 'row',
@@ -588,7 +593,7 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
         gap: 14,
         borderBottomWidth: 1,
         borderBottomColor: c['line.default'],
-      })}
+      }}
     >
       {/* **Le cercle porte le premier critère du tri.** Le contour d'encre
           disait « celle-ci peut réserver chez vous » sur la carte ; il tient le
@@ -626,6 +631,27 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
             {situation}
           </Texte>
         ) : null}
+        {/* **Ce qu'elle dit d'elle-même, et c'est un renversement assumé.**
+            `champs-servis` portait cette bio en « à instruire » avec une
+            objection sérieuse — du texte libre peut porter un pseudonyme qui
+            contourne la paroi payante — et la direction envisagée était le
+            retrait. Elle est affichée parce que la rangée ne disait que le
+            pseudonyme, la ville et la distance : de quoi reconnaître, pas de
+            quoi choisir. Voir `DECISIONS.md` du 2026-09-04.
+
+            **Deux lignes au plus.** La borne serveur est à mille caractères ;
+            une rangée d'annuaire n'en montre que le début, et c'est voulu —
+            elle sert à trier, la fiche sert à lire. */}
+        {createur.bio ? (
+          <Texte
+            variante="type.caption"
+            couleur="ink.mute"
+            apercuDeProse={2}
+            testID={`bio-${createur.creator_id}`}
+          >
+            {createur.bio}
+          </Texte>
+        ) : null}
       </View>
 
       {/* **De quel réseau, puis où ça mène** : c'est l'ordre de lecture, et les
@@ -640,6 +666,6 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
           <Icone nom="sortie" couleur="ink.soft" taille={18} />
         </View>
       ) : null}
-    </Pressable>
+    </LienExterne>
   );
 }

@@ -1343,6 +1343,50 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       la bannière part d'elle-même. Le renvoi relit le compte même en échec,
       sans quoi le 409 « déjà vérifiée » afficherait une erreur pour annoncer
       une réussite. 5 tests neufs, 4 mutations vérifiées*
+- [x] **`serve` déclaré, au lieu d'être téléchargé à chaque e2e**
+      *Le `webServer` de Playwright faisait `npx --yes serve` et `serve`
+      n'était déclaré nulle part : téléchargé depuis npm à chaque exécution,
+      sous le plafond de 120 s. Une lenteur du registre rendait la CI rouge sur
+      du code juste, sous un message qui n'en dit rien — « Timed out waiting
+      from config.webServer » — et qui accuse la dernière ligne écrite.*
+
+      ***Établi par contre-épreuve** : la e2e de `main`, relancée sur un commit
+      dont elle était verte, a échoué deux fois de suite, puis est repassée au
+      vert une heure plus tard sans qu'une ligne bouge. Node épinglé par
+      `.nvmrc`, `serve` non publié depuis six mois : restait le téléchargement.
+      Sans cette contre-épreuve, deux PR étaient soupçonnées à tort.*
+
+- [x] **C1 — la mention attendue s'écrit enfin, et l'écran la nomme**
+      *`required_mention` et `required_geotag` avaient leur colonne, leur
+      migration, leur recopie sur la contrepartie et leur place dans cinq
+      schémas de lecture. Aucun schéma d'écriture ne les acceptait :
+      `TierOfferCreate` en `extra="forbid"` sans les champs, pas d'`Update`,
+      pas de route, pas de semis. **Le champ valait `NULL` partout depuis sa
+      création**, et l'affichage — gardé par `required_mention ? … : null` — ne
+      s'est jamais rendu une seule fois. Vu de l'écran créatrice : « le badge
+      est peu clair ».*
+
+      ***Le chemin d'écriture** : `PATCH /business/{id}/tier-offers/{offer_id}`,
+      journal de **configuration** (qui a écrit quoi à la place de quoi) et non
+      d'audit, donc `CurrentUser` exigé. Sans rétroactivité — les contreparties
+      nées avant gardent leurs critères figés. Écran de saisie dans
+      `CatalogueScreen`, sous la carte de l'offre.*
+
+      ***`instagram_handle` sur le salon**, distinct d'`instagram_url` : le
+      modèle disait déjà que l'adresse « peut être une page de marque et non un
+      compte ». Aucun remplissage rétroactif — une valeur devinée serait pire
+      que son absence. Instagram seul, TikTok le jour où il sera intégré.*
+
+      ***Les trois asymétries corrigées** : `{requirements}` ajouté au rappel
+      d'échéance et à la demande de reprise (zéro Python, la valeur y arrivait
+      déjà) ; la mention porte un libellé au lieu d'être posée nue ;
+      `business_name`/`item_name`/`platform` reconnectés — ils étaient servis et
+      câblés à `null`, ce qui empêchait la ligne du lieu de se rendre.*
+
+      ***Le test qui annonçait sa propre chute n'est pas tombé.*** *Son décor
+      était casté et ne portait pas `business_name` : il passait avant comme
+      après. Décor corrigé en même temps que le code. Cinq mutations vérifiées.*
+
 - [x] **La suite en parallèle** — 651 s à 300 s, mesuré
       *`pytest-xdist` avec `--dist loadgroup`. Les deux tests de concurrence
       partagent `xdist_group("concurrence")` : même worker, sériels entre eux, et
@@ -1365,6 +1409,30 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       par un , qui prouverait qu'on sait copier une
       base — pas que la commande repart d'un état rempli. C'est le plancher, et
       il est le sujet d'un test, pas son coût*
+- [x] **Une base de test par exécution, et plus seulement par worker**
+      *Le complément du point ci-dessus, et la moitié qui manquait. Le worker
+      sépare les processus d'une même exécution, jamais deux exécutions entre
+      elles : deux sessions parallèles dans le même répertoire ont chacune un
+      `gw0` et se détruisaient la base l'une à l'autre en pleine course. Le
+      symptôme — « database bind_test_gw0 does not exist », `AdminShutdown` —
+      accuse toujours la dernière ligne écrite. Trois fois en deux jours, jamais
+      compris avant un `pgrep -f pytest` qui en a montré cinq.*
+
+      *L'empreinte vient de `PYTEST_XDIST_TESTRUNUID`, que xdist pose déjà dans
+      chaque worker d'une même exécution — la réponse existait dans une variable
+      que personne ne lisait. `BIND_TEST_SESSION` la précède, le pid la remplace
+      en série. **Aucune n'est tirée au hasard** : un `uuid4()` rendrait les
+      noms bien distincts et la base introuvable au premier test. Muté dans les
+      deux sens, six tests, deux jeux qui ne se recouvrent qu'en partie.*
+
+      ***Et le dépôt d'objets avec, ce qui manquait au premier jet.*
+      `OBJECT_STORE_LOCAL_ROOT` ne portait que le worker : deux processus qui
+      sèment ensemble écrivent la même clé — c'est l'empreinte du contenu — et
+      se volent leur fichier `.partiel`. 57 erreurs sur `test_seed.py` en
+      tournant à côté d'une autre session, zéro seul. **Le diagnostic était parti
+      sur un plafond de connexions Postgres** : mesuré à 17 connexions de pic
+      sur 100, l'hypothèse est morte avant d'être écrite. La cause était dans le
+      commentaire qui expliquait pourquoi le suffixe existait.*
 - [ ] **`SOCIAL_PROVIDER` et `API_PUBLIC_BASE_URL` à poser chez Render**
       *Le seul des trois bloquants que le code ne peut pas corriger seul. Depuis
       cette tranche, l'API refuse de démarrer sans elles plutôt que de répondre
@@ -3423,6 +3491,39 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       de la journée pour une phrase que plus personne ne lit.
       `createurs_qui_peuvent_reserver` et `confirmation_jours` sont retirés de la
       vue d'activation ; la portée reste servie par l'annuaire, qui en a l'usage.*
+
+- [x] **La file d'arbitrage ne se vide plus : échéance éloignée, et semis de nuit**
+      *La file se vidait douze heures après chaque semis, et la cause est
+      mesurée sur la base et non déduite : les quatre dossiers
+      `needs_human_review` étaient en `resubmit_requested` avec une échéance à
+      douze heures — `COLLABORATION_RESUBMIT_SECONDS`, posée par
+      `demander_une_nouvelle_soumission` au troisième passage. Ce statut est
+      dans `EXPIRABLES`, le balayage le faisait tomber en `unfulfilled`, et
+      `file_de_revue_humaine` exclut ce statut.*
+
+      ***Les deux corrections, pas l'une ou l'autre.** L'une remplit la file,
+      l'autre rafraîchit tout le reste ; seule, aucune ne suffit.*
+
+      ***Le jeu éloigne lui-même l'échéance.**
+      `eloigner_les_echeances_d_arbitrage` la porte à trente jours sur les
+      lignes `needs_human_review` dont le statut est dans `EXPIRABLES` — liste
+      importée du service, jamais recopiée. Exception nommée, comme
+      `vieillir_un_releve` : aucun service ne sait déplacer le temps. La file est
+      pleine dès la fin du semis, sans rejouer aucun scénario à la main.*
+
+      ***Et le semis se replante une fois par nuit**, à 4 h heure de Miami :
+      `DEMO_RESEED_HOUR`, lu par la boucle de `bind-worker-demo`, aucun service
+      neuf. Une heure et non une période — une période tombe à une heure
+      différente chaque jour et finit par tomber en pleine démonstration. Dans la
+      boucle et non dans un job : un traitement tient le verrou de sa propre
+      ligne de `job`, et `TABLE_RASE` demande un verrou exclusif sur cette table.*
+
+      ***Ce que ça coûte, su et accepté** : `reset_schema` supprime les
+      trente-sept tables — 27 comptes, 248 réservations, 51 contreparties,
+      5 favoris comptés avant de l'affirmer — et il n'existe aucun mode partiel.
+      S'y ajoute une minute où l'application ne répond plus rien d'utile, et les
+      jetons en circulation qui désignent des comptes disparus. À 4 h, personne
+      ne teste : c'est l'heure qui rend le coût acceptable, pas sa réduction.*
 
 - [x] **Le jeu de démonstration raconte quelque chose**
       *Il montrait une journée pauvre : une ligne par salon, des demandes

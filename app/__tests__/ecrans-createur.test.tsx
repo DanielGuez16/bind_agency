@@ -756,13 +756,25 @@ describe('audience et vérification', () => {
 });
 
 describe('historique', () => {
-  it('compte les onglets sur tout l’historique, pas sur la page', async () => {
+  it('compte ce qui attend un geste, et non ce qui est consommé', async () => {
+    /**
+     * **Le décor fait diverger les deux implémentations, et c'est tout son
+     * objet.** Sept réservations consommées, dont deux seulement attendent
+     * quelque chose de la créatrice : les cinq autres sont soumises et en
+     * contrôle, le salon les regarde, elle ne peut rien y faire.
+     *
+     * Un décor où les deux nombres coïncideraient — ce qu'écrivait la version
+     * précédente, `consumed: 2` et rien d'autre — laisserait passer l'ancienne
+     * somme sans rien éprouver. C'est le badge qui réclamait une action sur des
+     * dossiers où il n'y en a aucune à faire, et il n'aurait pas rougi.
+     */
     await monter(
       <HistoriqueScreen onOuvrir={jest.fn()} />,
       clientDe({
         '/me/bookings': {
           items: [RESERVATION],
-          compteurs: { ...COMPTEURS_VIDES, confirmed: 1, held: 2, cancelled: 4, consumed: 2 },
+          compteurs: { ...COMPTEURS_VIDES, confirmed: 1, held: 2, cancelled: 4, consumed: 7 },
+          a_envoyer: 2,
         },
       }),
     );
@@ -771,6 +783,7 @@ describe('historique', () => {
     // onglet est un appel permanent : il demande qu'on s'en occupe, et il le
     // demande sans fin sur ce qui est fini. Seul l'envoi attend quelque chose.
     expect(screen.getByText(`${en.parcours.ongletEnCours} · 2`)).toBeTruthy();
+    expect(screen.queryByText(`${en.parcours.ongletEnCours} · 7`)).toBeNull();
     expect(screen.getByText(en.parcours.ongletAVenir)).toBeTruthy();
     expect(screen.getByText(en.parcours.ongletTerminees)).toBeTruthy();
   });
@@ -886,6 +899,13 @@ describe('mes publications : le filtre part au serveur, et la liste se continue'
     // **1. Le filtre est dans la requête, pas dans l'écran.** Sans lui, le
     // serveur rend les cinquante plus récentes toutes catégories confondues.
     expect(demandes[0]).toContain('status=consumed');
+    // **Et les closes, sans quoi l'écran est vide en permanence.** Une
+    // publication approuvée ferme l'échange : elle porte `closed`, plus
+    // `consumed`. Le filtre qui ne demandait que les consommées était juste
+    // tant que rien ne sortait de cet état, et il a cessé de l'être le jour où
+    // la clôture est arrivée — sans erreur nulle part pour le dire, et sur
+    // *toutes* les publications à la fois.
+    expect(demandes[0]).toContain('status=closed');
     expect(demandes[0]).toContain('limite=50');
 
     // Une seule publiée sur la page, et c'est bien elle qui est rendue.

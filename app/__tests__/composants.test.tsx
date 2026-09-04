@@ -29,6 +29,7 @@ import {
   DayPicker,
   DecisionBar,
   EmptyState,
+  LienExterne,
   ManualCode,
   MediaFallback,
   SegmentedTabs,
@@ -942,6 +943,13 @@ describe("ce que la bibliothèque n'a pas", () => {
       // teinte de marque : deux jauges écrites sur place auraient demandé
       // d'exempter le fichier entier de cette garde-là.
       'Jauge.tsx',
+      // Le lien qui sort du produit, et qui est une vraie ancre sur le web.
+      // Écrit sur place, il donnait un `<div role="link">` : le clic marchait,
+      // et rien de ce qui fait un lien — l'ouvrir dans un onglet, copier son
+      // adresse, voir où il mène. La famille existe parce que onze écrans
+      // posent ce geste, et qu'un `Platform.OS` recopié onze fois n'est corrigé
+      // qu'une fois sur onze.
+      'LienExterne.tsx',
       'Logo.tsx',
       'Mouvement.tsx',
       'PaveDeSaisie.tsx',
@@ -1295,5 +1303,65 @@ describe('un texte sur une photo vit sur une bande, pas sur une queue de dégrad
     // Et cette bande dépasse ce que la plus exigeante des deux encres demande.
     const opacite = Number(/,\s*([\d.]+)\)/.exec(couleurs['scrim.photoBottom'])![1]);
     expect(opacite).toBeGreaterThanOrEqual(opaciteMinimaleDuVoile('ink.onScrimMuted'));
+  });
+});
+
+describe('un lien externe est une vraie ancre sur le web', () => {
+  /**
+   * **La seule garde possible ici, et elle vaut d'être expliquée.**
+   *
+   * Le préréglage jest est `jest-expo`, où `Platform.OS` ne vaut jamais
+   * `'web'` : la branche qui pose l'ancre n'est donc **jamais exécutée** par la
+   * suite. Mesuré plutôt que supposé — remplacer sa condition par `false` a
+   * laissé au vert les 97 tests des trois fichiers concernés.
+   *
+   * Ce test force la plateforme et vérifie que `href` et `hrefAttrs`
+   * descendent. Il n'éprouve pas le rendu — react-native-web n'est pas là pour
+   * transformer la vue en `<a>` — mais il éprouve la seule chose qui puisse se
+   * perdre par mégarde : la branche elle-même. Un `Pressable` + `openURL`, le
+   * défaut qu'on vient de corriger partout, ne passe aucun `href` et fait donc
+   * tomber ce test.
+   *
+   * Que l'ancre soit réellement rendue se vérifie dans un navigateur, et l'a
+   * été : `tagName === 'A'`, `href`, `target="_blank"` et
+   * `rel="noopener noreferrer"` sur les liens de profil de l'annuaire admin.
+   */
+  it('pose href et hrefAttrs quand la plateforme est le web', async () => {
+    const { Platform } = require('react-native') as typeof import('react-native');
+    const initiale = Platform.OS;
+    Platform.OS = 'web';
+    try {
+      await monter(
+        <LienExterne url="https://exemple.test/profil" testID="lien">
+          <Texte>Ouvrir</Texte>
+        </LienExterne>,
+      );
+      const noeud = screen.getByTestId('lien');
+      expect(noeud.props.href).toBe('https://exemple.test/profil');
+      expect(noeud.props.hrefAttrs).toEqual({ target: '_blank', rel: 'noopener noreferrer' });
+    } finally {
+      // Remis, sinon les fichiers suivants rendraient en web.
+      Platform.OS = initiale;
+    }
+  });
+
+  it("ne pose pas d'ancre quand il n'y a nulle part où aller", async () => {
+    // Le pendant : un composant qui poserait `href` partout passerait le test
+    // ci-dessus sans rien garantir, et offrirait un lien vers « null ».
+    await monter(
+      <LienExterne url={null} testID="lien-mort">
+        <Texte>Ouvrir</Texte>
+      </LienExterne>,
+    );
+    const noeud = screen.getByTestId('lien-mort');
+    expect(noeud.props.href).toBeUndefined();
+    // **Le rôle, et non `onPress`.** La première version de cette ligne
+    // vérifiait `props.onPress` — et elle a survécu à la mutation qui retire la
+    // branche : React Native n'expose pas `onPress` sur le nœud hôte d'un
+    // `Pressable`, il y devient un jeu de gestionnaires de responder. Elle
+    // était donc vraie des deux implémentations, celle qu'on veut comme celle
+    // qu'on redoute. Le rôle, lui, diverge : les deux branches qui portent un
+    // lien l'annoncent, celle-ci ne doit rien annoncer du tout.
+    expect(noeud.props.accessibilityRole).toBeUndefined();
   });
 });

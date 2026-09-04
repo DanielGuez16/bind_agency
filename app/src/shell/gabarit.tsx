@@ -24,7 +24,7 @@ import {
 } from 'react';
 import { View, type LayoutChangeEvent } from 'react-native';
 
-import { breakpoint } from '../theme';
+import { breakpoint, density } from '../theme';
 import { ECART_DES_COLONNES, placeDisponible } from './placeDisponible';
 
 export type Gabarit = {
@@ -117,6 +117,22 @@ export type NatureDeContenu =
   | 'reports'
   | 'merchantListeDetail'
   /**
+   * L'arbitrage : une file de six colonnes **et** le dossier ouvert à côté.
+   *
+   * **`reports` ne suffisait pas, et la mesure seule l'a dit.** L'écran la
+   * déclarait déjà — 1120 points — mais cette borne vaut pour un contenu d'un
+   * seul tenant : ici le panneau de détail en prend 440 fixes, et la file
+   * héritait des 608 restants pour une table qui en fait 760. « Reasons » et
+   * « Flagged » — le motif répété et l'ancienneté, c'est-à-dire les deux
+   * colonnes sur lesquelles on tranche — tombaient hors du cadre.
+   *
+   * Rien ne le signalait : la colonne fixe tient sa largeur et c'est la file
+   * qui se comprime, sous un `overflow: 'hidden'` sans défilement. Même défaut
+   * que celui déjà noté dans `placeDisponible` — un dépassement qu'aucune
+   * garde ne voit parce qu'il n'en est pas un.
+   */
+  | 'adminListeDetail'
+  /**
    * Un écran rendu **dans** une colonne déjà bornée par son parent.
    *
    * Les trois écrans de la configuration vivent à droite du menu de sections :
@@ -128,6 +144,18 @@ export type NatureDeContenu =
    */
   | 'section';
 
+/**
+ * Ce que mesure la file de l'arbitrage : ses six colonnes, plus la marge de
+ * douze points que `TableRow` pose de chaque côté.
+ *
+ * **Ici et non dans `tokens.json`.** Ce n'est pas un jeton de Design, c'est la
+ * somme de largeurs que le produit a choisies : la ranger avec la palette
+ * l'aurait rendue invisible au seul endroit où elle peut se démentir. Une
+ * assertion dans `arbitrage-v3.test.tsx` la confronte aux colonnes réelles —
+ * sans elle, élargir une colonne recréerait le débord en silence.
+ */
+const LARGEUR_DE_LA_FILE_ADMIN = 760;
+
 const BORNES: Record<NatureDeContenu, number> = {
   creator: breakpoint.contentMaxCreator,
   merchant: breakpoint.contentMaxMerchant,
@@ -138,6 +166,20 @@ const BORNES: Record<NatureDeContenu, number> = {
   // autres largeurs, sinon elle dériverait des jetons sans qu'on le voie.
   merchantListeDetail:
     breakpoint.listWidthMerchant + ECART_DES_COLONNES + breakpoint.contentMaxMerchant,
+  // La file de l'arbitrage **et** le dossier ouvert.
+  //
+  // **Les marges de l'écran sont dans l'addition, et les oublier a laissé le
+  // défaut en place.** La borne s'applique au conteneur d'`Ecran`, qui pose
+  // ensuite `screenPaddingLarge` de chaque côté *à l'intérieur* : sans les
+  // quarante-huit points, la file recevait 712 pour 760 et « Flagged » restait
+  // coupée. La première version de cette ligne les omettait, et l'assertion
+  // écrite en même temps les omettait aussi — donc elle est passée au vert sur
+  // un écran encore coupé. C'est le navigateur qui l'a dit, pas le test.
+  adminListeDetail:
+    LARGEUR_DE_LA_FILE_ADMIN +
+    ECART_DES_COLONNES +
+    breakpoint.detailPanelAdmin +
+    2 * density.creator.screenPaddingLarge,
   // Zéro veut dire « aucune borne » : `largeurMaximale` le traduit en
   // `undefined`. Le parent a déjà mesuré ce qui restait.
   section: 0,

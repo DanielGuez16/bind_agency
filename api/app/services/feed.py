@@ -36,7 +36,6 @@ from app.core.config import get_settings
 from app.integrations.geocoding import Coordinates
 from app.models import Booking, Business, CatalogItem, Tier, TierOffer
 from app.models.enums import (
-    BookingStatus,
     BusinessCategory,
     BusinessStatus,
     ContentFormat,
@@ -44,6 +43,7 @@ from app.models.enums import (
     Platform,
 )
 from app.services import availability, eligibility, favorites
+from app.services.booking_states import STATUTS_SERVIS
 
 
 @dataclass(frozen=True, slots=True)
@@ -791,7 +791,11 @@ async def _consommations_du_quartier(
             # montre. On garde la condition parce qu'elle dit l'intention à
             # celui qui lit, là où une comparaison de date sur une colonne
             # nullable la laisse deviner.
-            Booking.status == BookingStatus.CONSUMED,
+            # **`STATUTS_SERVIS` et non l'égalité.** Un échange dont la
+            # publication a été tranchée reste une prestation réellement
+            # servie ; l'égalité faisait fondre la popularité d'un salon au fur
+            # et à mesure que ses dossiers se ferment.
+            Booking.status.in_(STATUTS_SERVIS),
             Booking.consumed_at > sa.func.now() - FENETRE_DE_POPULARITE,
         )
         .group_by(Booking.business_id)
@@ -904,7 +908,11 @@ async def _consommations_citywide(session: AsyncSession) -> dict[uuid.UUID, int]
     lignes = await session.execute(
         sa.select(Booking.business_id, sa.func.count(Booking.id))
         .where(
-            Booking.status == BookingStatus.CONSUMED,
+            # **`STATUTS_SERVIS` et non l'égalité.** Un échange dont la
+            # publication a été tranchée reste une prestation réellement
+            # servie ; l'égalité faisait fondre la popularité d'un salon au fur
+            # et à mesure que ses dossiers se ferment.
+            Booking.status.in_(STATUTS_SERVIS),
             Booking.consumed_at > sa.func.now() - FENETRE_DE_POPULARITE,
         )
         .group_by(Booking.business_id)

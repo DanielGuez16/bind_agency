@@ -101,6 +101,7 @@ async function monter(
   items: ReservationDuCreateur[],
   locale: 'en' | 'es' = 'en',
   onglet?: string,
+  onOuvrirLeCommerce?: (businessId: string) => void,
 ) {
   const api = new ApiClient({
     baseUrl: 'https://api.test',
@@ -116,7 +117,11 @@ async function monter(
     <I18nProvider initialLocale={locale}>
       <ThemeProvider role="creator">
         <ApiProvider client={api}>
-          <HistoriqueScreen onOuvrir={() => {}} ongletDemande={onglet} />
+          <HistoriqueScreen
+            onOuvrir={() => {}}
+            onOuvrirLeCommerce={onOuvrirLeCommerce}
+            ongletDemande={onglet}
+          />
         </ApiProvider>
       </ThemeProvider>
     </I18nProvider>,
@@ -318,17 +323,40 @@ describe('le temps restant, isolé', () => {
   const instant = (decalageHeures: number) =>
     new Date(ECHEANCE).getTime() - decalageHeures * 3_600_000;
 
+  const minutes = (decalageMinutes: number) =>
+    new Date(ECHEANCE).getTime() - decalageMinutes * 60_000;
+
   it('compte en heures sous deux jours', () => {
     // « 31 H » se comprend sans calcul, et c'est lui qui décide si l'on publie
     // ce soir ou demain.
-    expect(tempsRestant(ECHEANCE, instant(31))).toBe('31 h');
+    expect(tempsRestant(ECHEANCE, instant(31))).toEqual({ texte: '31 h', urgent: false });
   });
 
   it('bascule en jours au-delà de deux', () => {
     // « 71 H » est exact et illisible quand « 2 J » suffit à décider.
-    expect(tempsRestant(ECHEANCE, instant(71))).toBe('2 j');
-    expect(tempsRestant(ECHEANCE, instant(48))).toBe('2 j');
-    expect(tempsRestant(ECHEANCE, instant(47))).toBe('47 h');
+    expect(tempsRestant(ECHEANCE, instant(71))?.texte).toBe('2 j');
+    expect(tempsRestant(ECHEANCE, instant(48))?.texte).toBe('2 j');
+    expect(tempsRestant(ECHEANCE, instant(47))?.texte).toBe('47 h');
+  });
+
+  it('compte en minutes dans la dernière heure, au lieu d’écrire « 0 h »', () => {
+    // **Le défaut qu'une testeuse a vu.** L'arrondi à l'heure pleine par le bas
+    // écrivait « 0 h » à cinquante-cinq minutes de l'échéance : le chiffre qu'on
+    // lit comme « c'est fini », sur le seul écran où il reste justement le temps
+    // d'agir. La dernière heure — celle qui décide — était la seule que le
+    // produit ne savait pas dire.
+    expect(tempsRestant(ECHEANCE, minutes(55))).toEqual({ texte: '55 min', urgent: true });
+    expect(tempsRestant(ECHEANCE, minutes(5))).toEqual({ texte: '5 min', urgent: true });
+  });
+
+  it('ne dit « pressant » que dans la dernière heure', () => {
+    // **Le cas divergent, et c'est lui qui compte.** Une implémentation qui
+    // dirait « pressant » partout passerait les deux cas ci-dessus sans faute ;
+    // elle tombe ici. Les deux bornes se touchent : à soixante minutes pile on
+    // est encore en heures, à cinquante-neuf on bascule.
+    expect(tempsRestant(ECHEANCE, minutes(60))).toEqual({ texte: '1 h', urgent: false });
+    expect(tempsRestant(ECHEANCE, minutes(59))).toEqual({ texte: '59 min', urgent: true });
+    expect(tempsRestant(ECHEANCE, instant(31))?.urgent).toBe(false);
   });
 
   it('ne rend rien quand l’échéance est passée', () => {
@@ -393,13 +421,24 @@ describe('08c · les terminées, la même carte que les deux autres', () => {
    * place dans la carte, et l'état accepté prend celle de l'action. Trois
    * onglets, une carte, et l'histoire cesse d'avoir une grammaire à elle.
    */
-  it('ne groupe plus, et porte l’état à la place de l’action', async () => {
+  it('ne groupe plus, et porte l’issue réelle à la place de l’action', async () => {
+    /**
+     * **Ce test affirmait qu'une réservation annulée affiche « Accepted ».**
+     * La carte écrivait ce libellé sur un vert de réussite pour les quatre fins
+     * indifféremment, et le décor — une annulation — était précisément celui
+     * qui aurait dû le montrer. Il attendait la valeur que le défaut produit,
+     * donc il l'a figée : c'est la forme de test que le dépôt appelle un décor
+     * qu'une implémentation fausse satisfait.
+     */
     const finie = reservation({ booking_id: 'r-finie', status: 'cancelled' });
     await monter([finie], 'en', 'terminees');
     await waitFor(() => expect(screen.getByTestId('onglets')).toBeTruthy());
 
     expect(screen.queryByTestId(/^mois-/)).toBeNull();
-    expect(screen.getByTestId('etat-r-finie')).toHaveTextContent(en.parcours.reservationAcceptee);
+    expect(screen.getByTestId('etat-r-finie')).toHaveTextContent(en.parcours.issueAnnulee);
+    expect(screen.getByTestId('etat-r-finie')).not.toHaveTextContent(
+      en.parcours.reservationAcceptee,
+    );
     // Et aucune action : il n'y a plus rien à faire, et un bouton gris se
     // presse quand même sans répondre.
     expect(screen.queryByTestId('agir-r-finie')).toBeNull();
@@ -602,5 +641,183 @@ describe('le titre est la prestation, et le format ouvre la carte', () => {
     expect(within(carte).getByTestId('agir-r-verbe')).toHaveTextContent(
       en.parcours.action_preuve,
     );
+  });
+});
+
+/**
+ * R2 — les logos, et lesquels mènent quelque part.
+ *
+ * **Deux choses se ressemblent sur cette carte et ne disent pas la même
+ * chose.** Le glyphe en tête est la plateforme de la *contrepartie* — où la
+ * créatrice va publier — et il n'a jamais été cliquable : une plateforme n'est
+ * pas une adresse. Ce que Rebecca demandait est l'autre : les comptes du salon,
+ * pour aller voir à quoi il ressemble avant de s'engager. Ils manquaient.
+ */
+describe('les liens du salon sur la carte', () => {
+  it('mènent aux comptes du salon, sans remplacer le glyphe de la contrepartie', async () => {
+    await monter([
+      reservation({
+        business_instagram_url: 'https://instagram.com/vela',
+        business_facebook_url: 'https://facebook.com/vela',
+      } as Partial<ReservationDuCreateur>),
+    ]);
+
+    expect(await screen.findByTestId('liens-du-salon-r1-instagram')).toBeTruthy();
+    expect(screen.getByTestId('liens-du-salon-r1-facebook')).toBeTruthy();
+    // Le glyphe de la contrepartie reste : il répond à une autre question.
+    expect(screen.getByTestId('palier-r1')).toBeTruthy();
+  });
+
+  it('et ne montrent rien quand le salon n’a rien renseigné', async () => {
+    // Quatre lignes vides diraient « ce salon n'est nulle part », ce qui est
+    // faux : elles diraient seulement qu'il ne l'a pas écrit.
+    await monter([reservation()]);
+
+    await screen.findByTestId('reservation-r1');
+    expect(screen.queryByTestId('liens-du-salon-r1')).toBeNull();
+  });
+});
+
+// --------------------------------------------------------------------------
+// R3/R4 · l'échange se ferme, et l'onglet des terminées montre ce qu'on a rendu
+// --------------------------------------------------------------------------
+
+describe('l’onglet des terminées reçoit ce qui a été honoré', () => {
+  /**
+   * **`closed` est le statut qui manquait, et l'onglet en dépend entièrement.**
+   * Une prestation servie puis publiée restait `consumed` pour toujours : elle
+   * n'atteignait jamais cet onglet, et le badge « honorée » qu'il sait dessiner
+   * était du code que rien ne pouvait atteindre.
+   */
+  const HONOREE = reservation({
+    booking_id: 'r-close',
+    status: 'closed',
+    contrepartie: contrepartie('approved', {
+      proof_id: 'p1',
+      post_url: 'https://instagram.com/p/xyz',
+      post_a_une_image: true,
+    }) as never,
+  });
+
+  it('montre la publication sans qu’on ait à la chercher ailleurs', async () => {
+    // La demande de la testeuse : « je voudrais voir ce que j'ai publié, sans
+    // un clic de plus ». La vignette se charge avec la carte.
+    await monter([HONOREE], 'en', 'terminees');
+
+    const carte = await screen.findByTestId('reservation-r-close');
+    expect(within(carte).getByTestId('publie-r-close-image')).toBeTruthy();
+    expect(within(carte).getByTestId('publie-r-close')).toBeTruthy();
+  });
+
+  it('et la dit honorée, plutôt qu’annulée', async () => {
+    await monter([HONOREE], 'en', 'terminees');
+
+    const carte = await screen.findByTestId('reservation-r-close');
+    expect(within(carte).getByTestId('etat-r-close')).toHaveTextContent(en.parcours.issueHonoree);
+  });
+
+  it('ne rend aucun bloc de publication quand il n’y a rien à montrer', async () => {
+    /**
+     * **Le cas divergent.** Une implémentation qui rendrait le bloc sans
+     * regarder ce qu'elle a passerait les deux tests ci-dessus ; elle tombe
+     * ici. Une réservation annulée n'a jamais eu de contrepartie, et un cadre
+     * vide se lirait comme une image qui ne charge pas.
+     */
+    await monter(
+      [reservation({ booking_id: 'r-annul', status: 'cancelled', contrepartie: null })],
+      'en',
+      'terminees',
+    );
+
+    const carte = await screen.findByTestId('reservation-r-annul');
+    expect(within(carte).queryByTestId('publie-r-annul')).toBeNull();
+  });
+
+  it('demande bien les réservations closes au serveur', async () => {
+    /**
+     * **Le décor de cette classe ne pouvait pas l'attraper, et c'est une
+     * mutation qui l'a dit.** `monter` répond les mêmes lignes quelle que soit
+     * la requête : retirer `closed` de l'onglet laissait donc les trois tests
+     * ci-dessus au vert, alors que l'onglet ne demandait plus au serveur la
+     * seule chose qu'on vient y chercher. C'est exactement le décor qu'une
+     * implémentation fausse satisfait.
+     *
+     * Celui-ci regarde ce qui part sur le réseau, seul endroit où la liste de
+     * statuts de l'onglet est observable.
+     */
+    const vues: string[] = [];
+    const api = new ApiClient({
+      baseUrl: 'https://api.test',
+      coffre: { lire: async () => null, ecrire: async () => {} },
+      fetchImpl: async (url: RequestInfo | URL) => {
+        vues.push(String(url));
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ items: [], compteurs: {}, a_envoyer: 0 }),
+        } as Response;
+      },
+    });
+    await render(
+      <I18nProvider initialLocale="en">
+        <ThemeProvider role="creator">
+          <ApiProvider client={api}>
+            <HistoriqueScreen onOuvrir={() => {}} ongletDemande="terminees" />
+          </ApiProvider>
+        </ThemeProvider>
+      </I18nProvider>,
+    );
+
+    await waitFor(() => expect(vues.length).toBeGreaterThan(0));
+    const appel = vues.find((u) => u.includes('/me/bookings')) ?? '';
+    expect(appel).toContain('status=closed');
+    // Et les trois fins malheureuses restent demandées : `closed` s'ajoute,
+    // il ne remplace pas.
+    expect(appel).toContain('status=cancelled');
+  });
+
+  it('distingue un dossier fermé sans faute d’une annulation', async () => {
+    // La prestation a bien été servie ; c'est la demande de publication qui
+    // n'a pas été comprise. « Cancelled » dirait qu'elle a renoncé à un
+    // rendez-vous auquel elle s'est rendue.
+    await monter(
+      [
+        reservation({
+          booking_id: 'r-sf',
+          status: 'closed',
+          contrepartie: contrepartie('closed_no_fault') as never,
+        }),
+      ],
+      'en',
+      'terminees',
+    );
+
+    const carte = await screen.findByTestId('reservation-r-sf');
+    expect(within(carte).getByTestId('etat-r-sf')).toHaveTextContent(en.parcours.issueClose);
+    expect(within(carte).getByTestId('etat-r-sf')).not.toHaveTextContent(
+      en.parcours.issueAnnulee,
+    );
+  });
+});
+
+describe('le nom du salon mène à sa fiche', () => {
+  it('ouvre le commerce, sans passer par l’action de la carte', async () => {
+    // **Il était écrit et mort.** Le mécanisme existait et servait déjà au fil
+    // et aux favoris ; il manquait seulement ici.
+    const onOuvrirLeCommerce = jest.fn();
+    await monter([reservation()], 'en', undefined, onOuvrirLeCommerce);
+
+    await fireEvent.press(await screen.findByTestId('ouvrir-le-salon-r1'));
+
+    expect(onOuvrirLeCommerce).toHaveBeenCalledWith('b1');
+  });
+
+  it('et reste du texte quand il n’y a pas de fiche à ouvrir', async () => {
+    // La pile du commerce monte le même écran sans destination : un mot qui
+    // répond au doigt sans rien ouvrir apprend à ne plus essayer.
+    await monter([reservation()]);
+
+    await screen.findByTestId('quand-r1');
+    expect(screen.queryByTestId('ouvrir-le-salon-r1')).toBeNull();
   });
 });

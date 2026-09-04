@@ -22,11 +22,25 @@ import { useApi } from '../../api';
 import { Button, StatusMessage, TextField } from '../../components';
 import { useI18n } from '../../i18n';
 
-/** Ce que l'écran édite : trois adresses, ou rien. */
+/** Ce que l'écran édite : quatre adresses et un pseudonyme, ou rien. */
 export type LiensPublics = {
   instagram_url: string | null;
   tiktok_url: string | null;
+  facebook_url: string | null;
   website_url: string | null;
+  /**
+   * Le compte Instagram du salon — **le pseudonyme, pas l'adresse**.
+   *
+   * Il est ici et pas ailleurs parce que c'est ici qu'un salon dit où il se
+   * montre. Mais il ne se déduit pas d'`instagram_url` : cette adresse peut
+   * mener à une page de marque dont le pseudonyme est autre, et une créatrice
+   * qui la recopierait citerait le mauvais compte. D'où deux champs voisins et
+   * non un seul.
+   *
+   * Le serveur le range sous une seule forme, `@` compris, et refuse une
+   * adresse collée plutôt que de la rogner.
+   */
+  instagram_handle: string | null;
 };
 
 /**
@@ -44,7 +58,9 @@ export function aEnvoyer(saisi: LiensPublics): LiensPublics {
   return {
     instagram_url: nettoyer(saisi.instagram_url),
     tiktok_url: nettoyer(saisi.tiktok_url),
+    facebook_url: nettoyer(saisi.facebook_url),
     website_url: nettoyer(saisi.website_url),
+    instagram_handle: nettoyer(saisi.instagram_handle),
   };
 }
 
@@ -66,7 +82,9 @@ export function LesLiensPublics({
   const change =
     aEnvoyer(saisi).instagram_url !== liens.instagram_url ||
     aEnvoyer(saisi).tiktok_url !== liens.tiktok_url ||
-    aEnvoyer(saisi).website_url !== liens.website_url;
+    aEnvoyer(saisi).facebook_url !== liens.facebook_url ||
+    aEnvoyer(saisi).website_url !== liens.website_url ||
+    aEnvoyer(saisi).instagram_handle !== liens.instagram_handle;
 
   async function enregistrer() {
     setEchec(null);
@@ -90,12 +108,31 @@ export function LesLiensPublics({
         placeholder="https://instagram.com/…"
         testID="champ-instagram"
       />
+      {/* **Le pseudonyme, juste sous son adresse, et distinct d'elle.** C'est
+          ce qu'une créatrice cite dans sa publication ; l'adresse au-dessus
+          peut mener à une page de marque dont le pseudonyme est autre. */}
+      <TextField
+        label={t('lieu.handleInstagram')}
+        helpText={t('lieu.handleInstagramAide')}
+        value={saisi.instagram_handle ?? ''}
+        onChangeText={(v) => setSaisi((avant) => ({ ...avant, instagram_handle: v }))}
+        placeholder="@"
+        maxLength={31}
+        testID="champ-handle-instagram"
+      />
       <TextField
         label={t('lieu.lienTiktok')}
         value={saisi.tiktok_url ?? ''}
         onChangeText={(v) => setSaisi((avant) => ({ ...avant, tiktok_url: v }))}
         placeholder="https://tiktok.com/@…"
         testID="champ-tiktok"
+      />
+      <TextField
+        label={t('lieu.lienFacebook')}
+        value={saisi.facebook_url ?? ''}
+        onChangeText={(v) => setSaisi((avant) => ({ ...avant, facebook_url: v }))}
+        placeholder="https://facebook.com/…"
+        testID="champ-facebook"
       />
       <TextField
         label={t('lieu.lienSite')}

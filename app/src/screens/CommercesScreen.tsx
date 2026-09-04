@@ -50,7 +50,8 @@ import { formatNumber } from '../format';
 import { formatDate } from '../format';
 import { useI18n } from '../i18n';
 import { motion, radius, useColors } from '../theme';
-import { Ecran } from './Ecran';
+import { largeurMaximale, useGabarit, type NatureDeContenu } from '../shell/gabarit';
+import { Ecran, useMargeLaterale } from './Ecran';
 import { ReprendreLeCompte } from './reprise/ReprendreLeCompte';
 import { useRequete } from './useRequete';
 
@@ -64,12 +65,33 @@ import { useRequete } from './useRequete';
 export const PLAFOND = 100;
 
 /**
- * La largeur du dernier bloc, celui qui porte le seul mot cliquable.
+ * Ce que cet écran est, pour savoir jusqu'où son contenu s'étend.
  *
- * Partagée par l'en-tête et la rangée : la colonne vide de l'un et la fente de
- * l'autre lisent la même valeur, et ne peuvent donc pas se désaligner.
+ * **Nommé une fois parce qu'il se lit deux fois** : `Ecran` en tire la borne du
+ * conteneur, et la bande collante — rendue dehors — doit s'y caler. Écrire
+ * `"reports"` aux deux endroits marchait le jour où on l'écrit, et laissait la
+ * barre de recherche sur l'ancienne borne le jour où l'écran change de nature.
+ *
+ * `reports` et non `merchant` : les cinq écrans de l'administration montrent
+ * des tables larges, et le repli `merchant` — 672 points utiles — coupait
+ * celle-ci, qui en fait 888.
  */
-const LARGEUR_ACTION = 104;
+const NATURE: NatureDeContenu = 'reports';
+
+/**
+ * La largeur de la fente qui porte le seul mot cliquable de la rangée.
+ *
+ * **Elle n'est plus déclarée comme colonne**, voir `COLONNES` : `TableRow` rend
+ * les cellules **puis** `fin`, donc l'y mettre réservait la place deux fois.
+ *
+ * **168 et non 104, et ce défaut-ci était caché par l'autre.** « Take over this
+ * account » ne tient pas en cent quatre points : il se repliait sur deux
+ * lignes. Personne ne l'avait vu parce que la colonne entière tombait hors du
+ * cadre — la corriger a rendu visible ce qu'elle masquait. Élargir plutôt
+ * qu'abréger le libellé : c'est le geste le plus lourd du produit, et il se dit
+ * en entier avant qu'on l'engage.
+ */
+const LARGEUR_ACTION = 168;
 
 /** Le libellé d'un état, quel qu'il soit. */
 /** Ce que chaque état appelle : rien, un geste, ou rien encore. */
@@ -117,7 +139,16 @@ const COLONNES = (t: (cle: string) => string): Colonne[] => [
   // « 2026 », et la rangée prenait deux hauteurs. Élargir vaut mieux
   // qu'ellipser : une date coupée ne se lit pas mieux qu'une date cassée.
   { cle: 'inscrit', label: t('admin.commercesColonneInscrit'), largeur: 140 },
-  { cle: 'action', label: '', largeur: LARGEUR_ACTION },
+  /* **Pas de colonne pour l'action, et l'y déclarer la comptait deux fois.**
+     `TableRow` rend une cellule par colonne **puis** `fin` : la rangée portait
+     donc une cellule vide de 168 points *et* le bouton derrière elle, si bien
+     qu'elle dépassait l'en-tête d'exactement une largeur d'action — 1112 contre
+     941, mesuré. Le commentaire de `LARGEUR_ACTION` promettait que les deux ne
+     pouvaient pas se désaligner ; ils l'étaient depuis le début, et seul le
+     recadrage l'a rendu visible en faisant déborder la rangée du cadre.
+
+     La fente se pose donc après la dernière colonne déclarée, ce qui est
+     exactement là où l'en-tête laisse la place. */
 ];
 
 export function CommercesScreen({
@@ -139,6 +170,8 @@ export function CommercesScreen({
   const { api } = useApi();
   const { t, locale } = useI18n();
   const c = useColors();
+  const margeDeLaBande = useMargeLaterale();
+  const { large } = useGabarit();
 
   /**
    * La saisie et la question, séparées.
@@ -174,6 +207,7 @@ export function CommercesScreen({
     <Ecran
       requete={requete}
       titre={t('admin.commercesTitre')}
+      nature={NATURE}
       squelette={<SkeletonLignes combien={6} testID="squelette-commerces" />}
       testID="ecran-commerces"
       vide={
@@ -183,13 +217,39 @@ export function CommercesScreen({
         />
       }
       barre={
-        <TextField
-          label={t('admin.commercesRecherche')}
-          value={saisie}
-          placeholder={t('admin.commercesRecherchePlaceholder')}
-          onChangeText={setSaisie}
-          testID="recherche-commerces"
-        />
+        /* **La bande se cale sur la colonne de contenu, pas sur la fenêtre.**
+           `barre` est rendue hors du conteneur qui porte les marges *et* la
+           borne de largeur : ce champ partait donc d'un bord à l'autre de
+           l'écran pendant que la table tenait dans sa colonne, et son libellé
+           se coupait contre la barre latérale.
+
+           **La marge seule ne suffisait pas**, et c'est la mesure qui l'a dit :
+           le contenu est plafonné à la borne de sa nature *puis centré* dans
+           la place restante. Padding posé, le champ commençait encore
+           soixante-seize points avant la table. Il faut donc les trois — la
+           borne, le centrage, la marge — c'est-à-dire la géométrie du
+           conteneur d'`Ecran`, reproduite ici parce que la bande vit dehors.
+
+           Elle ne peut pas remonter dans `Ecran` : la bande du fil y range une
+           ligne de catégories qui défile à fond perdu et qu'une borne
+           extérieure amputerait. D'où la règle déjà écrite là-bas — `Ecran`
+           marge ce qu'il compose, l'appelant marge ce qu'il fournit. */
+        <View
+          style={{
+            paddingHorizontal: margeDeLaBande,
+            maxWidth: largeurMaximale(NATURE, large),
+            width: '100%',
+            alignSelf: 'center',
+          }}
+        >
+          <TextField
+            label={t('admin.commercesRecherche')}
+            value={saisie}
+            placeholder={t('admin.commercesRecherchePlaceholder')}
+            onChangeText={setSaisie}
+            testID="recherche-commerces"
+          />
+        </View>
       }
     >
       {({ items: commerces, total }) => (

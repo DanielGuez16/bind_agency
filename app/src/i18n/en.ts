@@ -71,8 +71,8 @@ export const en = {
   tiers: {
     // 11c · les prestations d'un palier. Deux nombres dans la même phrase,
     // et ils comptent tous deux des prestations.
-    prestationsTitre: 'Open to you',
-    prestationsOuvertes: '{{count}} services open to you',
+    prestationsTitre: 'What you can book',
+    prestationsOuvertes: '{{count}} services you can book',
     prestationsPartout: 'Across every business on BIND.',
     // Deux grandeurs, chacune nommée : neuf prestations chez un seul salon et
     // neuf chez six sont deux offres très différentes.
@@ -98,7 +98,7 @@ export const en = {
     opensOne: '1 service open at this tier',
     opensNone: 'No business offers this tier yet',
     opensHelp: 'Counts cover every business on BIND, not only those near you.',
-    ouvertMaintenant: '{{count}} services are open to you at the {{palier}} tier',
+    ouvertMaintenant: '{{count}} services you can book at the {{palier}} tier',
     toUnlock: 'To open it',
     counterpart: 'You commit to',
     connectTitle: 'Connect a network to start',
@@ -109,7 +109,6 @@ export const en = {
     newCreatorHelp: 'You have no track record yet, so your tiers are based on your audience alone.',
     minFollowers: '{{count}} followers',
     empty: 'No tier is available right now.',
-    missingFollowers: '{{count}} more followers to go',
     rulesEntry: 'How tiers work',
     rulesEntryHelp: 'What lifts you, what sets you back, and what reliability means.',
     rulesUp: 'What opens a tier',
@@ -143,8 +142,8 @@ export const en = {
     paiementAFinirAide: 'The subscription is created but not paid. Reopen the page to finish. Starting again would create a second one.',
     reprendreLePaiement: 'Finish the payment',
     actifTitre: 'Your subscription is running',
-    actifCorps: 'The directory is open to you.',
-    actifJusquA: 'Paid until {{date}}. The directory is open to you.',
+    actifCorps: 'Your business is showing in the directory.',
+    actifJusquA: 'Paid until {{date}}. Your business is showing in the directory.',
     resilier: 'Stop the subscription',
     impayeTitre: 'A payment did not go through',
     impayeAide: 'The directory stays open for now. Update the card on our provider’s page before it closes.',
@@ -218,6 +217,19 @@ export const en = {
     sansPseudonyme: 'Your profile',
     abonnes: '{{n}} followers',
     mesPublications: 'My posts',
+    // --- ce qu'une créatrice déclare d'elle-même ---
+    declareTitre: 'About you',
+    // **Le lecteur, nommé avant les champs.** Écrire une bio sans savoir où
+    // elle atterrit fait écrire trop, ou rien.
+    declareQuiLit: 'Salons see this when they look you up in their directory.',
+    declarePrenom: 'First name',
+    declareNom: 'Last name',
+    declareVille: 'City',
+    declareVillePlaceholder: 'Wynwood',
+    declareBio: 'Bio',
+    declareBioPlaceholder: 'Nails and skin, mostly Wynwood and Little Havana.',
+    declareBioAide: 'What you shoot, and where. A couple of lines is plenty.',
+    declareIllisible: 'We could not load your profile just now.',
     publicationOuvrir: 'Open the post for {{prestation}}',
     favoris: 'Favourites',
     monAudience: 'My audience',
@@ -288,7 +300,7 @@ export const en = {
     audienceScoreOuvre: 'Opens the higher tiers',
     audienceScoreCeQuiLeFait: 'What raises it, what lowers it, and what it never does',
     audiencePasEncoreDeScoreDetail:
-      'It starts after your first collaboration. Until then the story tier is open to you like everyone else.',
+      'It starts after your first collaboration. Until then the story tier is unlocked for you, as it is for everyone.',
     audienceVoirMesPaliersSous: 'What is open, and what comes next',
     // --- Le score, en détail ---
     scoreTitre: 'Reliability',
@@ -349,7 +361,7 @@ export const en = {
     verificationEnCours: 'We are checking this account. You can keep using BIND meanwhile.',
     verificationSignaux: 'What we looked at',
     tiersTitre: 'Your tiers',
-    tiersVide: 'No tier is open to you yet.',
+    tiersVide: 'No tier is unlocked yet.',
     tiersNouveau: 'New creator',
     tiersOuvert: 'Open',
     tiersFerme: 'Locked',
@@ -359,8 +371,8 @@ export const en = {
     // Deux clés plutôt qu'un pluriel : le produit choisit entre deux clés
     // là où ça compte, et une créatrice à qui une seule prestation est
     // ouverte est le cas du premier jour, pas le cas limite.
-    filPrestationsOuverteUne: 'One service is open to you',
-    filPrestationsOuvertes: '{{count}} services are open to you',
+    filPrestationsOuverteUne: 'One service you can book',
+    filPrestationsOuvertes: '{{count}} services you can book',
     // Le mot qui nomme ce qu'on ouvre. « Paliers » est un mot du produit
     // qu'il faut déjà connaître pour vouloir appuyer dessus.
     filPourquoi: 'Why',
@@ -406,7 +418,6 @@ export const en = {
     filDecouvrir: 'Discover',
     // Deux phrases distinctes et non une à trou : « 6 nail services » place la
     // catégorie avant le nom commun, ce que l'espagnol n'ordonne pas ainsi.
-    murServicesOuverts: '{{salons}} salons · {{count}} services open to you in {{quartier}}',
     murServicesDeCategorie: '{{salons}} salons · {{count}} {{categorie}} services in {{quartier}}',
     murLePlusPres: 'Closest to you',
     murToutVoir: 'All {{count}}',
@@ -414,8 +425,8 @@ export const en = {
     // **Sans le quartier.** Il est déjà écrit deux lignes plus haut, dans la
     // ligne du salon ; répété ici, il faisait lire le compte comme un total du
     // quartier.
-    carteServicesOuverts: '{{count}} services open to you',
-    carteServiceOuvertUn: 'One service open to you',
+    carteServicesOuverts: '{{count}} services you can book',
+    carteServiceOuvertUn: 'One service you can book',
     carteEtEncore: 'and {{count}} more inside',
     // **Toutes, jamais une seule.** `favoris.garder`/`favoris.retirer`
     // nomment une prestation ; ce cœur-ci en garde plusieurs d'un geste, et
@@ -438,7 +449,8 @@ export const en = {
     rangeeSuiteUn: 'One more, further out.',
     // Une annulation, pas une issue chiffrée : elle ramène à ce qu'on a vu.
     murResserrer: 'Back to {{rayon}} km',
-    filRayon: '{{rayon}} km',
+    filRayon: 'Search radius · {{rayon}} km',
+    filRayonAide: 'How far you are willing to go',
     filSansPosition: 'We need your location to show places near you.',
     filAutoriser: 'Share my location',
     filPositionEnCours: 'Getting your location…',
@@ -476,9 +488,8 @@ export const en = {
     ficheDuree: '{{count}} minutes',
     fichePhotosCompte: '{{count}} photos',
     fichePhotosCompteUne: 'One photo',
-    fichePasEncore: 'Not open to you yet',
-    ficheOuvertes: '{{count}} open to you',
-    fichePasEncoreCompte: '{{count}} not open to you yet',
+    ficheOuvertes: '{{count}} you can book',
+    fichePasEncoreCompte: '{{count}} not unlocked yet',
     // **Ce n'est plus un refus, c'est deux réservations de plus.** Le nombre
     // porte l'argument : « connecte TikTok » sans lui ne fait renoncer
     // personne à renoncer.
@@ -499,7 +510,7 @@ export const en = {
     contrepartieApres: ' on {{plateforme}}, within {{heures}} h',
     // Dit seulement quand le lien est la seule forme : sur un téléphone,
     // « revenir » n'est pas toujours un geste évident.
-    ficheFerme: 'Not open to you yet',
+    ficheFerme: 'Shown so you know it exists. Not unlocked for you yet.',
     ficheComplet: 'Fully booked for now',
     ficheAttendu: 'They expect: {{quoi}}',
     ficheMention: 'a mention of {{mention}}',
@@ -604,13 +615,16 @@ export const en = {
     issueHonoree: 'Honoured',
     issueNonHonoree: 'Not honoured',
     issueAnnulee: 'Cancelled',
+    issueClose: 'Closed',
+    publiee: 'Your post',
+    publieeOuvrir: 'Your post. Open it',
     format_story: 'story',
     format_post: 'post',
     format_reel: 'reel',
     contrepartieEnArbitrage: 'A reviewer has taken this over: the salon is no longer the one deciding.',
     contrepartieRienAFaire: 'The salon is checking it: nothing to do on your side.',
     action_code: 'Show code',
-    action_preuve: 'Send',
+    action_preuve: 'Send proof…',
     enAttenteDuSalon: 'Waiting for the salon to confirm. Your pickup code appears once they do.',
     enAttenteJusquA: 'They have until {{quand}} to answer. After that the booking expires and your slot is free again.',
     codeTitre: 'Show this code',
@@ -626,23 +640,32 @@ export const en = {
     preuveFormatAvant: 'One ',
     preuveFormatApres: ' on {{plateforme}}',
     preuveEcheanceAvant: 'Due ',
+    preuveMentionLibelle: 'Mention this account',
+    preuveLieuLibelle: 'Tag this location',
     preuveCopier: 'Copy',
     preuveCopie: 'Copied',
     preuveEcheance: 'Due {{date}}',
     preuveEnvoyer: 'Send my proof',
-    preuveDepuisGalerie: 'Choose from my photos',
-    preuvePrendrePhoto: 'Take a photo',
+    preuveDepuisGalerie: 'Choose a photo or video',
+    preuvePrendrePhoto: 'Record or take one now',
+    // Le poids, dit avant le choix et non dans le refus qui suit.
+    preuveContraintes: 'Photo or video, {{poids}} MB at most.',
     preuveChoisirAutre: 'Choose another one',
     preuveEnvoyerCelle_ci: 'Send this one',
     preuveEnvoiEnCours: 'Sending your proof…',
-    preuveEchecTitre: 'It did not go through. Your photo is still here.',
+    preuveEchecTitre: 'It did not go through. What you chose is still here.',
     preuveEchecCorps: 'The network dropped, not your proof. Nothing was counted and nothing was lost.',
     preuveEchecTentative: 'Attempt {{n}} of {{total}}, still {{n}} of {{total}}.',
     preuveReessayer: 'Try again',
-    preuveApercuEntier: 'Shown whole, status bars included. We never crop it: what matters is that the post, the mention and the tag are readable.',
+    preuveApercuEntier: 'Shown whole, nothing cropped. What matters is that the post, the mention and the tag are readable.',
+    // **Sa propre clé, et non `composition.photoEnvoiInterrompu`.** Celle-là
+    // sert trois écrans du commerce où il s'agit vraiment de photos ; la
+    // neutraliser pour cet écran-ci aurait rendu leur texte plus vague sans
+    // rien gagner.
+    preuveEnvoiInterrompu: 'Sending stopped when you left the app. What you chose is still here.',
     preuveEcheanceTient: 'No rush, it holds.',
     preuveEcheanceProche: 'Due soon. Better on wifi, if you have any.',
-    preuveTropLourde: 'That image is too heavy. {{poids}} MB at most. Your phone can export a smaller one.',
+    preuveTropLourde: 'That file is too heavy. {{poids}} MB at most. Your phone can export a smaller one.',
     preuvePermissionGalerie: 'BIND cannot open your photos. Allow access in your phone settings, then come back.',
     preuvePermissionCamera: 'BIND cannot open your camera. Allow access in your phone settings, then come back.',
     preuveOuvrirReglages: 'Open settings',
@@ -652,7 +675,7 @@ export const en = {
     // sans savoir ce que ça lui coûte d'attendre.
     preuveViteTitre: 'Send it within 24 hours and Instagram confirms it for you',
     preuveVite:
-      'After that your story is gone from Instagram, and all we have is your screenshot and your word. The salon accepts either. The first is just easier for both of you.',
+      'After that your story is gone from Instagram, and all we have is what you send us and your word. The salon accepts either. The first is just easier for both of you.',
     // **Trois états, et l'écran n'en rendait que deux.** Nul veut dire « la
     // question ne s'est pas posée », faux « elle s'est posée et la réponse est
     // non ». Les confondre faisait croire à une vérification passée.
@@ -664,7 +687,7 @@ export const en = {
     preuve_ecart_aide: 'The platform checked and found this:',
     preuveAdresse: 'Link to your post',
     preuveAdresseAide:
-      'Paste the link to the post. The business opens it to check that it is live. With only a screenshot, they have to take your word for it.',
+      'Paste the link to the post. The business opens it to check that it is live. Without it, they have to take your word for it.',
     preuveNote: 'Anything to add?',
     preuveNoteAide: 'Optional. The salon reads this with your proof, useful if something did not go to plan.',
     // « Vous la prenez » répond à la question réellement posée — c'est à qui de
@@ -695,7 +718,7 @@ export const en = {
     prestationEtDuree: '{{prestation}} · {{minutes}} min',
     ongletAVenir: 'Upcoming',
     ongletEnCours: 'To send',
-    ongletAEnvoyerAide: 'You have posted. Send the screenshot so the salon can check it.',
+    ongletAEnvoyerAide: 'You have posted. Send your proof so the salon can check it.',
     reservationAcceptee: 'Accepted',
     ongletTerminees: 'Done',
   },
@@ -817,6 +840,7 @@ export const en = {
     statut_awaiting_business: 'waiting for you',
     statut_confirmed: 'confirmed',
     statut_consumed: 'served',
+    statut_closed: 'closed',
     statut_cancelled: 'cancelled',
     statut_no_show: 'no show',
     statut_expired: 'expired',
@@ -1143,7 +1167,6 @@ export const en = {
     porteCommerce: 'Fill your quiet hours, get seen locally',
     porteCommerceAction: 'Register my business',
     etapeCreateur1: 'Connect Instagram or TikTok, so tiers can open',
-    etapeCreateur2: 'Book a service that is open to you',
     etapeCreateur3: 'Show your code at the counter, publish within the agreed time',
     etapeCommerce1: 'Publish your services and the hours you can take someone',
     etapeCommerce2: 'A creator books a quiet slot and shows a code at the counter',
@@ -1188,7 +1211,7 @@ export const en = {
     titre: 'Saved',
     videTitre: 'Nothing saved yet',
     retraitEchec: 'We couldn’t remove {{prestation}}. Tap again to retry.',
-    videCorps: 'The heart on a service keeps it here, useful for what is not open to you yet.',
+    videCorps: 'The heart on a service keeps it here, useful for what is not unlocked for you yet.',
     duree: '{{n}} min',
     // **Le seul réglage de notification du produit.** Tout le reste est
     // transactionnel — déclenché par celui qui le reçoit. Celui-ci part trois
@@ -1292,7 +1315,10 @@ export const en = {
     sectionLiens: 'Where you are online',
     liensResume: '{{count}} of 3 filled in',
     lienInstagram: 'Instagram',
+    handleInstagram: 'Instagram account',
+    handleInstagramAide: 'The @name creators mention in their post. Not the link above.',
     lienTiktok: 'TikTok',
+    lienFacebook: 'Facebook',
     lienSite: 'Website',
     photosCompte: '{{count}} photos',
     photosCompteUne: 'One photo',
@@ -1305,6 +1331,10 @@ export const en = {
     titre: 'Your place',
   },
   composition: {
+    mentionLabel: 'Account to mention',
+    mentionAide: 'What the creator writes in their post. Leave empty if you do not ask for one.',
+    lieuLabel: 'Ask for a location tag',
+    enregistrerLesCriteres: 'Save what you expect',
     fermerLOffre: 'Stop offering at this tier',
     rouvrirLOffre: 'Offer at this tier again',
     offreFermeeCorps: 'Not offered at this tier. Past bookings still show it: closing changes nothing behind you.',

@@ -117,7 +117,7 @@ export function ArbitrageScreen() {
     <Ecran
       requete={requete}
       titre={t('admin.arbitrageTitre')}
-      nature="reports"
+      nature="adminListeDetail"
       squelette={<SkeletonLignes combien={5} testID="squelette-arbitrage" />}
       testID="ecran-arbitrage"
       vide={
@@ -153,7 +153,7 @@ export function ArbitrageScreen() {
 }
 
 /** Les colonnes de la file, à largeur fixe. Les chiffres sont à droite. */
-const COLONNES: Colonne[] = [
+export const COLONNES: Colonne[] = [
   { cle: 'commerce', label: 'Business', largeur: 168 },
   { cle: 'createur', label: 'Creator', largeur: 128 },
   { cle: 'prestation', label: 'Service', largeur: 176 },

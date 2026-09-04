@@ -72,12 +72,19 @@ export function PreuveScreen({
               panneau dit les deux en toutes lettres, et il porte en plus ce que
               la liste des réservations laisse tomber : le format exact, la
               mention et le lieu, copiables. */}
+          {/* **Les trois champs étaient servis et câblés à `null`.** L'API les
+              rend depuis que `CollaborationRead` les assemble ; le type client
+              ne les déclarait pas, et l'écran passait donc `null` en dur. Effet
+              en cascade : la ligne du lieu ne se rendait jamais — elle est
+              gardée par le nom du salon — et la phrase du format tombait sur sa
+              variante courte, « One story within 48 h », sans dire sur quel
+              réseau publier. */}
           <ContratDeLaPreuve
             contrepartie={contrepartie}
-            plateforme={null}
+            plateforme={contrepartie.platform}
             timezone={FUSEAU_DU_PRODUIT}
-            nomDuSalon={null}
-            nomDeLaPrestation={null}
+            nomDuSalon={contrepartie.business_name}
+            nomDeLaPrestation={contrepartie.item_name}
           />
 
           {/* **Un arbitre a la main, et l'attente change de nature.** Le champ

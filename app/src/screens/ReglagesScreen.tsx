@@ -58,6 +58,7 @@ import { HealthScreen } from './HealthScreen';
 /** Le fuseau du téléphone, résolu une fois. */
 const FUSEAU_DE_L_APPAREIL = Intl.DateTimeFormat().resolvedOptions().timeZone;
 import { NotificationsDeCetAppareil } from './reglages/NotificationsDeCetAppareil';
+import { SectionDeMonProfil } from './reglages/MonProfilDeclare';
 import { PauseDuCommerce } from './reglages/PauseDuCommerce';
 import { RepriseDuCompte } from './reglages/RepriseDuCompte';
 import { compterOuRien, PAGE } from './reglages/suppression';
@@ -171,7 +172,6 @@ export function ReglagesScreen({
             </View>
           ) : null}
 
-          {role === 'business_member' ? <PauseDuCommerce /> : null}
         </View>
       ) : null}
 
@@ -200,6 +200,12 @@ export function ReglagesScreen({
       {/* **Les notifications de cet appareil, pour tout le monde.** Créatrice
           ou salon, c'est le même téléphone et le même besoin : pouvoir les
           couper sans passer par les réglages du système. */}
+      {/* **Ce qu'une créatrice déclare d'elle-même.** La route existait
+          depuis toujours et personne ne l'appelait : `bio` et `city` étaient
+          nulles pour tout le monde, donc l'annuaire n'avait rien à montrer
+          même le jour où l'on déciderait de le montrer. */}
+      {role === 'creator' ? <SectionDeMonProfil /> : null}
+
       <NotificationsDeCetAppareil />
 
       {role === 'business_member' ? <PauseDuCommerce /> : null}

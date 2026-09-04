@@ -11,7 +11,7 @@
  * mal écrite ; un bouton de copie retire la faute de frappe du chemin.
  */
 import * as Presse from 'expo-clipboard';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 
 import { ApiClient, ApiProvider, type Collaboration } from '../src/api';
 import { I18nProvider } from '../src/i18n';
@@ -40,6 +40,13 @@ const CONTREPARTIE = {
   attempts_count: 0,
   needs_human_review: false,
   approved_at: null,
+  // **Les trois champs que l'API servait et que le type ne déclarait pas.**
+  // Leur absence de ce décor est ce qui a fait passer le test du lieu avant
+  // comme après la correction : `nomDuSalon` restait `undefined` des deux
+  // côtés, et l'assertion « la ligne est absente » ne distinguait rien.
+  business_name: 'Vela Nail Studio',
+  item_name: 'Gel manicure',
+  platform: 'instagram',
   proofs: [],
 } as unknown as Collaboration;
 
@@ -146,19 +153,46 @@ describe('ce qui n’est pas servi ne s’invente pas', () => {
     await vue.unmount();
   });
 
-  it('et le lieu ne se rend pas tant que le nom du salon n’est pas servi', async () => {
-    // **`required_geotag` vaut vrai dans ce montage**, et la ligne n'apparaît
-    // pourtant pas : ce qu'on tape dans la plateforme est le **nom de
-    // l'établissement**, que `Collaboration` ne porte pas. Une ligne
-    // « identifiez le lieu » sans rien à copier raterait exactement ce que
-    // cette planche corrige.
+  it('le lieu se rend, et il porte le nom du salon à copier', async () => {
+    // **Ce test disait l'inverse jusqu'ici, et il avait raison à ce moment-là.**
+    // La ligne ne pouvait pas se rendre : `business_name` était servi par l'API
+    // et absent du type client, donc l'écran passait `null` en dur.
     //
-    // Ce test tombera le jour où le champ arrivera, et c'est voulu : il dit
-    // l'état du contrat, pas une intention.
+    // Il a fallu corriger le décor en même temps que le code — sans
+    // `business_name`, l'ancienne assertion passait avant comme après la
+    // correction, et n'éprouvait donc rien.
     const vue = await monter();
     await waitFor(() => expect(screen.getByTestId('contrat-de-la-preuve')).toBeTruthy());
 
+    // **Cherché dans la ligne du lieu, pas dans l'écran.** Le nom du salon
+    // apparaît aussi dans l'en-tête du contrat depuis que `business_name` est
+    // servi : un `getByText` global trouve les deux et ne dirait pas lequel.
+    const lieu = screen.getByTestId('contrat-lieu');
+    expect(within(lieu).getByText('Vela Nail Studio')).toBeTruthy();
+    expect(within(lieu).getByText('Tag this location')).toBeTruthy();
+    await vue.unmount();
+  });
+
+  it('le lieu reste absent quand le salon n’en demande pas', async () => {
+    // L'autre moitié : la ligne est gardée par `required_geotag`, pas par la
+    // seule présence du nom. Sans ce cas, une implémentation qui rendrait la
+    // ligne dès qu'un salon est nommé passerait le test ci-dessus.
+    const vue = await monter({ ...CONTREPARTIE, required_geotag: false });
+    await waitFor(() => expect(screen.getByTestId('contrat-de-la-preuve')).toBeTruthy());
+
     expect(screen.queryByTestId('contrat-lieu')).toBeNull();
+    await vue.unmount();
+  });
+
+  it('la mention porte son libellé, elle n’est plus posée nue', async () => {
+    // **Le défaut que cette planche corrige.** La valeur était rendue seule, en
+    // mono, avec un bouton COPY : `@velanailstudio` `[COPY]`, sans un mot pour
+    // dire ce que c'est ni ce qu'il faut en faire. L'email écrivait la phrase
+    // entière depuis toujours, et le côté commerce aussi.
+    const vue = await monter();
+    await waitFor(() => expect(screen.getByTestId('contrat-mention')).toBeTruthy());
+
+    expect(screen.getByText('Mention this account')).toBeTruthy();
     await vue.unmount();
   });
 });
