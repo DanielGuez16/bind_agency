@@ -57,6 +57,11 @@ async def compte_complet(session: AsyncSession, conn: AsyncConnection) -> dict:
     creator_id = graph["creator_id"]
     email = f"rebecca-{uuid.uuid4().hex[:8]}@example.com"
 
+    # **Le nom d'affichage est posé ici**, sans quoi son effacement ne prouve
+    # rien : une colonne jamais renseignée est nulle avant comme après.
+    await conn.execute(
+        sa.update(User).where(User.id == creator_id).values(display_name="Rebecca A.")
+    )
     await conn.execute(
         sa.update(CreatorProfile)
         .where(CreatorProfile.user_id == creator_id)
@@ -131,11 +136,101 @@ async def test_le_compte_perd_toute_donnee_personnelle(
             )
         )
     ).one()
+    ligne_complete = (
+        await conn.execute(
+            sa.select(User.date_of_birth, User.age_verified_at, User.age_minimum_applique).where(
+                User.id == user.id
+            )
+        )
+    ).one()
 
     assert (ligne.email, ligne.phone, ligne.password_hash) == (None, None, None)
     assert ligne.status == UserStatus.ANONYMIZED
     # La langue n'identifie personne : elle reste.
     assert ligne.locale is not None
+    # Et la date de naissance part, tandis que la preuve qu'on l'a vérifiée
+    # reste : un fait sur ce qui a eu lieu n'est pas une donnée identifiante.
+    assert ligne_complete.date_of_birth is None
+    assert ligne_complete.age_verified_at is not None
+    assert ligne_complete.age_minimum_applique is not None
+
+
+#: Ce que `app_user` porte sans que cela désigne personne.
+#:
+#: **Écrit ici plutôt que déduit**, comme la table jumelle du profil créateur :
+#: une liste dérivée du code qu'elle vérifie serait toujours d'accord avec lui.
+NON_PERSONNEL_SUR_LE_COMPTE = {
+    "id",  # la clé ; le journal d'audit la référence
+    "role",  # ce qu'on faisait, pas qui on était
+    "status",  # devient `anonymized`, c'est la marque elle-même
+    "locale",  # une langue n'identifie personne
+    "created_at",
+    "last_login_at",  # un instant sans contenu
+    "email_verified_at",  # le fait d'avoir vérifié, pas l'adresse
+    "age_verified_at",  # idem, et c'est la preuve qu'on garde
+    "age_minimum_applique",  # le seuil appliqué, un entier
+    "favoris_me_previennent",  # une préférence, pas une identité
+    "deletion_requested_at",
+    "deletion_effective_at",
+}
+
+
+async def test_le_compte_n_a_aucune_colonne_personnelle_oubliee(
+    session: AsyncSession, conn: AsyncConnection
+) -> None:
+    """Par comparaison de colonnes, et non par liste recopiée.
+
+    **La garde manquait de ce côté-ci.** Le profil créateur en a une depuis
+    toujours — ajouter un champ personnel sans l'ajouter à l'effacement y fait
+    tomber le test — mais `app_user` n'avait qu'une liste écrite à la main, qui
+    ne dit rien d'une colonne qu'on n'y a pas pensée. C'est par ce trou qu'une
+    date de naissance non effacée serait passée en silence.
+
+    **Et elle a trouvé quelque chose du premier coup.** `display_name` est
+    déclaré nullable dans le modèle « pour que l'anonymisation puisse
+    l'effacer », et `_strip_account` ne l'effaçait pas. Aucune liste recopiée
+    ne pouvait le dire : elle ne parle que des colonnes qu'on y a pensées.
+    """
+    contexte = await compte_complet(session, conn)
+    user = contexte["user"]
+
+    colonnes = {c.name for c in User.__table__.columns}
+    personnelles = colonnes - NON_PERSONNEL_SUR_LE_COMPTE
+    assert personnelles, "la table jumelle doit rester une liste, pas tout absorber"
+
+    avant = (
+        (
+            await conn.execute(
+                sa.select(*[User.__table__.c[nom] for nom in sorted(personnelles)]).where(
+                    User.id == user.id
+                )
+            )
+        )
+        .one()
+        ._mapping
+    )
+    jamais_posees = [nom for nom, valeur in avant.items() if valeur is None]
+    assert jamais_posees == [], (
+        "colonnes personnelles jamais renseignées par ce test : "
+        f"{jamais_posees}. Le décor doit les poser, sinon leur effacement ne prouve rien"
+    )
+
+    assert await anonymization.anonymize_account(session, user=user, actor=Actor.from_user(user))
+    await session.flush()
+
+    apres = (
+        (
+            await conn.execute(
+                sa.select(*[User.__table__.c[nom] for nom in sorted(personnelles)]).where(
+                    User.id == user.id
+                )
+            )
+        )
+        .one()
+        ._mapping
+    )
+    restantes = [nom for nom, valeur in apres.items() if valeur is not None]
+    assert restantes == [], f"colonnes personnelles non effacées : {restantes}"
 
 
 async def test_le_profil_createur_est_vide_de_son_identite(

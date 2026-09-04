@@ -211,6 +211,7 @@ async def claim_handover(
             email=payload.email,
             password=payload.password,
             terms_version=payload.terms_version,
+            date_of_birth=payload.date_of_birth,
             locale=payload.locale,
         )
     except (

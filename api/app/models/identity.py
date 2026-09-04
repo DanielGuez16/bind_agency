@@ -1,7 +1,7 @@
 """Identité : utilisateurs, profils créateurs, comptes sociaux et métriques."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 import sqlalchemy as sa
@@ -80,6 +80,42 @@ class User(UUIDPrimaryKey, CreatedAt, Base):
         sa.DateTime(timezone=True), nullable=True
     )
 
+    #: La date de naissance déclarée à l'inscription.
+    #:
+    #: **Nullable, et pour une seule raison : l'anonymisation l'efface.** Une
+    #: contrainte l'exige sur tout compte vivant — c'est le patron de `email`
+    #: et `password_hash`, nullables pour la même raison et jamais nulles
+    #: ailleurs.
+    #:
+    #: Elle ne sert qu'au portail. Aucun écran ne la lit, aucune réponse ne la
+    #: rend : la seule chose que le produit ait besoin de savoir ensuite est
+    #: qu'elle a été vérifiée, et c'est ce que portent les deux colonnes
+    #: suivantes.
+    date_of_birth: Mapped[date | None] = mapped_column(sa.Date(), nullable=True)
+
+    #: Quand la majorité a été vérifiée, et **contre quel seuil**.
+    #:
+    #: **La marque survit à l'anonymisation, la date non.** C'est la même
+    #: distinction que `completed_collabs_count` : un fait sur ce qui a eu lieu
+    #: n'est pas une donnée identifiante. Effacer la preuve avec la donnée
+    #: rendrait indémontrable qu'on a vérifié, ce qui est exactement ce que le
+    #: portail existe pour établir.
+    #:
+    #: **Un instant et non un booléen** : « il était majeur » ne dit pas quand,
+    #: et c'est la première question qui se pose si l'âge est contesté. Même
+    #: raison qu'`email_verified_at`, écrite juste au-dessus.
+    #:
+    #: **Et le seuil avec, parce qu'il peut bouger.** Dix-huit vaut à Miami. Un
+    #: marché où la majorité contractuelle diffère, ou un durcissement, ferait
+    #: mentir en silence toute marque posée sous l'ancienne règle — le compte
+    #: dirait « vérifié » sans dire contre quoi. C'est le raisonnement de
+    #: `accepted_terms_version` à la prise en main : « il a accepté » ne vaut
+    #: rien si l'on ne sait pas quoi.
+    age_verified_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
+    age_minimum_applique: Mapped[int | None] = mapped_column(sa.Integer(), nullable=True)
+
     #: Quand la suppression a été demandée, et quand elle prendra effet.
     #:
     #: **Les deux, et non l'une plus un délai calculé.** Ce qui a été promis à
@@ -109,6 +145,23 @@ class User(UUIDPrimaryKey, CreatedAt, Base):
         # cas, un compte sans adresse serait un compte sans moyen de connexion.
         sa.CheckConstraint(
             "status = 'anonymized' OR email IS NOT NULL", name="email_unless_anonymized"
+        ),
+        # La date de naissance suit exactement le même sort : nullable pour que
+        # l'anonymisation l'efface, jamais nulle sur un compte vivant. Sans
+        # cette ligne, un chemin d'écriture qui l'oublierait créerait un compte
+        # sans portail — et c'est précisément ce que le portail existe pour
+        # empêcher.
+        sa.CheckConstraint(
+            "status = 'anonymized' OR date_of_birth IS NOT NULL",
+            name="birth_date_unless_anonymized",
+        ),
+        # **La marque et son seuil vont ensemble, comme les deux dates de la
+        # suppression.** Un instant de vérification sans seuil ne dit pas contre
+        # quoi on a vérifié ; un seuil sans instant ne dit pas qu'on l'a fait.
+        # Ni l'un ni l'autre ne vaut seul.
+        sa.CheckConstraint(
+            "(age_verified_at IS NULL) = (age_minimum_applique IS NULL)",
+            name="age_mark_together",
         ),
         sa.CheckConstraint(
             "status = 'anonymized' OR password_hash IS NOT NULL",

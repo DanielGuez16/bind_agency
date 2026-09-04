@@ -34,7 +34,12 @@ async def membre(client: AsyncClient) -> dict:
     email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
     cree = await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": password, "role": UserRole.BUSINESS_MEMBER.value},
+        json={
+            "email": email,
+            "password": password,
+            "role": UserRole.BUSINESS_MEMBER.value,
+            "date_of_birth": "1992-04-17",
+        },
     )
     jetons = (
         await client.post(f"{PREFIX}/auth/login", json={"email": email, "password": password})

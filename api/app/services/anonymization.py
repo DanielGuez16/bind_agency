@@ -150,12 +150,27 @@ async def _strip_creator_profile(session: AsyncSession, user_id: uuid.UUID) -> N
 
 
 async def _strip_account(session: AsyncSession, user: User, actor: Actor) -> None:
-    """En dernier : un trigger gèle la ligne dès qu'elle passe en `anonymized`."""
+    """En dernier : un trigger gèle la ligne dès qu'elle passe en `anonymized`.
+
+    **La date de naissance part, la preuve qu'on l'a vérifiée reste.** C'est la
+    même distinction que sur le profil, où `completed_collabs_count` et
+    `reliability_score` survivent : un fait sur ce qui a eu lieu n'est pas une
+    donnée identifiante. Effacer `age_verified_at` avec la date rendrait
+    indémontrable qu'on a vérifié — c'est-à-dire effacerait exactement ce que le
+    portail existe pour établir, en gardant le risque et en perdant la preuve.
+    """
     previous = user.status
 
     user.email = None
     user.phone = None
     user.password_hash = None
+    user.date_of_birth = None
+    # **`display_name` partait déjà en théorie et restait en pratique.** Le
+    # modèle le déclare nullable « pour que l'anonymisation puisse l'effacer » ;
+    # cette ligne manquait. Trouvé par la garde de complétude écrite juste
+    # au-dessus de ce chantier, qui compare les colonnes au lieu de recopier une
+    # liste — c'est-à-dire par la seule chose qui pouvait le voir.
+    user.display_name = None
     user.status = UserStatus.ANONYMIZED
 
     await session.flush()

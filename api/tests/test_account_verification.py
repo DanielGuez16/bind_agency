@@ -584,7 +584,12 @@ async def _connecte(client: AsyncClient, role: UserRole) -> dict:
     email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
     cree = await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": password, "role": role.value},
+        json={
+            "email": email,
+            "password": password,
+            "role": role.value,
+            "date_of_birth": "1992-04-17",
+        },
     )
     assert cree.status_code == 201, cree.text
     jetons = (

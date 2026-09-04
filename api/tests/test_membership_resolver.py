@@ -179,7 +179,12 @@ async def test_un_createur_ne_passe_pas_par_cette_porte(
     email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
     await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": password, "role": UserRole.CREATOR.value},
+        json={
+            "email": email,
+            "password": password,
+            "role": UserRole.CREATOR.value,
+            "date_of_birth": "1992-04-17",
+        },
     )
     jetons = (
         await client.post(f"{PREFIX}/auth/login", json={"email": email, "password": password})

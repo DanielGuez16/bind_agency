@@ -32,6 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from alembic import command
 from app import seed_demo
+from app.core.age import NAISSANCE_DES_JEUX_DE_DONNEES
 from app.core.config import API_ROOT, get_settings
 from app.integrations.geocoding import ManualGeocoder
 from app.integrations.social import IdentiteSociale, JetonEchange, MetriquesProfil
@@ -79,9 +80,17 @@ async def _inscrire_verifie(session, **kwargs):
     émis et consommé plutôt que la date posée à la main — un semis qui écrirait
     `email_verified_at` directement produirait le même état sans jamais éprouver
     le mécanisme qui doit le produire.
+
+    **La date de naissance a son défaut ici, et jamais dans `register`.** Le
+    portail est requis côté service, sans valeur par défaut : un défaut là-bas
+    ouvrirait un chemin de production qui le contourne, et ce serait celui qu'on
+    emprunte sans y penser. Ici, il évite de reprendre soixante-trois décors qui
+    n'ont rien à dire sur l'âge — et un décor qui veut éprouver le portail passe
+    sa propre date, qui l'emporte.
     """
     from app.services import email_verification as _verif
 
+    kwargs.setdefault("date_of_birth", NAISSANCE_DES_JEUX_DE_DONNEES)
     user = await auth_service.register(session, **kwargs)
     jeton = await _verif.emettre(session, user=user)
     await _verif.confirmer(session, jeton=jeton)

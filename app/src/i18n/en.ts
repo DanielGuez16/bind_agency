@@ -1195,6 +1195,12 @@ export const en = {
     autrePorteCommerce: 'Registering as a creator instead? Go back and pick the other door.',
     jauge: '{{saisi}} / {{requis}}',
     resteACombler: 'At least {{requis}} characters. {{reste}} to go.',
+    naissanceTitre: 'Date of birth',
+    naissanceJour: 'Day',
+    naissanceMois: 'Month',
+    naissanceAnnee: 'Year',
+    // Le format, et rien que le format : ce champ n'annonce pas sa règle.
+    naissanceAide: 'Numbers only, four digits for the year.',
     montrerLeMotDePasse: 'Show password',
     masquerLeMotDePasse: 'Hide password',
     motDePasseComplet: 'At least {{requis}} characters.',
@@ -1697,6 +1703,7 @@ export const en = {
     duration_minutes: 'duration',
     reason: 'reason',
     starts_at: 'time slot',
+    date_of_birth: 'date of birth',
   },
   errors: {
     generic: 'Something went wrong. Please try again.',
@@ -1725,6 +1732,11 @@ export const en = {
       'An administrator account cannot be deleted from here. Ask another administrator.',
     deletion_blocked_by_collaboration:
       'You still owe a post. Publish it, or let the business close the counterpart, then try again.',
+    // Le refus dit la règle — c'est sa seule raison d'être, et c'est après
+    // la saisie, donc le portail reste neutre.
+    age_below_minimum: 'You need to be 18 or older to use BIND.',
+    birth_date_in_future: 'That date is in the future. Check the year.',
+    birth_date_implausible: 'That date does not look right. Check the year.',
     password_too_short: 'Use at least 12 characters.',
     password_too_long: 'That is too long: 256 characters at most.',
     password_too_common: 'That one is guessed every day. Try a few unrelated words instead.',

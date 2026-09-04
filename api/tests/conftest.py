@@ -91,11 +91,19 @@ if os.environ.get("PYTEST_XDIST_WORKER"):
     _morceaux.append(os.environ["PYTEST_XDIST_WORKER"])
 os.environ["OBJECT_STORE_LOCAL_ROOT"] = "-".join(_morceaux)
 
+import uuid
 from collections.abc import AsyncIterator, Iterator
 
 import httpx
 import psycopg
 import pytest
+
+from app.core.age import NAISSANCE_DES_JEUX_DE_DONNEES
+
+#: Le mot de passe des comptes de test. Douze caractères, sans suite de clavier
+#: ni mot de la liste de refus : c'est le plus court qui franchisse le contrôle
+#: de force, et le faire varier ne prouverait rien de plus.
+MOT_DE_PASSE_DE_TEST = "tourbillon-cactus-91-vermeil"
 import sqlalchemy as sa
 from alembic.config import Config
 from httpx import ASGITransport, AsyncClient
@@ -437,6 +445,32 @@ def transport_meta():
     return fabriquer
 
 
+def charge_d_inscription(**champs: object) -> dict[str, object]:
+    """La charge utile d'un `POST /auth/register`, avec ses champs obligatoires.
+
+    **Un point de passage plutôt que trois cents recopies.** Chaque fichier de
+    test construisait son JSON à la main ; le jour où l'inscription a gagné un
+    champ requis — la date de naissance du portail d'âge — trois cent dix-huit
+    tests sont tombés d'un coup, tous pour la même raison et aucun pour une
+    raison qui les concernait.
+
+    **Ce que la fabrique n'est pas.** Elle ne vérifie rien et ne prétend rien :
+    elle pose l'état d'une inscription valide pour que les décors qui parlent
+    d'autre chose n'aient rien à dire de l'âge. Ce que le portail refuse
+    s'éprouve ailleurs — dans `test_le_portail_d_age.py` pour la règle, et par
+    la route pour le refus — en passant justement une date à soi.
+
+    Tout champ nommé l'emporte : `charge_d_inscription(role="business_member")`,
+    ou `charge_d_inscription(date_of_birth="2015-01-01")` pour éprouver le refus.
+    """
+    return {
+        "email": f"{uuid.uuid4()}@example.com",
+        "password": MOT_DE_PASSE_DE_TEST,
+        "role": "creator",
+        "date_of_birth": NAISSANCE_DES_JEUX_DE_DONNEES.isoformat(),
+    } | champs
+
+
 async def inscrire_verifie(session, **kwargs):
     """Inscrit un compte **et confirme son adresse par le vrai chemin**.
 
@@ -454,6 +488,10 @@ async def inscrire_verifie(session, **kwargs):
     from app.services import auth as auth_service
     from app.services import email_verification, outbox
 
+    # Le défaut du portail vit ici, jamais dans `register` : un défaut au
+    # service ouvrirait un chemin de production qui le contourne. Un décor qui
+    # éprouve le portail passe sa propre date, qui l'emporte.
+    kwargs.setdefault("date_of_birth", NAISSANCE_DES_JEUX_DE_DONNEES)
     user = await auth_service.register(session, **kwargs)
     jeton = await email_verification.emettre(session, user=user)
     await email_verification.confirmer(session, jeton=jeton)

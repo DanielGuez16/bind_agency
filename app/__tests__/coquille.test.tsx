@@ -322,6 +322,15 @@ describe('connexion', () => {
     expect(screen.getByText(en.auth.confirmationDiscordante)).toBeTruthy();
 
     await fireEvent.changeText(screen.getByTestId('champ-confirmation'), 'douze-caracteres');
+    // **Toujours fermé : le portail d'âge manque.** Les deux mots de passe se
+    // rejoignent, l'adresse est bonne, et la date n'est pas tapée. C'est ce qui
+    // rend le portail bloquant plutôt que décoratif — sans cette ligne, un
+    // formulaire qui ignorerait la date passerait ce test.
+    expect(screen.getByTestId('valider').props.accessibilityState.disabled).toBe(true);
+
+    await fireEvent.changeText(screen.getByTestId('date-de-naissance-jour'), '4');
+    await fireEvent.changeText(screen.getByTestId('date-de-naissance-mois'), '9');
+    await fireEvent.changeText(screen.getByTestId('date-de-naissance-annee'), '1992');
     expect(screen.getByTestId('valider').props.accessibilityState.disabled).toBe(false);
   });
 

@@ -209,7 +209,12 @@ async def test_la_route_est_reservee_aux_createurs(client: AsyncClient) -> None:
         email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
         await client.post(
             f"{PREFIX}/auth/register",
-            json={"email": email, "password": password, "role": role.value},
+            json={
+                "email": email,
+                "password": password,
+                "role": role.value,
+                "date_of_birth": "1992-04-17",
+            },
         )
         jetons = (
             await client.post(f"{PREFIX}/auth/login", json={"email": email, "password": password})
@@ -272,7 +277,12 @@ async def test_la_route_rend_la_fiabilite(client: AsyncClient, session: AsyncSes
     email, password = f"{uuid.uuid4()}@example.com", "tourbillon-cactus-91-vermeil"
     await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": password, "role": UserRole.CREATOR.value},
+        json={
+            "email": email,
+            "password": password,
+            "role": UserRole.CREATOR.value,
+            "date_of_birth": "1992-04-17",
+        },
     )
     jetons = (
         await client.post(f"{PREFIX}/auth/login", json={"email": email, "password": password})
@@ -463,7 +473,12 @@ async def test_une_seule_coordonnee_est_refusee(client: AsyncClient) -> None:
     email = f"{uuid.uuid4()}@example.com"
     await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": "tourbillon-cactus-91-vermeil", "role": "creator"},
+        json={
+            "email": email,
+            "password": "tourbillon-cactus-91-vermeil",
+            "role": "creator",
+            "date_of_birth": "1992-04-17",
+        },
     )
     jetons = (
         await client.post(

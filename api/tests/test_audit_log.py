@@ -57,7 +57,12 @@ async def register_and_login(client: AsyncClient, role: UserRole = UserRole.CREA
     password = "tourbillon-cactus-91-vermeil"
     created = await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": password, "role": role.value},
+        json={
+            "email": email,
+            "password": password,
+            "role": role.value,
+            "date_of_birth": "1992-04-17",
+        },
     )
     assert created.status_code == 201
     logged = await client.post(f"{PREFIX}/auth/login", json={"email": email, "password": password})
@@ -77,7 +82,12 @@ async def test_l_inscription_ecrit_sa_ligne_de_journal(
 
     response = await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": "tourbillon-cactus-91-vermeil", "role": "creator"},
+        json={
+            "email": email,
+            "password": "tourbillon-cactus-91-vermeil",
+            "role": "creator",
+            "date_of_birth": "1992-04-17",
+        },
     )
     assert response.status_code == 201
 
@@ -245,6 +255,7 @@ async def test_une_inscription_refusee_ne_laisse_aucune_ligne(
         "email": "doublon@example.com",
         "password": "tourbillon-cactus-91-vermeil",
         "role": "creator",
+        "date_of_birth": "1992-04-17",
     }
     avant = len(await journal(conn, entity="app_user"))
 

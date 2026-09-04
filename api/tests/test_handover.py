@@ -22,6 +22,7 @@ from httpx import AsyncClient
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 
+from app.core.age import NAISSANCE_DES_JEUX_DE_DONNEES
 from app.core.config import get_settings
 from app.integrations.geocoding import ManualGeocoder
 from app.models import AuditLog, Business, BusinessHandover, BusinessMember, User
@@ -277,6 +278,7 @@ async def test_prendre_en_main_cree_le_compte_et_le_proprietaire(session: AsyncS
         email="gerant@salon.example",
         password=MOT_DE_PASSE,
         terms_version=get_settings().terms_version,
+        date_of_birth=NAISSANCE_DES_JEUX_DE_DONNEES,
     )
 
     appartenance = await session.scalar(
@@ -311,6 +313,7 @@ async def test_la_version_acceptee_est_ecrite_au_journal(session: AsyncSession) 
         email="gerant@salon.example",
         password=MOT_DE_PASSE,
         terms_version=get_settings().terms_version,
+        date_of_birth=NAISSANCE_DES_JEUX_DE_DONNEES,
     )
 
     entree = await session.scalar(
@@ -338,6 +341,7 @@ async def test_un_lien_ne_sert_qu_une_fois(session: AsyncSession) -> None:
         email="premier@salon.example",
         password=MOT_DE_PASSE,
         terms_version=get_settings().terms_version,
+        date_of_birth=NAISSANCE_DES_JEUX_DE_DONNEES,
     )
 
     with pytest.raises(service.HandoverUnknown):
@@ -363,6 +367,7 @@ async def test_une_version_perimee_n_ecrit_rien(session: AsyncSession) -> None:
             email="gerant@salon.example",
             password=MOT_DE_PASSE,
             terms_version="conditions-de-l-an-dernier",
+            date_of_birth=NAISSANCE_DES_JEUX_DE_DONNEES,
         )
 
     assert await auth_service.get_user_by_email(session, "gerant@salon.example") is None
@@ -419,6 +424,7 @@ async def test_le_suivi_garde_les_fiches_assumees(session: AsyncSession) -> None
         email="signe@salon.example",
         password=MOT_DE_PASSE,
         terms_version=get_settings().terms_version,
+        date_of_birth=NAISSANCE_DES_JEUX_DE_DONNEES,
     )
 
     lignes = {ligne.business_id: ligne for ligne in await service.suivi(session)}
@@ -504,7 +510,12 @@ async def compte(client: AsyncClient, role: UserRole) -> dict:
     email = f"{uuid.uuid4()}@example.com"
     cree = await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": MOT_DE_PASSE, "role": role.value},
+        json={
+            "email": email,
+            "password": MOT_DE_PASSE,
+            "role": role.value,
+            "date_of_birth": "1992-04-17",
+        },
     )
     assert cree.status_code == 201, cree.text
     jetons = (
@@ -569,6 +580,7 @@ async def test_le_parcours_complet_depuis_les_routes(
             "email": "comptoir@salon.example",
             "password": MOT_DE_PASSE,
             "terms_version": apercu.json()["terms_version"],
+            "date_of_birth": "1992-04-17",
         },
     )
     assert prise.status_code == 200, prise.text

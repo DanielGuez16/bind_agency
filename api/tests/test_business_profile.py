@@ -59,7 +59,12 @@ async def compte(
     password = "tourbillon-cactus-91-vermeil"
     created = await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": password, "role": role.value},
+        json={
+            "email": email,
+            "password": password,
+            "role": role.value,
+            "date_of_birth": "1992-04-17",
+        },
     )
     assert created.status_code == 201, created.text
     if session is not None:

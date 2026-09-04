@@ -37,7 +37,12 @@ async def register_and_login(
 
     created = await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": password, "role": role.value},
+        json={
+            "email": email,
+            "password": password,
+            "role": role.value,
+            "date_of_birth": "1992-04-17",
+        },
     )
     assert created.status_code == 201, created.text
 
@@ -60,7 +65,12 @@ async def test_inscription_stocke_une_empreinte_argon2id_et_jamais_le_mot_de_pas
 
     response = await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": password, "role": UserRole.CREATOR.value},
+        json={
+            "email": email,
+            "password": password,
+            "role": UserRole.CREATOR.value,
+            "date_of_birth": "1992-04-17",
+        },
     )
 
     assert response.status_code == 201
@@ -78,6 +88,7 @@ async def test_inscription_refuse_une_adresse_deja_prise_meme_casse_differente(
         "email": "Rebecca@Example.com",
         "password": "tourbillon-cactus-91-vermeil",
         "role": UserRole.ADMIN.value,
+        "date_of_birth": "1992-04-17",
     }
     first = await client.post(f"{PREFIX}/auth/register", json=payload)
     assert first.status_code == 201
@@ -100,7 +111,12 @@ async def test_inscription_refuse_une_adresse_deja_prise_meme_casse_differente(
 async def test_inscription_refuse_un_mot_de_passe_trop_court(client: AsyncClient) -> None:
     response = await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": "court@example.com", "password": "court", "role": UserRole.CREATOR.value},
+        json={
+            "email": "court@example.com",
+            "password": "court",
+            "role": UserRole.CREATOR.value,
+            "date_of_birth": "1992-04-17",
+        },
     )
     assert response.status_code == 422
 
@@ -113,6 +129,7 @@ async def test_inscription_refuse_un_mot_de_passe_demesure(client: AsyncClient) 
             "email": "enorme@example.com",
             "password": "a" * (PASSWORD_MAX_LENGTH + 1),
             "role": UserRole.CREATOR.value,
+            "date_of_birth": "1992-04-17",
         },
     )
     assert response.status_code == 422
