@@ -14,6 +14,7 @@ from app.schemas.tier_offers import (
     TierOfferActivation,
     TierOfferCreate,
     TierOfferRead,
+    TierOfferUpdate,
 )
 from app.services import portee_locale
 from app.services import tier_offers as offer_service
@@ -62,6 +63,8 @@ async def _read(session: AsyncSession, offers: list[TierOffer]) -> list[TierOffe
             business_id=offer.business_id,
             tier_id=offer.tier_id,
             catalog_item_id=offer.catalog_item_id,
+            required_mention=offer.required_mention,
+            required_geotag=offer.required_geotag,
             is_active=offer.is_active,
             created_at=offer.created_at,
             **details[offer.id],
@@ -124,6 +127,32 @@ async def create_offer(
 ) -> TierOfferRead:
     try:
         offer = await offer_service.create_offer(session, business_id=business.id, payload=payload)
+    except offer_service.TierOfferError as error:
+        raise _translate(error) from error
+
+    await session.commit()
+    return (await _read(session, [offer]))[0]
+
+
+@router.patch("/{offer_id}", response_model=TierOfferRead)
+async def update_offer(
+    offer_id: uuid.UUID,
+    payload: TierOfferUpdate,
+    business: CurrentBusiness,
+    user: CurrentUser,
+    session: SessionDep,
+) -> TierOfferRead:
+    """Corrige les critères de publication. **Sans toucher aux dossiers ouverts.**
+
+    `CurrentUser` en plus de `CurrentBusiness`, contrairement au `POST` : le
+    journal de configuration exige un auteur humain et refuse d'écrire sans lui.
+    C'est le même couple que sur l'activation, et pour la même raison.
+    """
+    try:
+        offer = await offer_service.get_offer(session, business.id, offer_id)
+        await offer_service.update_offer(
+            session, offer=offer, payload=payload, actor=Actor.from_user(user)
+        )
     except offer_service.TierOfferError as error:
         raise _translate(error) from error
 

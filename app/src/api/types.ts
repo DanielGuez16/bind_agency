@@ -1060,6 +1060,18 @@ export type Collaboration = {
    * `LigneDeFile.dernier_motif` côté commerce : deux lecteurs, une vérité.
    */
   dernier_motif: string | null;
+  /**
+   * Le salon, la prestation et le réseau — **servis depuis longtemps, déclarés
+   * seulement maintenant.** L'écran de preuve les câblait à `null` faute de les
+   * voir dans le contrat : la ligne du lieu ne se rendait donc jamais, et la
+   * phrase du format tombait sur sa variante courte, « One story within 48 h »,
+   * sans dire sur quel réseau publier.
+   *
+   * Nullables : la contrepartie peut être lue sans son contexte.
+   */
+  business_name: string | null;
+  item_name: string | null;
+  platform: Platform | null;
   proofs: Preuve[];
 };
 
@@ -1544,6 +1556,17 @@ export type OffreDePalier = {
   platform: Platform;
   content_format: ContentFormat;
   item_name: string;
+  /**
+   * Ce que le salon attend de la publication. **Écrivables depuis le `PATCH`** :
+   * les deux existaient en base et dans toutes les lectures sans qu'aucun
+   * schéma d'écriture ne les accepte, si bien que `required_mention` valait
+   * `null` partout et que l'interface qui l'affiche ne se rendait jamais.
+   *
+   * Recopiés sur la contrepartie à la consommation et figés là : les corriger
+   * ici ne touche pas un dossier déjà ouvert.
+   */
+  required_mention: string | null;
+  required_geotag: boolean;
   is_active: boolean;
   is_effectively_offered: boolean;
   created_at: string;

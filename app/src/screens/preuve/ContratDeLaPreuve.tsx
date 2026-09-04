@@ -87,12 +87,11 @@ export function ContratDeLaPreuve({
           publier. Le palier en gras dans la phrase, le réseau par sa marque —
           la même forme que sur la fiche, pour que « une story sur Instagram »
           se lise partout pareil. */}
-      {/* **Le réseau n'est pas nommé, faute d'être servi.** La planche écrit
-          « une story sur Instagram » ; `Collaboration` ne porte pas la
-          plateforme, et la deviner depuis le palier serait faux — le même
-          palier existe sur les trois réseaux. La forme courte de la
-          contrepartie est employée telle quelle, et elle dit déjà le format et
-          le délai. `plateforme` attend son champ. */}
+      {/* **Le réseau est nommé depuis que `platform` est déclaré côté client.**
+          Il était servi et le type ne le portait pas : l'écran passait `null`,
+          et la forme courte — « One story within 48 h » — s'affichait sans dire
+          sur quel réseau publier. Le deviner depuis le palier aurait été faux,
+          le même palier existe sur les trois. */}
       <Ligne glyphe="paliers" premiere={!nomDeLaPrestation} testID="contrat-format">
         <LigneDeContrepartie
           tier={contrepartie.required_format}
@@ -103,6 +102,7 @@ export function ContratDeLaPreuve({
       {contrepartie.required_mention ? (
         <LigneCopiable
           valeur={contrepartie.required_mention}
+          libelle={t('parcours.preuveMentionLibelle')}
           mono
           testID="contrat-mention"
         />
@@ -112,7 +112,11 @@ export function ContratDeLaPreuve({
           dit qu'il en faut un ; ce qu'on tape dans l'application de la
           plateforme est le nom de l'établissement, et c'est lui qui se copie. */}
       {contrepartie.required_geotag && nomDuSalon ? (
-        <LigneCopiable valeur={nomDuSalon} testID="contrat-lieu" />
+        <LigneCopiable
+          valeur={nomDuSalon}
+          libelle={t('parcours.preuveLieuLibelle')}
+          testID="contrat-lieu"
+        />
       ) : null}
 
       <Ligne glyphe="horloge" testID="contrat-echeance">
@@ -182,10 +186,22 @@ const RETOUR_DU_BOUTON_MS = 2_000;
 
 function LigneCopiable({
   valeur,
+  libelle,
   mono = false,
   testID,
 }: {
   valeur: string;
+  /**
+   * Ce que la valeur est. **Il manquait, et c'est le défaut que cet écran
+   * portait** : la mention était posée nue, en mono, avec un bouton `COPY` et
+   * rien d'autre — littéralement `@velanailstudio` `[COPY]`. Une créatrice y
+   * lisait une chaîne sans savoir qu'il fallait la citer, ni où.
+   *
+   * L'email, lui, écrivait la phrase entière depuis toujours : « Mention X in
+   * your post. » Le côté commerce aussi — « Expected mention », « What you
+   * asked for ». Seule la personne qui doit exécuter ne l'avait pas.
+   */
+  libelle: string;
   /** La mention s'écrit en mono : c'est une chaîne à recopier exactement. */
   mono?: boolean;
   testID: string;
@@ -221,13 +237,14 @@ function LigneCopiable({
         borderTopColor: c['line.default'],
       }}
     >
-      <Texte
-        variante={mono ? 'type.data' : 'type.body'}
-        style={{ flex: 1 }}
-        ellipseSurNomPropre
-      >
-        {valeur}
-      </Texte>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Texte variante="type.caption" couleur="ink.mute">
+          {libelle}
+        </Texte>
+        <Texte variante={mono ? 'type.data' : 'type.body'} ellipseSurNomPropre>
+          {valeur}
+        </Texte>
+      </View>
       <Texte
         variante="type.label"
         couleur={copie ? 'status.success.text' : 'ink.default'}

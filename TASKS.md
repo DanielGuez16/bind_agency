@@ -1356,6 +1356,37 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       `.nvmrc`, `serve` non publié depuis six mois : restait le téléchargement.
       Sans cette contre-épreuve, deux PR étaient soupçonnées à tort.*
 
+- [x] **C1 — la mention attendue s'écrit enfin, et l'écran la nomme**
+      *`required_mention` et `required_geotag` avaient leur colonne, leur
+      migration, leur recopie sur la contrepartie et leur place dans cinq
+      schémas de lecture. Aucun schéma d'écriture ne les acceptait :
+      `TierOfferCreate` en `extra="forbid"` sans les champs, pas d'`Update`,
+      pas de route, pas de semis. **Le champ valait `NULL` partout depuis sa
+      création**, et l'affichage — gardé par `required_mention ? … : null` — ne
+      s'est jamais rendu une seule fois. Vu de l'écran créatrice : « le badge
+      est peu clair ».*
+
+      ***Le chemin d'écriture** : `PATCH /business/{id}/tier-offers/{offer_id}`,
+      journal de **configuration** (qui a écrit quoi à la place de quoi) et non
+      d'audit, donc `CurrentUser` exigé. Sans rétroactivité — les contreparties
+      nées avant gardent leurs critères figés. Écran de saisie dans
+      `CatalogueScreen`, sous la carte de l'offre.*
+
+      ***`instagram_handle` sur le salon**, distinct d'`instagram_url` : le
+      modèle disait déjà que l'adresse « peut être une page de marque et non un
+      compte ». Aucun remplissage rétroactif — une valeur devinée serait pire
+      que son absence. Instagram seul, TikTok le jour où il sera intégré.*
+
+      ***Les trois asymétries corrigées** : `{requirements}` ajouté au rappel
+      d'échéance et à la demande de reprise (zéro Python, la valeur y arrivait
+      déjà) ; la mention porte un libellé au lieu d'être posée nue ;
+      `business_name`/`item_name`/`platform` reconnectés — ils étaient servis et
+      câblés à `null`, ce qui empêchait la ligne du lieu de se rendre.*
+
+      ***Le test qui annonçait sa propre chute n'est pas tombé.*** *Son décor
+      était casté et ne portait pas `business_name` : il passait avant comme
+      après. Décor corrigé en même temps que le code. Cinq mutations vérifiées.*
+
 - [x] **La suite en parallèle** — 651 s à 300 s, mesuré
       *`pytest-xdist` avec `--dist loadgroup`. Les deux tests de concurrence
       partagent `xdist_group("concurrence")` : même worker, sériels entre eux, et

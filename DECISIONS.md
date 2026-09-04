@@ -11697,3 +11697,86 @@ ne sont pas récursives. Un sous-composant de réglages y échappe
 légitimement : il n'est pas un écran, il n'a ni route ni retour, et
 l'inscrire aux cinq registres aurait décrit une navigation qui n'existe
 pas.
+---
+
+## 2026-09-04 — La mention attendue : un champ qui existait partout sauf là où on l'écrit
+
+**Le défaut tenait en une phrase, et il était invisible depuis chaque bout.**
+`tier_offer.required_mention` et `required_geotag` avaient leur colonne, leur
+migration, leur recopie sur la contrepartie, et leur place dans **cinq** schémas
+de lecture — fiche publique, contrepartie, file du commerce, journée, historique.
+Ce qui manquait : `TierOfferCreate` était en `extra="forbid"` **sans les
+champs**, il n'existait aucun `TierOfferUpdate`, aucune route ne les acceptait,
+et le semis ne les posait pas.
+
+Conséquence : `required_mention` valait `NULL` sur chaque ligne de chaque
+environnement depuis la création de la colonne. Tout l'affichage étant gardé par
+`required_mention ? … : null`, **il ne s'est jamais rendu une seule fois**. Vu
+de l'écran de la créatrice, ça se lisait « le badge est peu clair » — un défaut
+d'apparence, alors que la cause était qu'il n'y avait rien à afficher.
+
+**Ce que ça dit du garde-fou qui aurait dû l'attraper.**
+`test_schemas_ecrits.py` vérifie que tout champ d'un schéma d'écriture apparaît
+en position d'écriture quelque part. Il ne pouvait pas voir ce défaut-ci :
+`required_mention=` existe bel et bien dans le code — à
+`collaboration.py:193`, où la contrepartie **recopie** l'offre. La garde
+cherchait le nom, elle a trouvé le nom, et le nom appartenait à une lecture. Une
+garde qui cherche une chaîne trouve les homonymes ; c'est le même mode d'échec
+que la garde de traduction qui se satisfaisait d'une feuille sans son domaine.
+
+**Trois asymétries, toutes dans le même sens : la créatrice en sait moins que
+tout le monde.**
+
+1. **L'email en disait plus que l'écran.** `collaboration.requirements.mention`
+   porte « Mention {mention} in your post. » — la seule phrase impérative du
+   produit — et n'était injectée que dans `collaboration.opened.body`. Le
+   **rappel d'échéance** et la **demande de reprise** transportaient déjà la
+   valeur jusqu'à la boîte d'envoi et ne l'écrivaient pas : deux gabarits à
+   corriger, zéro ligne de Python. Or le rappel est précisément le message qu'on
+   lit au moment de publier.
+2. **Le commerce était mieux légendé que la personne qui exécute.** Côté
+   commerce : « Expected mention », « What you asked for ». Côté créatrice, la
+   valeur était posée **nue** — `@velanailstudio` suivi d'un bouton `COPY`, sans
+   un mot pour dire ce que c'est ni ce qu'il faut en faire.
+3. **Trois champs servis et câblés à `null`.** `business_name`, `item_name` et
+   `platform` étaient assemblés par `CollaborationRead` et absents du type
+   TypeScript ; l'écran passait donc `null` en dur. La ligne du lieu ne se
+   rendait jamais — elle est gardée par le nom du salon — et la phrase du format
+   tombait sur sa variante courte, sans dire sur quel réseau publier.
+
+**Le test qui annonçait sa propre chute n'est pas tombé, et c'est le plus
+instructif de la journée.** `la-preuve-v3.test.tsx` affirmait « le lieu ne se
+rend pas tant que le nom du salon n'est pas servi », avec ce commentaire : « Ce
+test tombera le jour où le champ arrivera, et c'est voulu ». Le champ est
+arrivé, et le test est resté vert — son décor est casté (`as unknown as
+Collaboration`) et ne portait pas `business_name`. `nomDuSalon` valait donc
+`undefined` **avant comme après**, et l'assertion ne distinguait rien. Il a
+fallu corriger le décor en même temps que le code. C'est exactement la règle du
+dépôt sur les décors qui survivent à la mutation, rencontrée sur un test qui
+prétendait par écrit être prêt à tomber.
+
+**`instagram_handle` est un champ neuf, et distinct d'`instagram_url`.** Le
+modèle disait déjà pourquoi : « le salon donne l'adresse qu'il veut montrer, qui
+peut être une page de marque et non un compte ». On ne peut donc pas dériver le
+pseudonyme de l'adresse, et une créatrice qui recopierait l'adresse citerait le
+mauvais compte. Aucun remplissage rétroactif : il n'existe aucune règle sûre, et
+une valeur devinée serait pire que son absence — elle serait proposée au salon
+comme une valeur qu'il aurait donnée. Instagram seul ; TikTok n'a pas
+d'intégration, et le jour où il en aura une, c'est une colonne de plus.
+
+Nommage convenu avec la session voisine : `handle` nu reste à la créatrice
+(`social_account.handle`, déjà en base et servi par trois schémas), le qualifié
+va au nouveau. Le nom nu à ce qui existe déjà et qui est le plus nombreux.
+
+**Le journal est celui de la configuration, pas celui de l'audit.** Une mention
+est une **valeur** qui change ; ce qu'on relira est « qui a écrit quoi à la
+place de quoi », que `record_transition` ne sait pas dire. L'audit garde les
+bascules de l'offre — ouverte, fermée — et mêler les deux rendrait « a retiré
+l'offre » et « a corrigé le pseudonyme » illisibles l'un à côté de l'autre.
+D'où `CurrentUser` sur le `PATCH` en plus de `CurrentBusiness` : le journal de
+configuration refuse d'écrire sans auteur humain.
+
+**Sans rétroactivité, et c'est la propriété qui protège la créatrice.** Les
+contreparties déjà nées gardent les critères figés à leur création — `SPEC.md`
+§2.5. Changer la consigne sous quelqu'un qui a déjà consommé ferait tomber sa
+publication pour un motif qui n'existait pas quand elle a publié.
