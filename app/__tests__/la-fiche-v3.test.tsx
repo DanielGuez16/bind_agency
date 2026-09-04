@@ -278,6 +278,31 @@ describe('une prestation fermée reste lisible', () => {
     await vue.unmount();
   });
 
+  it('rend la description du salon, et se tait quand il n’y en a pas', async () => {
+    /**
+     * **Le champ était servi et lu par personne.** `CatalogItem.description`
+     * part du serveur, la recherche du fil l'indexe — on pouvait donc trouver
+     * une prestation par un mot qu'aucun écran n'affichait ensuite — et le
+     * seul lecteur était l'écran du commerce, qui l'édite.
+     *
+     * Les deux sens dans le même test : une carte qui rendrait toujours le
+     * bloc laisserait un vide sous le nom là où le salon n'a rien écrit, et
+     * c'est le cas courant.
+     */
+    const decrite = { ...FERMEE, description: 'Balayage sur cheveux longs, deux heures.' };
+    const vue = await monter({ ...FICHE, offres: [decrite] } as unknown as FichePublique);
+    await waitFor(() => expect(screen.getByTestId('offre-fermee')).toBeTruthy());
+    expect(screen.getByTestId('offre-description')).toHaveTextContent(
+      'Balayage sur cheveux longs, deux heures.',
+    );
+    await vue.unmount();
+
+    const muette = await monter({ ...FICHE, offres: [FERMEE] } as unknown as FichePublique);
+    await waitFor(() => expect(screen.getByTestId('offre-fermee')).toBeTruthy());
+    expect(screen.queryByTestId('offre-description')).toBeNull();
+    await muette.unmount();
+  });
+
   it('porte l’obstacle dans un encart, avec son chiffre dans la phrase', async () => {
     // L'obstacle passe d'une légende en gris à un encart à lui. Les mêmes
     // codes que sur l'écran des paliers : deux vocabulaires pour un même refus
