@@ -11561,3 +11561,92 @@ deux, alors que le pic mesuré était de 17 sur 100 ; et une garde de
 largeur écrite en même temps que le code qu'elle vérifie a reproduit son
 omission, donc elle est passée au vert sur un écran encore coupé. Dans
 les deux cas, plus personne ne cherche ensuite.
+
+### Complément — le troisième angle, celui qui parle quand tout est rouge
+
+Les deux commandes ci-dessus se lisent **dans** un journal, et la colonne
+des jobs se lit **entre** deux jobs du même run. Il reste un cas où ni
+l'une ni l'autre ne répond : quand tous les jobs sont rouges, et qu'on
+n'a qu'un seul run sous les yeux.
+
+La question qui tranche alors vient de `bind-agency-1a`, et elle ne
+demande aucun journal :
+
+> **Est-ce que ça n'arrive qu'à moi ?**
+
+Trois PR de trois branches différentes portant la même erreur au même
+moment désignent l'infrastructure, sans qu'on ait à ouvrir quoi que ce
+soit. C'est ce qui a établi la panne de `serve` : la même ligne
+`Timed out waiting 120000ms from config.webServer` sur des travaux qui
+n'avaient rien en commun.
+
+Les trois angles répondent à la même question par des chemins différents,
+et il est utile qu'ils soient trois — on n'a pas toujours les trois vues :
+
+| Angle | Ce qu'on regarde | Muet quand |
+|---|---|---|
+| Assertions contre dépassements | un journal | on n'a pas encore le journal |
+| Un job vert, un job rouge | un run | tous les jobs sont rouges |
+| Plusieurs PR, même erreur | plusieurs runs | on est seul à livrer |
+
+## 2026-09-04 — Fusionner une pile : ce qui ferme la PR enfant
+
+Deux PR empilées — la seconde basée sur la branche de la première — se
+fusionnent dans l'ordre, et deux pièges attendent au même moment. Le
+premier coûte un rebase, le second est irréversible.
+
+**Le piège cher, mesuré.** `gh pr merge <base> --delete-branch` a fermé
+la PR enfant. Le journal d'événements de la #449 ne laisse pas de place à
+l'interprétation :
+
+```
+base_ref_deleted · 2026-09-04T02:27:35Z
+closed           · 2026-09-04T02:27:35Z
+```
+
+La même seconde. GitHub ferme une PR dont la base disparaît — et une PR
+fermée dont la base n'existe plus **ne se rouvre pas** : `reopen` refuse,
+et `--base main` répond `Cannot change the base branch of a closed pull
+request`. Il a fallu en ouvrir une nouvelle, la #450, pour du travail
+déjà écrit, testé et vert.
+
+**Ce n'est pas `--delete-branch` qui ferme, c'est la suppression
+effective de la base** — et la nuance est venue d'un contre-exemple.
+`bind-agency-1a` avait fusionné une base avec le même drapeau sans que
+son enfant ferme. Vérification : sa branche de base **existait encore**.
+Le geste dangereux n'avait pas eu lieu.
+
+**Pourquoi il n'avait pas eu lieu — hypothèse étayée, pas mécanisme
+établi.** Le réglage du dépôt est `delete_branch_on_merge = false` :
+personne ne supprime automatiquement. `gh` supprime lui-même, côté
+client, **après** la fusion — donc seulement s'il est encore là quand
+elle aboutit. Trois observations concordent :
+
+| Fusion | Mode | Branche distante | Enfant |
+|---|---|---|---|
+| #438 | `--delete-branch` | existe encore | resté ouvert |
+| #444 | `--auto --delete-branch` | existe encore | — |
+| #447 | `--delete-branch`, **synchrone** | **supprimée** | **fermé** |
+
+Concordantes, mais **la variable n'a pas été isolée** : il faudrait une
+fusion `--auto` sur une PR immédiatement fusionnable pour séparer « `gh`
+est parti » de « la fusion a tardé ». C'est écrit comme hypothèse parce
+que trois observations qui vont dans le même sens ne sont pas une
+expérience — et que se faire prendre par cette confusion est le sujet de
+l'entrée précédente.
+
+**La conduite, elle, ne dépend pas de l'hypothèse : sur une pile, ne pas
+demander la suppression avant la dernière PR.** Elle coûte une branche
+morte à nettoyer plus tard ; l'inverse coûte une PR.
+
+**Et le piège qui ne coûte qu'un rebase.** Après une fusion *squash*, la
+branche enfant se met en conflit : git rejoue des commits déjà présents
+sous une autre identité. `git rebase origin/main` s'en sort en signalant
+`patch contents already upstream` et en les laissant tomber — c'est ce
+qui a marché ici. Viser explicitement l'ancêtre commun marche aussi, et
+c'est la même idée que la règle déjà écrite plus haut sur
+`git reset --soft "$(git merge-base HEAD origin/main)"` : **désigner le
+point de divergence plutôt que supposer `origin/main`.** Deux remèdes
+voisins pour deux pièges voisins — assez proches pour qu'une session les
+ait confondus ce soir, et ait annoncé dans `CLAUDE.md` un `rebase --onto`
+qui ne s'y trouve pas.
