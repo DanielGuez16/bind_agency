@@ -209,6 +209,33 @@ gh api repos/DanielGuez16/bind_agency/branches/main/protection \
   --jq .required_status_checks.contexts
 ```
 
+**`alembic heads` après tout rebase qui touche `alembic/versions/`.** Deux têtes
+naissent **sans qu'un seul conflit ne s'affiche** : `git` compare des noms de
+fichiers, jamais des `down_revision`. Deux migrations écrites en parallèle
+descendent du même parent, portent des noms différents, et le rebase n'a donc
+rien à signaler — il ne signale rien.
+
+```
+cd api && python -c "
+from alembic.config import Config; from alembic.script import ScriptDirectory
+s = ScriptDirectory.from_config(Config('alembic.ini'))
+t = s.get_heads(); print(len(t), 'tête(s):', t)"
+```
+
+Une seule tête, ou la branche est cassée. Rebrancher en changeant le
+`down_revision` de **sa propre** migration vers celle qui a fusionné, jamais
+l'inverse : celle de `main` a des bases qui l'ont déjà appliquée.
+
+Rien d'autre ne le dit à temps. La CI monte un schéma neuf et échoue en masse —
+**2010 erreurs de montage**, un nombre qui ne pointe vers rien — et la base de
+développement partagée, elle, garde la révision fantôme longtemps après. Deux
+fois en une journée, dont une où le compte d'erreurs identique à celui d'une
+autre panne a fait conclure à la même cause et relancer au lieu de lire :
+**un nombre d'erreurs identique n'est pas une cause identique.**
+
+La question se pose donc au même moment que « la branche est-elle fusionnable » :
+juste après le rebase, avant toute attente.
+
 **Un champ qui « arrive par l'autre conversation » se compose à deux, et on se
 le dit avant d'écrire.** Trois collisions dans une seule session : le compte de
 prestations du fil, la ligne « et il s'ouvre » des favoris, et la réponse sur
