@@ -653,11 +653,16 @@ export const en = {
     preuveChoisirAutre: 'Choose another one',
     preuveEnvoyerCelle_ci: 'Send this one',
     preuveEnvoiEnCours: 'Sending your proof…',
-    preuveEchecTitre: 'It did not go through. Your photo is still here.',
+    preuveEchecTitre: 'It did not go through. What you chose is still here.',
     preuveEchecCorps: 'The network dropped, not your proof. Nothing was counted and nothing was lost.',
     preuveEchecTentative: 'Attempt {{n}} of {{total}}, still {{n}} of {{total}}.',
     preuveReessayer: 'Try again',
-    preuveApercuEntier: 'Shown whole, status bars included. We never crop it: what matters is that the post, the mention and the tag are readable.',
+    preuveApercuEntier: 'Shown whole, nothing cropped. What matters is that the post, the mention and the tag are readable.',
+    // **Sa propre clé, et non `composition.photoEnvoiInterrompu`.** Celle-là
+    // sert trois écrans du commerce où il s'agit vraiment de photos ; la
+    // neutraliser pour cet écran-ci aurait rendu leur texte plus vague sans
+    // rien gagner.
+    preuveEnvoiInterrompu: 'Sending stopped when you left the app. What you chose is still here.',
     preuveEcheanceTient: 'No rush, it holds.',
     preuveEcheanceProche: 'Due soon. Better on wifi, if you have any.',
     preuveTropLourde: 'That file is too heavy. {{poids}} MB at most. Your phone can export a smaller one.',
@@ -670,7 +675,7 @@ export const en = {
     // sans savoir ce que ça lui coûte d'attendre.
     preuveViteTitre: 'Send it within 24 hours and Instagram confirms it for you',
     preuveVite:
-      'After that your story is gone from Instagram, and all we have is your screenshot and your word. The salon accepts either. The first is just easier for both of you.',
+      'After that your story is gone from Instagram, and all we have is what you send us and your word. The salon accepts either. The first is just easier for both of you.',
     // **Trois états, et l'écran n'en rendait que deux.** Nul veut dire « la
     // question ne s'est pas posée », faux « elle s'est posée et la réponse est
     // non ». Les confondre faisait croire à une vérification passée.
@@ -682,7 +687,7 @@ export const en = {
     preuve_ecart_aide: 'The platform checked and found this:',
     preuveAdresse: 'Link to your post',
     preuveAdresseAide:
-      'Paste the link to the post. The business opens it to check that it is live. With only a screenshot, they have to take your word for it.',
+      'Paste the link to the post. The business opens it to check that it is live. Without it, they have to take your word for it.',
     preuveNote: 'Anything to add?',
     preuveNoteAide: 'Optional. The salon reads this with your proof, useful if something did not go to plan.',
     // « Vous la prenez » répond à la question réellement posée — c'est à qui de
@@ -713,7 +718,7 @@ export const en = {
     prestationEtDuree: '{{prestation}} · {{minutes}} min',
     ongletAVenir: 'Upcoming',
     ongletEnCours: 'To send',
-    ongletAEnvoyerAide: 'You have posted. Send the screenshot so the salon can check it.',
+    ongletAEnvoyerAide: 'You have posted. Send your proof so the salon can check it.',
     reservationAcceptee: 'Accepted',
     ongletTerminees: 'Done',
   },

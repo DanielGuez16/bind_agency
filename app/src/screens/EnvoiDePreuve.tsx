@@ -434,7 +434,7 @@ export function EnvoiDePreuve({
       {envoiDeFichier.interrompu ? (
         <StatusMessage
           level="neutral"
-          body={t('composition.photoEnvoiInterrompu')}
+          body={t('parcours.preuveEnvoiInterrompu')}
           testID="envoi-interrompu"
         />
       ) : null}
