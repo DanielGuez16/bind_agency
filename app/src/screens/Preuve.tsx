@@ -16,10 +16,10 @@
  * exactement la vérification qu'on lui demande de faire.
  */
 import { useEffect, useState } from 'react';
-import { Linking, Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 import { useApi, type DerniereSoumission } from '../api';
-import { Icone, Photo, SkeletonBox, StatusMessage, Texte } from '../components';
+import { Icone, LienExterne, Photo, SkeletonBox, StatusMessage, Texte } from '../components';
 import { useI18n } from '../i18n';
 import { radius, useTheme } from '../theme';
 
@@ -126,15 +126,15 @@ export function PreuveSoumise({
       {/* L'adresse d'origine, quand elle existe : c'est là que la publication
           se vérifie vraiment, l'archive n'en est que la trace. */}
       {soumission.source_url ? (
-        <Pressable
-          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-          onPress={() => void Linking.openURL(soumission.source_url!)}
+        <LienExterne
+          url={soumission.source_url}
+          accessibilityLabel={t('commerce.preuveOuvrirSource')}
           testID="ouvrir-la-publication"
         >
           <Texte variante="type.caption" couleur="brand.700">
             {t('commerce.preuveOuvrirSource')}
           </Texte>
-        </Pressable>
+        </LienExterne>
       ) : null}
 
       {/* Ce qui était exigé, à côté de ce qui a été rendu. La détection

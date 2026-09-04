@@ -23,8 +23,17 @@ import type { ReactNode } from 'react';
 import { Linking, Platform, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 
 export type LienExterneProps = {
-  /** Où il mène. Absolu : ces liens sortent du produit. */
-  url: string;
+  /**
+   * Où il mène. Absolu : ces liens sortent du produit.
+   *
+   * **`null` rend la même chose, sans le lien.** Trois appelants portaient déjà
+   * cette branche à la main — une rangée d'annuaire sans compte rattaché, une
+   * publication sans adresse, une ligne de journée sans profil — et tous
+   * rendaient une vue au même style plutôt que rien. Un lien qui ne mène nulle
+   * part se lit comme une panne ; ne pas en poser du tout est la bonne
+   * réponse, et c'est ici qu'elle vit maintenant plutôt qu'en trois copies.
+   */
+  url: string | null;
   /** Ce que le lien montre. */
   children: ReactNode;
   /** Ce qu'un lecteur d'écran annonce à sa place. */
@@ -53,6 +62,15 @@ export function LienExterne({
   style,
   testID,
 }: LienExterneProps) {
+  // Ni ancre ni bouton : la rangée garde sa forme et ne prétend rien ouvrir.
+  if (url === null) {
+    return (
+      <View testID={testID} style={style}>
+        {children}
+      </View>
+    );
+  }
+
   if (Platform.OS === 'web') {
     const ancre: ProprietesDAncre = {
       href: url,

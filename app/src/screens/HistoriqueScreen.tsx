@@ -15,7 +15,7 @@
  * rendez-vous à quiconque voyage.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import {
   useApi,
@@ -28,6 +28,7 @@ import {
   EmptyState,
   Button,
   Icone,
+  LienExterne,
   MediaFallback,
   Photo,
   SegmentedTabs,
@@ -772,18 +773,17 @@ function CeQuiAEtePublie({ reservation }: { reservation: ReservationDuCreateur }
     </View>
   );
 
-  if (!lien) return <View testID={`publie-${reservation.booking_id}`}>{vignette}</View>;
-
+  // **Le repère reste des deux côtés, ici.** Contrairement à la ligne de la
+  // journée, où il nomme le lien, il nomme la vignette : la carte le porte que
+  // la publication soit atteignable ou non, et un test la cherche ainsi.
   return (
-    <Pressable
-      accessibilityRole="link"
+    <LienExterne
+      url={lien ?? null}
       accessibilityLabel={t('profil.publicationOuvrir', { prestation: reservation.item_name })}
-      onPress={() => void Linking.openURL(lien)}
       testID={`publie-${reservation.booking_id}`}
-      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
     >
       {vignette}
-    </Pressable>
+    </LienExterne>
   );
 }
 
