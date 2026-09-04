@@ -439,6 +439,30 @@ def _contrepartie(
     )
 
 
+def _est_une_image(
+    media_key: str | None, screenshot_key: str | None, type_archive: str | None
+) -> bool:
+    """L'écran peut-il en tirer une vignette.
+
+    **« Un fichier existe » n'est pas « c'est une image », et la confusion se
+    voyait.** Ce test rendait `bool(media_key or screenshot_key)` : depuis que
+    la vidéo est acceptée, une preuve MP4 y répondait « oui », le repli vers la
+    photo du service ne se déclenchait plus, et l'URL d'un MP4 partait vers un
+    composant d'image. Le champ promettait une image, il ne constatait qu'un
+    dépôt.
+
+    **`NULL` vaut image, et c'est un fait d'histoire.** Les preuves antérieures
+    à l'acceptation de la vidéo n'ont pas de type relevé, et il n'y a rien à
+    reprendre : le sélecteur comme le serveur ne prenaient alors que des
+    images. Les traiter en inconnues ferait basculer sur la photo du service
+    toutes les publications déjà archivées, ce qui remplacerait un défaut par
+    une régression plus large.
+    """
+    if not (media_key or screenshot_key):
+        return False
+    return type_archive is None or type_archive.startswith("image/")
+
+
 def _publication(trouvee: tuple[uuid.UUID, str | None, bool] | None) -> dict:
     if trouvee is None:
         return {"proof_id": None, "post_url": None, "post_a_une_image": False}
@@ -467,13 +491,21 @@ async def _dernieres_publications(
     publications: dict[uuid.UUID, tuple[uuid.UUID, str | None, bool]] = {}
     # Du plus ancien au plus récent : la dernière écriture pour un dossier
     # écrase les précédentes, et c'est celle-là qu'on garde.
-    for collaboration_id, proof_id, source_url, media_key, screenshot_key in await session.execute(
+    for (
+        collaboration_id,
+        proof_id,
+        source_url,
+        media_key,
+        screenshot_key,
+        type_archive,
+    ) in await session.execute(
         sa.select(
             Proof.collaboration_id,
             Proof.id,
             Proof.source_url,
             Proof.media_key,
             Proof.screenshot_key,
+            Proof.media_content_type,
         )
         .where(Proof.collaboration_id.in_(ids))
         .order_by(Proof.submitted_at)
@@ -481,7 +513,7 @@ async def _dernieres_publications(
         publications[collaboration_id] = (
             proof_id,
             source_url,
-            bool(media_key or screenshot_key),
+            _est_une_image(media_key, screenshot_key, type_archive),
         )
     return publications
 

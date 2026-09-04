@@ -30,6 +30,7 @@ from dataclasses import dataclass
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.integrations.object_store import type_du_contenu
 from app.models import Collaboration, Proof
 from app.models.enums import CaptureMethod, CollaborationStatus
 from app.services import audit, verification
@@ -125,6 +126,11 @@ async def soumettre(
         capture_method=capture.capture_method,
         media_key=capture.media_key,
         screenshot_key=capture.screenshot_key,
+        # **Relevé sur les octets, au même endroit et au même moment que
+        # l'empreinte.** Les deux répondent à « qu'est-ce qui a réellement été
+        # envoyé », et les séparer ferait relire l'objet une seconde fois pour
+        # une question qu'on peut poser une fois.
+        media_content_type=type_du_contenu(capture.contenu),
         content_hash=empreinte(capture.contenu),
         platform_published_at=capture.platform_published_at,
         # **Les trois champs de la vérification, écrits même si le verdict est
