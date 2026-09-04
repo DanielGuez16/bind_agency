@@ -51,6 +51,10 @@ _CODES = {
     ),
     # `NotYours` répond comme une réservation absente : distinguer les deux
     # dirait à un créateur quels identifiants appartiennent à un autre.
+    service.ConditionsPerimees: (
+        status.HTTP_409_CONFLICT,
+        ErrorCode.BOOKING_TERMS_OUTDATED,
+    ),
     service.NotYours: (status.HTTP_404_NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND),
     service.NotYourBusiness: (status.HTTP_404_NOT_FOUND, ErrorCode.BOOKING_NOT_FOUND),
     service.MotifRequis: (status.HTTP_422_UNPROCESSABLE_CONTENT, ErrorCode.VALIDATION_FAILED),
@@ -72,6 +76,27 @@ class MotifDuCommerce(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     reason: str = Field(min_length=3, max_length=500)
+
+
+class EngagementDeLaCreatrice(BaseModel):
+    """Ce que la créatrice accepte en confirmant.
+
+    **Le corps est exigé ici, pas au service.** `confirmer` a soixante-trois
+    appelants — tests, semis, autres services — dont aucun ne parle de
+    conditions ; leur imposer une version leur ferait fabriquer une preuve
+    qu'aucun humain n'a produite. La route est le seul chemin qu'une créatrice
+    emprunte, donc le seul endroit où l'engagement existe.
+
+    **Une version, pas un booléen.** « Elle a accepté » ne vaut rien si l'on ne
+    sait pas quoi. Et c'est la version que *l'écran a montrée* qui remonte, non
+    celle en vigueur au moment de l'envoi : un écran ouvert la semaine dernière
+    montre les conditions de la semaine dernière, et le serveur refuse l'écart
+    plutôt que d'enregistrer une acceptation que personne n'a produite.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    terms_version: str = Field(min_length=1, max_length=50)
 
 
 class MotifAbsence(BaseModel):
@@ -100,11 +125,27 @@ async def _reservation(session: SessionDep, booking_id: uuid.UUID) -> Booking:
     dependencies=[Depends(require_role(UserRole.CREATOR))],
 )
 async def confirm(
-    booking_id: Annotated[uuid.UUID, Path()], user: CurrentUser, session: SessionDep
+    booking_id: Annotated[uuid.UUID, Path()],
+    payload: EngagementDeLaCreatrice,
+    user: CurrentUser,
+    session: SessionDep,
 ) -> BookingRead:
+    """Confirmer, **et s'engager dans le même geste**.
+
+    `SPEC.md` §4.1 nomme l'acte : « confirmation créateur » est la seule flèche
+    que la créatrice tire elle-même vers un état où le salon l'attend. Le `held`
+    posé juste avant n'est qu'un verrou de capacité qui expire tout seul au bout
+    de dix minutes ; y recueillir un consentement produirait des acceptations
+    enregistrées sur des réservations qui n'ont jamais existé pour le salon.
+    """
     reservation = await _reservation(session, booking_id)
     try:
-        await service.confirmer(session, booking=reservation, creator_id=user.id)
+        await service.confirmer(
+            session,
+            booking=reservation,
+            creator_id=user.id,
+            terms_version=payload.terms_version,
+        )
     except service.BookingStateError as error:
         raise _traduire(error) from error
 

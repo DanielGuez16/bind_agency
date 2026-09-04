@@ -6178,7 +6178,17 @@ qui est close — et il fallait lire les trois pour trouver laquelle agissait.
 **La règle sort du rendu.** `attenteDe` rend `creatrice`, `controle` ou rien, et
 s'éprouve sans monter un écran — même découpage que le cycle du mur. Ce qui en
 découle : filet d'encre et bouton pour la première, **des mots** pour la
-seconde. Un bouton grisé se presse quand même et ne répond pas ; l'action
+seconde.
+
+> **Renversé le 2026-09-04, et cette moitié-là ne vaut plus.** « Des mots pour la
+> seconde » a tenu six semaines et n'a pas suffi : une ligne qui attend un
+> contrôle restait dans l'onglet de celles qui appellent un geste, et le seul
+> moyen de savoir laquelle on regardait était de lire la ligne entière. La
+> distinction a désormais son onglet — « in review » / « Revisión ». `attenteDe`
+> n'est pas retirée pour autant : elle **devient** la définition serveur du
+> quatrième onglet, ce qui est une promotion plutôt qu'un abandon. Le reste de
+> cette entrée — le filet d'encre, l'action retirée plutôt que grisée, les deux
+> champs servis et rendus nulle part — reste vrai. Un bouton grisé se presse quand même et ne répond pas ; l'action
 impossible se retire, c'est déjà la règle de la bibliothèque et cet écran ne la
 tenait pas.
 
@@ -9545,6 +9555,16 @@ poser un `onEndReached` que rien n'exercerait serait du mécanisme sans emploi.
 points avec trois onglets, chaque cellule offre **103 points utiles** — une
 douzaine de capitales.
 
+> **Deux corrections du 2026-09-04.** L'écran des réservations est passé à
+> quatre onglets : sa cellule fait **73,5 points**, pas 103. Et le modèle de
+> largeur employé ici — `longueur × avance moyenne` — s'est révélé faux *dans sa
+> forme* : confronté au rendu réel, l'écart allait de −14 % à +9 % selon le mot,
+> parce qu'un caractère n'a pas de largeur fixe. Il se trompait dans le sens
+> dangereux : il acceptait `Upcoming` (74,0 points rendus contre 65,8 annoncés,
+> donc coupé) et refusait `In review` (67,7 rendus contre 74,0 annoncés, donc
+> bon). La garde emploie maintenant une table d'avances **mesurée** dans un
+> navigateur chargé de la police, qui reproduit le rendu à 0,4 point près.
+
 **La mesure a trouvé pire que la question posée.** Design demandait de vérifier
 l'espagnol ; « Awaiting their post » débordait **en anglais**, la langue des
 maquettes. Personne n'avait mesuré dans aucune des deux, et c'est moi qui l'avais
@@ -11780,3 +11800,137 @@ configuration refuse d'écrire sans auteur humain.
 contreparties déjà nées gardent les critères figés à leur création — `SPEC.md`
 §2.5. Changer la consigne sous quelqu'un qui a déjà consommé ferait tomber sa
 publication pour un motif qui n'existait pas quand elle a publié.
+## 2026-09-04 — Le quatrième onglet, et la garde de largeur qui se trompait dans le sens dangereux
+
+**Le découpage des onglets est passé au serveur, et il n'avait plus le choix.**
+L'app envoyait une liste de `BookingStatus` que le serveur appliquait. Ça tenait
+tant qu'un onglet valait un ensemble de statuts de réservation ; ce n'est plus
+vrai. « À envoyer » et « en revue » portent **tous les deux** `consumed` — ce
+qui les sépare est le statut de la *contrepartie*, que le paramètre `status` ne
+sait pas exprimer. Le motif repris est `FiltreDeContrepartie`, côté commerce,
+qui a cette forme depuis plus longtemps : la créatrice était le seul des deux
+bords à ne pas l'avoir.
+
+**Une table de prédicats, pas une table de statuts.** La transposition littérale
+du gabarit commerce ne marchait pas : la jointure sur `Collaboration` est
+*externe*, et deux onglets sur quatre n'ont aucune contrainte de contrepartie —
+un `Collaboration.status.in_(…)` poserait `NULL NOT IN (…)` sur leurs lignes et
+les éliminerait toutes.
+
+**« À envoyer » se définit par soustraction, et c'est ce qui garantit la
+couverture.** Le nouvel onglet **découpe** dans l'ancien au lieu de s'ajouter à
+côté : tout ce qui est `consumed` sans être en contrôle y reste, y compris un
+état de contrepartie qu'on n'aurait pas prévu. C'est la réponse à la contrainte
+du 2026-08-16 — « lier la lecture aux onglets ferait disparaître de l'interface
+un statut qui existe en base » — et un test l'éprouve sur les huit
+`BookingStatus`, pas sur les prédicats : comparer les prédicats reviendrait à
+relire le code qu'on vient d'écrire.
+
+**`status` survit, et ce n'est pas une hésitation.** Deux appelants ne sont pas
+des onglets : « mes publications » veut `consumed` et `closed`, un ensemble qui
+ne correspond à aucun onglet, et les réglages veulent tout l'historique sans
+filtre. `onglet` prime quand les deux arrivent, ce qui laisse marcher une
+version d'app antérieure.
+
+**`a_envoyer` a été retiré.** Il disait exactement ce que dit désormais le compte
+de l'onglet « à envoyer », et c'est la garde `champs-servis` qui l'a signalé dès
+qu'il a perdu son lecteur. Son insight — le badge doit exclure les dossiers en
+contrôle — n'est pas perdu : il est devenu la frontière entre deux onglets.
+
+---
+
+### La garde de largeur mesurait un modèle, pas un rendu
+
+**Le point le plus instructif du chantier, et il a failli passer inaperçu.**
+La consigne était de raccourcir `Por enviar` pour tenir dans la cellule de 73,5
+points. La session voisine a fait remarquer que la formule de la garde —
+`longueur × avance moyenne`, l'avance dérivée des jetons — n'avait jamais
+rencontré un rendu. Mesuré dans un navigateur chargé de Plus Jakarta Sans :
+
+| libellé | rendu | formule | écart |
+|---|---:|---:|---:|
+| `Upcoming` | **74,0** | 65,8 | −11 % |
+| `Done` | 38,2 | 32,9 | −14 % |
+| `In review` | **67,7** | 74,0 | +9 % |
+| `Por enviar` | 79,9 | 82,2 | +3 % |
+
+**L'écart n'est pas constant, il change de signe.** Ce n'est donc pas un
+coefficient à corriger : le modèle « N points par caractère » est faux *dans sa
+forme*, un caractère n'ayant pas de largeur fixe. C'est la distinction que la
+voisine avait demandé de trancher en mesurant **trois** libellés au lieu d'un —
+un écart constant aurait appelé un autre remède.
+
+**Et il se trompait dans le sens dangereux.** Il acceptait `Upcoming`, qui
+déborde de 0,5 point, et refusait `In review`, qui tient avec six points de
+marge. Le vrai coupable n'était pas l'espagnol : `Upcoming` est devenu `Booked`,
+et `Por enviar` n'a été raccourci en `A enviar` que parce qu'il débordait
+réellement aussi.
+
+Sans la mesure, on raccourcissait un libellé qui tenait, on gardait un libellé
+coupé, et la garde passait au vert — **le pire résultat possible**, puisque
+plus personne ne rouvre une question réglée.
+
+**La garde emploie maintenant une table d'avances mesurée**, caractère par
+caractère, qui reproduit le rendu à 0,4 point près. Mesurée en *paire* et non
+isolément : un caractère seul porte son interlettrage de queue, la différence
+entre « XX » et « X » donne l'avance qui s'accumule dans un mot. La méthode de
+régénération est dans le fichier.
+
+---
+
+## 2026-09-04 — Le consentement de la créatrice, recueilli là où l'engagement a lieu
+
+**Le bouton s'appelait déjà « Confirm booking », et rien n'était confirmé.**
+L'écran affichait « à quoi tu t'engages » — contrepartie, mention, échéance,
+règle d'annulation — puis laissait réserver d'un appui, sans qu'aucune trace
+n'atteste que ce bloc ait été vu. Le produit avait pourtant le motif complet :
+la prise en main d'une fiche fait accepter une version des conditions, refuse
+l'écart, et l'écrit au journal d'audit. Il n'existait que du côté commerce.
+
+**À la confirmation, jamais à la pose du garde.** `SPEC.md` §4.1 nomme l'acte :
+« confirmation créateur » est la seule flèche que la créatrice tire elle-même
+vers un état où le salon l'attend. Le `held` posé une milliseconde plus tôt
+n'est qu'un verrou de capacité qui expire seul au bout de dix minutes ; y
+recueillir un consentement produirait des acceptations enregistrées sur des
+réservations qui n'ont jamais existé du point de vue du salon.
+
+**Exigé à la route, facultatif au service — et c'est ce qui rend le chantier
+possible sans rien casser.** `confirmer` a soixante-trois appelants : tests,
+semis, autres services. Aucun ne parle de conditions, et leur imposer une
+version leur ferait fabriquer une preuve qu'aucun humain n'a produite — le
+journal ne vaudrait alors plus rien, puisqu'on ne saurait plus distinguer les
+vraies. La route est le seul chemin qu'une créatrice emprunte, donc le seul
+endroit où l'engagement existe. **Zéro test cassé**, ce que l'audit avait prédit
+et que la suite a confirmé.
+
+Un test garde chaque moitié, et c'est la paire qui compte : la route refuse un
+corps absent, et une confirmation *par le service* ne laisse **aucune** trace
+d'engagement. Sans le second, on pourrait croire la tolérance inoffensive.
+
+**La preuve vit au journal d'audit, pas sur la réservation.** Même choix que la
+prise en main, et sa raison est écrite là-bas : le journal est immuable et ne se
+supprime pas avec la ligne, là où une colonne recopiée peut diverger sous un
+`UPDATE`. Qui, quand, sur quelle version — les trois choses qu'on regardera le
+jour où quelqu'un contestera. `transitionner` a gagné un `extra` pour cela ;
+deux appelants s'en servaient déjà par d'autres chemins.
+
+**La version est servie sur la fiche, pas sur l'offre.** La fiche est un objet
+par écran, l'offre une ligne par prestation : le même mot répété douze fois dans
+la même réponse ne dirait rien de plus. Et servie plutôt qu'écrite en dur côté
+client — une constante dans l'app annoncerait encore l'ancienne le jour où le
+texte change, et le serveur refuserait l'écart. Ce refus n'a de sens que si la
+version vient de lui.
+
+**Un code d'erreur distinct de celui de la prise en main.** Les deux refusent la
+même chose et n'expliquent pas la même suite : « rechargez cette page » n'a
+aucun sens sur un écran de créneau, où l'on revient choisir une heure.
+
+**Le verrou porte aussi les reprises.** Les boutons « reprendre 16 h » appellent
+la même fonction hors de la barre de confirmation ; sans le même `disabled`, le
+consentement se contournait d'un appui.
+
+**Ce que la mutation a montré, et qu'une relecture n'aurait pas vu.** Rendre la
+bascule décorative — affichée, mais non lue par le verrou — laisse passer *tous*
+les autres tests : le bouton marche, l'envoi part, la version est jointe. Un
+seul cas distingue « on demande » de « on affiche », et c'est celui-là qu'il
+fallait écrire.

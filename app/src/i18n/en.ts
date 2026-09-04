@@ -524,6 +524,7 @@ export const en = {
     creneauxEngagementTitre: 'What you commit to',
     creneauxEngagementCiter: 'Tag and mention {{quoi}}',
     creneauxEngagementPublierAvant: 'Publish by ',
+    creneauxConditions: 'I accept the BIND terms (version {{version}}) and commit to publishing',
     creneauxAnnulationTitre: 'If you cannot come',
     creneauxAnnulationCorps: 'Cancel free up to {{heures}} h before. After that, or if you do not show up, it counts against your reliability score.',
     creneauxAnnulationScore: 'The score is gradual and recovers as you honour the next ones.',
@@ -716,10 +717,11 @@ export const en = {
     historiqueTitre: 'Your bookings',
     historiqueVide: 'Nothing here yet.',
     prestationEtDuree: '{{prestation}} · {{minutes}} min',
-    ongletAVenir: 'Upcoming',
+    ongletAVenir: 'Booked',
     ongletEnCours: 'To send',
     ongletAEnvoyerAide: 'You have posted. Send your proof so the salon can check it.',
     reservationAcceptee: 'Accepted',
+    ongletEnRevue: 'In review',
     ongletTerminees: 'Done',
   },
   roles: {
@@ -1718,6 +1720,11 @@ export const en = {
     support_access_out_of_scope: 'This access does not open that screen. Open one that does.',
     handover_terms_outdated:
       'The terms have changed since this page was opened. Reload and read them again.',
+    // **Le même refus sur l'autre chemin d'engagement, et un autre message.**
+    // Parler de « cette page » sur un écran de créneau ne veut rien dire : ici
+    // on revient au choix de l'heure, pas à une fiche.
+    booking_terms_outdated:
+      'The terms have changed while you were booking. Go back and pick your time again.',
     catalog_duration_mismatch:
       'A bookable item needs a duration, and an item that is not bookable must not have one.',
     catalog_item_not_bookable:
