@@ -32,6 +32,14 @@
  * premier rang parce qu'il est le contenant, pas parce que ce qu'on y fait
  * redevient secondaire.
  *
+ * **Et chaque palier dit ce à quoi il engage.** `TierBadge` situe, il
+ * n'informe pas — sa propre brique l'écrit : « c'est la phrase qui informe,
+ * pas le badge, et elle accompagne toujours le badge sur une carte ». Ce mur
+ * était le seul endroit du produit à la rendre fausse, donc le seul où « POST »
+ * devait porter seul le délai et la nature de l'engagement. Les testeurs de la
+ * fiche v3 avaient déjà buté là-dessus, en cherchant le réseau dans un badge
+ * qui n'a jamais porté que le palier ; la fiche l'a corrigé, le mur non.
+ *
  * **Un cœur y est revenu, et c'est un renversement assumé.** « La carte
  * contient quatre prestations, un cœur y désignerait quoi ? » disait la
  * version précédente de ce commentaire, en écartant le cœur du salon pour de
@@ -64,6 +72,7 @@ import type { ContentFormat } from '../../api';
 import {
   CoeurDeLaCarte,
   Icone,
+  LigneDeContrepartie,
   MediaFallback,
   Photo,
   Texte,
@@ -271,16 +280,40 @@ export function CarteDeSalon({
           <View
             key={prestation.catalogItemId}
             testID={testID ? `${testID}-ligne-${prestation.catalogItemId}` : undefined}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}
+            style={{ gap: 2 }}
           >
-            {/* `ellipseSurNomPropre` : un nom de prestation est un nom
-                propre de catalogue, et il se tronque plutôt que de pousser le
-                badge hors de la carte. */}
-            <Texte variante="type.body" ellipseSurNomPropre style={{ flex: 1, minWidth: 0 }}>
-              {prestation.nom}
-            </Texte>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+              {/* `ellipseSurNomPropre` : un nom de prestation est un nom
+                  propre de catalogue, et il se tronque plutôt que de pousser le
+                  badge hors de la carte. */}
+              <Texte variante="type.body" ellipseSurNomPropre style={{ flex: 1, minWidth: 0 }}>
+                {prestation.nom}
+              </Texte>
+              {prestation.contrepartie === null ? null : (
+                <TierBadge tier={prestation.contrepartie} size="sm" />
+              )}
+            </View>
+
+            {/* **Le badge situe, la phrase informe** — et c'est la brique
+                elle-même qui le dit : « elle accompagne toujours le badge sur
+                une carte ». Ce mur était le seul endroit du produit à rendre
+                `TierBadge` sans elle, donc le seul où « POST » devait porter
+                seul ce qu'il ne porte pas : sous quel délai, et qu'il s'agit
+                d'un engagement à tenir.
+
+                **La forme courte, sans `plateforme`.** L'autre nomme le réseau
+                et met le palier en gras — c'est celle de la fiche, qui a la
+                place. Ici la ligne est déjà serrée entre un nom ellipsé et un
+                badge ; la forme courte existe pour exactement ce cas, et elle
+                passe sous la ligne plutôt qu'à côté, où elle écraserait le nom
+                qu'on est venu lire. */}
             {prestation.contrepartie === null ? null : (
-              <TierBadge tier={prestation.contrepartie} size="sm" />
+              <LigneDeContrepartie
+                tier={prestation.contrepartie}
+                testID={
+                  testID ? `${testID}-contrepartie-${prestation.catalogItemId}` : undefined
+                }
+              />
             )}
           </View>
         ))}

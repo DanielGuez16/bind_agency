@@ -210,6 +210,37 @@ describe('la carte, et ce qui a traversé les trois fils', () => {
     await vue.unmount();
   });
 
+  it('chaque palier dit sous quel délai il engage, pas seulement son nom', async () => {
+    // **Le badge situe, la phrase informe** — c'est la brique elle-même qui
+    // l'écrit, et ce mur était le seul écran à la rendre fausse. « POST » seul
+    // ne dit ni le délai ni qu'il s'agit d'un engagement.
+    //
+    // **Deux paliers aux délais différents**, sans quoi une implémentation qui
+    // écrirait un délai en dur rendrait le même verdict qu'une bonne : la
+    // story engage sous 48 h, le reel sous 72 h.
+    const vue = await monter({
+      ...FIL,
+      commerces: [
+        commerce('b1', 'Vela Nail Studio', 'beauty', [
+          item('o1', 'Gel manicure', 'story'),
+          item('o2', 'Cover shoot', 'reel'),
+        ]),
+      ],
+      categories: [{ categorie: 'beauty', commerces: 1, prestations: 2 }],
+    } as unknown as Fil);
+    await waitFor(() =>
+      expect(screen.getByTestId('rangee-proches-apercu-b1-contrepartie-i-o1')).toBeTruthy(),
+    );
+
+    expect(screen.getByTestId('rangee-proches-apercu-b1-contrepartie-i-o1')).toHaveTextContent(
+      /48/,
+    );
+    expect(screen.getByTestId('rangee-proches-apercu-b1-contrepartie-i-o2')).toHaveTextContent(
+      /72/,
+    );
+    await vue.unmount();
+  });
+
   it('demande la vignette, jamais l’original', async () => {
     const vue = await monter({
       ...FIL,
