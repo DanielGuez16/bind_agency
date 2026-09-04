@@ -208,6 +208,13 @@ export function surfaceDe(
  * de vie mettait « à venir » en tête parce que c'est le début de l'histoire —
  * une raison de modèle, pas une raison de lecteur.
  */
+/**
+ * Combien de réservations par page. Le défaut du serveur, écrit ici pour être
+ * **comparé** : c'est lui qui décide combien il rend, et l'écran ne fait que
+ * reconnaître qu'une page est pleine — donc qu'il en reste peut-être.
+ */
+const PAGE = 50;
+
 const ONGLETS: { cle: OngletDesReservations; libelle: string }[] = [
   {
     cle: 'a-venir',
@@ -319,9 +326,51 @@ export function HistoriqueScreen({
   // s'exprime pas dans ce paramètre.
   const onglet = ONGLETS[index].cle;
   const requete = useRequete<HistoriqueDuCreateur>(
-    (signal) => api.mesReservations({ onglet }, signal),
+    (signal) => api.mesReservations({ onglet, limite: PAGE }, signal),
     { estVide: (vue) => vue.items.length === 0, dependances: [index] },
   );
+
+  /**
+   * Les pages suivantes, à côté de la première.
+   *
+   * **L'écran s'arrêtait à la page par défaut du serveur** : au-delà de la
+   * cinquantième réservation, l'onglet « terminées » cessait d'être un
+   * historique sans que rien ne le dise. Le découpage par onglet évitait la
+   * page gâchée — les lignes rendues appartiennent toutes à l'onglet lu — mais
+   * pas la troncature.
+   *
+   * **Le curseur, et non un décalage numérique.** La route pagine sur
+   * `created_at`, la colonne de son tri, et documente son refus de l'offset :
+   * il saute des lignes dès qu'une réservation est prise pendant la lecture.
+   *
+   * Les pages vivent à côté de la requête et non dedans : la recharger pour une
+   * page de plus ferait clignoter les onglets et leur compteur alors que seul
+   * le bas s'allonge.
+   */
+  const [suite, setSuite] = useState<ReservationDuCreateur[]>([]);
+  const [enCours, setEnCours] = useState(false);
+  const [pleine, setPleine] = useState(false);
+
+  const premiere = requete.etat === 'pret' ? requete.donnees : null;
+
+  // On repart de zéro dès que la tête change — changement d'onglet comme
+  // rechargement. Sans cela, la suite d'un onglet resterait collée sous les
+  // lignes d'un autre.
+  useEffect(() => {
+    setSuite([]);
+    setPleine((premiere?.items.length ?? 0) >= PAGE);
+  }, [premiere]);
+
+  async function charger(curseur: string) {
+    setEnCours(true);
+    try {
+      const page = await api.mesReservations({ onglet, limite: PAGE, avant: curseur });
+      setSuite((avant) => [...avant, ...page.items]);
+      setPleine(page.items.length >= PAGE);
+    } finally {
+      setEnCours(false);
+    }
+  }
 
   // Le compteur est celui de la réponse, quel que soit l'onglet lu : il porte
   // sur tout l'historique.
@@ -384,7 +433,7 @@ export function HistoriqueScreen({
               {t('parcours.ongletAEnvoyerAide')}
             </Texte>
           ) : null}
-          {vue.items.map((reservation, rang) => (
+          {[...vue.items, ...suite].map((reservation, rang) => (
             <Apparition key={reservation.booking_id} rang={rang}>
               <CarteDeReservation
                 reservation={reservation}
@@ -395,6 +444,33 @@ export function HistoriqueScreen({
               />
             </Apparition>
           ))}
+
+          {/* **Le curseur est la dernière ligne reçue**, pas la dernière
+              rendue par la première page : sans cela, le second appui
+              redemanderait la page déjà lue, en boucle. Rien à proposer quand
+              la dernière page n'était pas pleine — un bouton qui ne ramène
+              jamais rien fait douter de la fin de liste. */}
+          {pleine ? (
+            <Pressable
+              testID="voir-plus-historique"
+              accessibilityRole="button"
+              disabled={enCours}
+              onPress={() => {
+                const bout = [...vue.items, ...suite].at(-1);
+                if (bout) void charger(bout.created_at);
+              }}
+              style={({ pressed }) => ({
+                opacity: pressed || enCours ? 0.7 : 1,
+                minHeight: 44,
+                alignItems: 'center',
+                justifyContent: 'center',
+              })}
+            >
+              <Texte variante="type.label" couleur="brand.700">
+                {t(enCours ? 'annuaire.chargement' : 'annuaire.voirPlus')}
+              </Texte>
+            </Pressable>
+          ) : null}
         </View>
       )}
     </Ecran>
