@@ -60,6 +60,7 @@ import { messageDObstacle } from './obstacle';
 import { AGES } from './cacheDesReponses';
 import { BlocPositionRefusee } from './fil/BlocPositionRefusee';
 import { SectionFilPopulaire } from './fil/SectionFilPopulaire';
+import { RayonDeRecherche } from './mur/RayonDeRecherche';
 import { useRequete } from './useRequete';
 
 const CODES_CONNUS = new Set(Object.keys(en.errors));
@@ -422,6 +423,14 @@ export function FilScreen({
               // puis la tête de la section ouverte.
               entete: (
                 <>
+                  {/* **Le rayon se règle ici, au kilomètre.** Le bas du mur
+                      propose des élargissements — « à 25 km, douze salons » —
+                      qui répondent à « où y a-t-il quelque chose ». Celui-ci
+                      répond à « jusqu'où j'accepte d'aller », et deux paliers
+                      fixes ne pouvaient pas le dire. */}
+                  <View style={{ paddingHorizontal: MARGE, paddingBottom: 16 }}>
+                    <RayonDeRecherche rayonKm={rayonKm} onChange={setRayonKm} />
+                  </View>
                   <View style={{ paddingHorizontal: MARGE, paddingBottom: 16 }}>
                     <Obstacles fil={filPret!} />
                   </View>
@@ -481,7 +490,12 @@ export function FilScreen({
         </View>
       }
       vide={
-        <View style={{ paddingHorizontal: MARGE }}>
+        <View style={{ paddingHorizontal: MARGE, gap: 16 }}>
+        {/* **Présent sur le vide aussi, et c'est là qu'il sert le plus.** Un
+            fil vide est exactement le moment où l'on veut chercher plus loin ;
+            l'offrir seulement quand il y a des résultats le rendrait absent de
+            l'écran qui le réclame. */}
+        <RayonDeRecherche rayonKm={rayonKm} onChange={setRayonKm} testID="rayon-du-vide" />
         <RaisonDuVide
           obstacles={filPret?.obstacles ?? []}
           issues={issues}

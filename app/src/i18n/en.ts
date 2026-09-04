@@ -437,7 +437,8 @@ export const en = {
     rangeeSuiteUn: 'One more, further out.',
     // Une annulation, pas une issue chiffrée : elle ramène à ce qu'on a vu.
     murResserrer: 'Back to {{rayon}} km',
-    filRayon: '{{rayon}} km',
+    filRayon: 'Search radius · {{rayon}} km',
+    filRayonAide: 'How far you are willing to go',
     filSansPosition: 'We need your location to show places near you.',
     filAutoriser: 'Share my location',
     filPositionEnCours: 'Getting your location…',
