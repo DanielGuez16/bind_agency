@@ -71,8 +71,8 @@ export const en = {
   tiers: {
     // 11c · les prestations d'un palier. Deux nombres dans la même phrase,
     // et ils comptent tous deux des prestations.
-    prestationsTitre: 'Open to you',
-    prestationsOuvertes: '{{count}} services open to you',
+    prestationsTitre: 'What you can book',
+    prestationsOuvertes: '{{count}} services you can book',
     prestationsPartout: 'Across every business on BIND.',
     // Deux grandeurs, chacune nommée : neuf prestations chez un seul salon et
     // neuf chez six sont deux offres très différentes.
@@ -358,8 +358,8 @@ export const en = {
     // Deux clés plutôt qu'un pluriel : le produit choisit entre deux clés
     // là où ça compte, et une créatrice à qui une seule prestation est
     // ouverte est le cas du premier jour, pas le cas limite.
-    filPrestationsOuverteUne: 'One service is open to you',
-    filPrestationsOuvertes: '{{count}} services are open to you',
+    filPrestationsOuverteUne: 'One service you can book',
+    filPrestationsOuvertes: '{{count}} services you can book',
     // Le mot qui nomme ce qu'on ouvre. « Paliers » est un mot du produit
     // qu'il faut déjà connaître pour vouloir appuyer dessus.
     filPourquoi: 'Why',
@@ -405,7 +405,7 @@ export const en = {
     filDecouvrir: 'Discover',
     // Deux phrases distinctes et non une à trou : « 6 nail services » place la
     // catégorie avant le nom commun, ce que l'espagnol n'ordonne pas ainsi.
-    murServicesOuverts: '{{salons}} salons · {{count}} services open to you in {{quartier}}',
+    murServicesOuverts: '{{salons}} salons · {{count}} services you can book in {{quartier}}',
     murServicesDeCategorie: '{{salons}} salons · {{count}} {{categorie}} services in {{quartier}}',
     murLePlusPres: 'Closest to you',
     murToutVoir: 'All {{count}}',
@@ -413,8 +413,8 @@ export const en = {
     // **Sans le quartier.** Il est déjà écrit deux lignes plus haut, dans la
     // ligne du salon ; répété ici, il faisait lire le compte comme un total du
     // quartier.
-    carteServicesOuverts: '{{count}} services open to you',
-    carteServiceOuvertUn: 'One service open to you',
+    carteServicesOuverts: '{{count}} services you can book',
+    carteServiceOuvertUn: 'One service you can book',
     carteEtEncore: 'and {{count}} more inside',
     // **Toutes, jamais une seule.** `favoris.garder`/`favoris.retirer`
     // nomment une prestation ; ce cœur-ci en garde plusieurs d'un geste, et

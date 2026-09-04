@@ -66,8 +66,8 @@ export const es: Catalogue = {
     rien_autourCorps: 'Tus niveles están abiertos: simplemente no hay negocios que los ofrezcan tan cerca. Prueba con un radio mayor.',
   },
   tiers: {
-    prestationsTitre: 'Abierto para ti',
-    prestationsOuvertes: '{{count}} servicios abiertos para ti',
+    prestationsTitre: 'Lo que puedes reservar',
+    prestationsOuvertes: '{{count}} servicios que puedes reservar',
     prestationsPartout: 'En todos los locales de BIND.',
     prestationsDontProches: '{{count}} a menos de {{rayon}} km, en {{salons}} locales.',
     prestationsProches: 'Cerca',
@@ -339,8 +339,8 @@ export const es: Catalogue = {
     // Deux clés plutôt qu'un pluriel : le produit choisit entre deux clés
     // là où ça compte, et une créatrice à qui une seule prestation est
     // ouverte est le cas du premier jour, pas le cas limite.
-    filPrestationsOuverteUne: 'Una prestación está abierta para ti',
-    filPrestationsOuvertes: '{{count}} prestaciones están abiertas para ti',
+    filPrestationsOuverteUne: 'Un servicio que puedes reservar',
+    filPrestationsOuvertes: '{{count}} servicios que puedes reservar',
     // Le mot qui nomme ce qu'on ouvre. « Paliers » est un mot du produit
     // qu'il faut déjà connaître pour vouloir appuyer dessus.
     filPourquoi: 'Por qué',
@@ -375,13 +375,13 @@ export const es: Catalogue = {
     // « servicios de uñas » et non « uñas servicios » : la catégorie suit le
     // nom commun en espagnol. C'est pour cela que les deux phrases sont deux
     // clés et non une seule avec un mot en plus.
-    murServicesOuverts: '{{salons}} salones · {{count}} servicios abiertos para ti en {{quartier}}',
+    murServicesOuverts: '{{salons}} salones · {{count}} servicios que puedes reservar en {{quartier}}',
     murServicesDeCategorie: '{{salons}} salones · {{count}} servicios de {{categorie}} en {{quartier}}',
     murLePlusPres: 'Lo más cerca de ti',
     murToutVoir: 'Ver los {{count}}',
     murEncoreIci: '+{{count}} más aquí',
-    carteServicesOuverts: '{{count}} servicios abiertos para ti',
-    carteServiceOuvertUn: 'Un servicio abierto para ti',
+    carteServicesOuverts: '{{count}} servicios que puedes reservar',
+    carteServiceOuvertUn: 'Un servicio que puedes reservar',
     carteEtEncore: 'y {{count}} más dentro',
     carteCoeurGarder: 'Guardar los {{count}} servicios de {{nom}}',
     carteCoeurGarderUn: 'Guardar este servicio de {{nom}}',
