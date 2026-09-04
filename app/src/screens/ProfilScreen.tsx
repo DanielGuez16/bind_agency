@@ -21,6 +21,7 @@ import { Pressable, View } from 'react-native';
 
 import { useApi, type AudienceDuCompte } from '../api';
 import { EnTeteDEcran, Icone, Photo, SkeletonLignes, Texte } from '../components';
+import { formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { radius, useColors } from '../theme';
 import { Ecran } from './Ecran';
@@ -51,12 +52,37 @@ export function ProfilScreen({
   const { t } = useI18n();
   const c = useColors();
 
-  const requete = useRequete<AudienceDuCompte[]>((signal) => api.monAudience(signal), {
-    // **Jamais vide.** Une créatrice sans réseau rattaché a quand même un
-    // profil : ses favoris et ses réglages vivent ici. Rendre l'état vide
-    // fermerait la porte des réglages à qui n'a pas encore branché de compte.
-    estVide: () => false,
-  });
+  /**
+   * L'audience, et **combien de favoris attendent derrière leur porte**.
+   *
+   * **Ensemble, en un seul cycle d'attente.** Deux `useRequete` feraient deux
+   * squelettes et deux erreurs possibles sur un écran qui n'a qu'un état.
+   *
+   * **Le compte ne bloque pas le profil.** Il situe, il ne conditionne rien :
+   * si sa route échoue, la rangée se tait et les portes restent ouvertes. Un
+   * profil qui refuserait de s'afficher parce qu'on n'a pas su compter des
+   * favoris serait le défaut qu'on vient de corriger ailleurs, à l'envers.
+   *
+   * **Le même nombre que la pastille du fil**, et par la même source : la
+   * route rend la liste entière, sans plafond, donc sa longueur est le total
+   * que `fil.favoris_total` annonce. Deux façons de compter la même chose
+   * finiraient par diverger.
+   */
+  const requete = useRequete<{ comptes: AudienceDuCompte[]; favoris: number | null }>(
+    async (signal) => {
+      const [comptes, favoris] = await Promise.all([
+        api.monAudience(signal),
+        api.mesFavoris(signal).then((liste) => liste.length).catch(() => null),
+      ]);
+      return { comptes, favoris };
+    },
+    {
+      // **Jamais vide.** Une créatrice sans réseau rattaché a quand même un
+      // profil : ses favoris et ses réglages vivent ici. Rendre l'état vide
+      // fermerait la porte des réglages à qui n'a pas encore branché de compte.
+      estVide: () => false,
+    },
+  );
 
   return (
     <Ecran
@@ -90,7 +116,7 @@ export function ProfilScreen({
         />
       }
     >
-      {(comptes) => {
+      {({ comptes, favoris }) => {
         const tete = compteDeTete(comptes);
         const photo = tete?.avatar_key ? api.urlDeLaVignette(tete.avatar_key) : null;
 
@@ -137,6 +163,7 @@ export function ProfilScreen({
               />
               <Ligne
                 titre={t('profil.favoris')}
+                compte={favoris ?? undefined}
                 onPress={onFavoris}
                 testID="vers-les-favoris"
               />
@@ -157,20 +184,35 @@ export function ProfilScreen({
 /** Une destination du profil. Le chevron dit qu'il y a un écran derrière. */
 function Ligne({
   titre,
+  compte,
   onPress,
   dernier,
   testID,
 }: {
   titre: string;
+  /**
+   * Combien il y a derrière la porte. Absent : la rangée se tait.
+   *
+   * **Et zéro se tait aussi.** Une rangée qui affiche « 0 » apprend à ne plus
+   * regarder le chiffre — c'est la règle que la pastille du fil applique déjà
+   * pour le même nombre. Le titre suffit alors : la porte reste ouverte, elle
+   * ne promet simplement rien.
+   */
+  compte?: number;
   onPress: () => void;
   dernier?: boolean;
   testID: string;
 }) {
+  const { locale } = useI18n();
   const c = useColors();
+  const chiffre = compte !== undefined && compte > 0 ? formatNumber(compte, locale) : null;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={titre}
+      // **Le compte entre dans le nom du bouton.** Un chiffre posé à côté d'un
+      // libellé n'existe pas pour un lecteur d'écran, et c'est précisément
+      // l'information qui évite d'ouvrir pour rien.
+      accessibilityLabel={chiffre === null ? titre : `${titre} — ${chiffre}`}
       onPress={onPress}
       testID={testID}
       style={({ pressed }) => ({
@@ -186,6 +228,11 @@ function Ligne({
       <Texte variante="type.body" style={{ flex: 1, minWidth: 0 }}>
         {titre}
       </Texte>
+      {chiffre === null ? null : (
+        <Texte variante="type.label" couleur="ink.soft" testID={`${testID}-compte`}>
+          {chiffre}
+        </Texte>
+      )}
       <Icone nom="chevron" couleur="ink.soft" taille={20} />
     </Pressable>
   );
