@@ -152,6 +152,15 @@ export const en = {
     titre: 'Creators on BIND',
     sousTitre: 'Everyone you can reach from here. Sorted by access first, then by distance.',
     trieePar: 'Sorted by access, then distance',
+    filtres: 'Filters',
+    filtresAucun: 'Showing everyone in your radius',
+    filtresPoses: '{combien} active',
+    filtrePalier: 'Format they can book',
+    filtreReseau: 'Network',
+    filtreInterets: 'What they cover',
+    filtreInteretsAide:
+      'Creators who declared none are left out while this is set, the same way an unknown distance is.',
+    filtreDistance: 'Limit the distance',
     affichees: '{{combien}} of {{total}}',
     voirPlus: 'See more',
     chargement: 'Loading…',
@@ -1549,6 +1558,18 @@ export const en = {
    * lire exactement le même mot. Deux traductions du même intérêt se
    * liraient comme deux intérêts.
    */
+  /**
+   * Les réseaux par leur nom.
+   *
+   * **Des noms propres, donc identiques dans les deux langues** — et pourtant
+   * ici, parce qu'une chaîne écrite en dur dans un écran est une chaîne que
+   * personne ne retrouve le jour où elle doit changer. `lienInstagram` faisait
+   * déjà exactement cela, à un endroit.
+   */
+  reseaux: {
+    instagram: 'Instagram',
+    tiktok: 'TikTok',
+  },
   interets: {
     coiffure: 'Hair',
     ongles: 'Nails',

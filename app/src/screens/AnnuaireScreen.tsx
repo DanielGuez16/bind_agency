@@ -56,6 +56,13 @@ import { useGabarit } from '../shell/gabarit';
 import { elevationDeCarte, radius, useColors } from '../theme';
 import { Ecran } from './Ecran';
 import { nomDePlateforme } from './obstacle';
+import {
+  AUCUN_FILTRE,
+  FiltresDeLAnnuaire,
+  cleDesFiltres,
+  enRequete,
+  type FiltresAnnuaire,
+} from './annuaire/FiltresDeLAnnuaire';
 import { useRequete } from './useRequete';
 
 /** Le code que le serveur rend à un commerce sans abonnement vivant. */
@@ -111,9 +118,18 @@ export function AnnuaireScreen({
   const c = useColors();
   const { large } = useGabarit();
 
+  const [filtres, setFiltres] = useState<FiltresAnnuaire>(AUCUN_FILTRE);
+  // Une chaîne, et non l'objet : les dépendances se comparent par identité, et
+  // un objet reconstruit à chaque rendu relancerait la requête en boucle.
+  const cle = cleDesFiltres(filtres);
+
   const requete = useRequete<AnnuaireDuCommerce>(
-    (signal) => api.annuaireDesCreateurs(businessId, { limite: PAGE }, signal),
-    { estVide: (annuaire) => annuaire.createurs.length === 0, dependances: [businessId] },
+    (signal) =>
+      api.annuaireDesCreateurs(businessId, { limite: PAGE, ...enRequete(filtres) }, signal),
+    {
+      estVide: (annuaire) => annuaire.createurs.length === 0,
+      dependances: [businessId, cle],
+    },
   );
 
   // Les pages suivantes vivent à côté de la première, et non dans la requête :
@@ -124,9 +140,14 @@ export function AnnuaireScreen({
 
   // La première page change quand le salon change : la suite doit repartir de
   // zéro, sinon les créatrices d'un autre salon restent collées dessous.
+  // **Et quand un filtre bouge, pour la même raison.** Sans cette dépendance,
+  // les pages déjà chargées restent collées sous une première page filtrée :
+  // l'écran montrerait des créatrices que le filtre vient d'écarter, sous un
+  // total qui, lui, les compte plus. C'est le défaut que la remise à zéro par
+  // salon évitait déjà, avec une seconde cause.
   useEffect(() => {
     setSuite([]);
-  }, [businessId]);
+  }, [businessId, cle]);
 
   // **Le refus d'abonnement n'est pas une panne.** L'écran d'erreur générique
   // proposerait « réessayer », ce qui ne mène nulle part : il n'y a rien à
@@ -219,6 +240,12 @@ export function AnnuaireScreen({
           <Texte variante="type.caption" couleur="ink.soft" testID="ordre-de-la-grille">
             {t('annuaire.trieePar')}
           </Texte>
+
+          {/* **Après le compte et l'ordre, pas avant.** Le salon arrive pour
+              voir combien de créatrices sont à sa portée ; lui présenter un
+              formulaire d'abord ferait passer l'annuaire pour une recherche
+              alors que sa réponse par défaut est déjà la bonne. */}
+          <FiltresDeLAnnuaire filtres={filtres} onChange={setFiltres} />
         </View>
       ),
       elements: createurs.map((createur) => ({
@@ -247,6 +274,10 @@ export function AnnuaireScreen({
                   .annuaireDesCreateurs(businessId, {
                     limite: PAGE,
                     decalage: createurs.length,
+                    // Les mêmes filtres que la première page : un décalage
+                    // calculé sur une liste filtrée et servi sans filtre
+                    // rendrait une page qui ne suit pas la précédente.
+                    ...enRequete(filtres),
                   })
                   .then((page) => setSuite((avant) => [...avant, ...page.createurs]))
                   .finally(() => setEnCours(false));
@@ -650,6 +681,22 @@ function FicheDeCreateur({ createur }: { createur: CreateurDeLAnnuaire }) {
             testID={`bio-${createur.creator_id}`}
           >
             {createur.bio}
+          </Texte>
+        ) : null}
+
+        {/* **Ce sur quoi le filtre a trié, écrit sur la ligne qu'il a
+            retenue.** Un tri qui ne dit pas sur quoi il a trié se lit comme
+            une liste tronquée au hasard : le salon qui filtre sur « ongles »
+            doit voir le mot sur chaque fiche, sinon il doute du filtre plutôt
+            que du marché. Vide tant que la créatrice n'a rien déclaré, ce qui
+            est le cas de la majorité tant que l'écran de saisie est neuf. */}
+        {createur.interets.length > 0 ? (
+          <Texte
+            variante="type.caption"
+            couleur="ink.soft"
+            testID={`interets-${createur.creator_id}`}
+          >
+            {createur.interets.map((valeur) => t(`interets.${valeur}`)).join(' · ')}
           </Texte>
         ) : null}
       </View>

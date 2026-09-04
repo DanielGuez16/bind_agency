@@ -145,6 +145,15 @@ export const es: Catalogue = {
     titre: 'Creadores en BIND',
     sousTitre: 'Todo el mundo al que puedes llegar desde aquí. Ordenado por acceso primero, luego por distancia.',
     trieePar: 'Ordenado por acceso, luego por distancia',
+    filtres: 'Filtros',
+    filtresAucun: 'Mostrando a todo el mundo en tu radio',
+    filtresPoses: '{combien} activos',
+    filtrePalier: 'Formato que pueden reservar',
+    filtreReseau: 'Red',
+    filtreInterets: 'Lo que cubren',
+    filtreInteretsAide:
+      'Las creadoras que no han declarado ninguno quedan fuera mientras esto esté puesto, igual que una distancia desconocida.',
+    filtreDistance: 'Limitar la distancia',
     affichees: '{{combien}} de {{total}}',
     voirPlus: 'Ver más',
     chargement: 'Cargando…',
@@ -1363,6 +1372,10 @@ export const es: Catalogue = {
     museum: 'Museo',
     family_activity: 'Actividad familiar',
     other: 'Otro',
+  },
+  reseaux: {
+    instagram: 'Instagram',
+    tiktok: 'TikTok',
   },
   interets: {
     coiffure: 'Peluquería',
