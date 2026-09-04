@@ -372,7 +372,7 @@ const ECRANS = [
         onMonAudience={() => {}}
       />
     ),
-    plein: { '/me/audience': [COMPTE] },
+    plein: { '/me/audience': [COMPTE], '/me/favorites': [] },
     // **Pas d'état vide, et c'est une décision.** Une créatrice sans réseau
     // rattaché a quand même un profil : ses favoris et ses réglages vivent ici.
     // Rendre le vide fermerait la porte des réglages à qui n'a pas encore
@@ -934,5 +934,59 @@ describe('mes publications : le filtre part au serveur, et la liste se continue'
     await waitFor(() => expect(screen.getByTestId('liste-des-publications')).toBeTruthy());
 
     expect(screen.queryByTestId('voir-plus-publications')).toBeNull();
+  });
+});
+
+describe('la rangée des favoris dit combien attendent derrière', () => {
+  /** Deux favoris servis, et rien d'autre à raconter sur eux ici. */
+  const favoris = (combien: number) =>
+    Array.from({ length: combien }, (_, i) => ({ catalog_item_id: `i${i}` }));
+
+  function profil() {
+    return (
+      <ProfilScreen
+        onReglages={() => {}}
+        onMesPublications={() => {}}
+        onFavoris={() => {}}
+        onMonAudience={() => {}}
+      />
+    );
+  }
+
+  it('écrit le compte, et se tait à zéro', async () => {
+    // **Zéro se tait**, comme la pastille du fil pour le même nombre : une
+    // rangée qui affiche « 0 » apprend à ne plus regarder le chiffre. C'est le
+    // cas qui sépare les deux implémentations — en n'écrivant que le cas
+    // plein, une rangée qui afficherait toujours le nombre passerait.
+    const avec = await monter(
+      profil(),
+      clientDe({ '/me/audience': [COMPTE], '/me/favorites': favoris(3) }),
+    );
+    await waitFor(() => expect(screen.getByTestId('vers-les-favoris-compte')).toBeTruthy());
+    expect(screen.getByTestId('vers-les-favoris-compte')).toHaveTextContent('3');
+    // Le compte entre dans le nom du bouton : un chiffre à côté d'un libellé
+    // n'existe pas pour un lecteur d'écran.
+    expect(screen.getByTestId('vers-les-favoris').props.accessibilityLabel).toContain('3');
+    await avec.unmount();
+
+    await monter(profil(), clientDe({ '/me/audience': [COMPTE], '/me/favorites': [] }));
+    await waitFor(() => expect(screen.getByTestId('vers-les-favoris')).toBeTruthy());
+    expect(screen.queryByTestId('vers-les-favoris-compte')).toBeNull();
+  });
+
+  it('et le profil s’affiche quand même si le compte ne se charge pas', async () => {
+    // Le compte situe, il ne conditionne rien : un profil qui refuserait de
+    // s'ouvrir parce qu'on n'a pas su compter des favoris enfermerait dehors.
+    await monter(
+      profil(),
+      clientQui(async (url) => {
+        if (url.includes('/me/favorites')) throw new Error('boom');
+        return [COMPTE];
+      }),
+    );
+    await waitFor(() => expect(screen.getByTestId('vers-les-favoris')).toBeTruthy());
+
+    expect(screen.queryByTestId('vers-les-favoris-compte')).toBeNull();
+    expect(screen.getByTestId('vers-mon-audience')).toBeTruthy();
   });
 });
