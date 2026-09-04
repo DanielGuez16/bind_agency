@@ -57,6 +57,7 @@ from app.models.enums import (
     BookingStatus,
     BusinessCategory,
     BusinessStatus,
+    CentreDInteret,
     JobStatus,
     JobType,
     Locale,
@@ -536,6 +537,7 @@ async def _creer(
     nom: str | None = None,
     ville: str | None = None,
     bio: str | None = None,
+    interets: list[CentreDInteret] | None = None,
     media_count: int | None = None,
     token_ttl: timedelta = timedelta(days=60),
 ) -> tuple[User, SocialAccount]:
@@ -562,6 +564,7 @@ async def _creer(
             ("last_name", nom),
             ("city", ville),
             ("bio", bio),
+            ("interests", interets),
         )
         if valeur is not None
     }
@@ -607,6 +610,7 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
         nom="Rojas",
         ville="Little Havana",
         bio="Recién empiezo. Uñas y peinados, y me encanta grabar el antes y el después.",
+        interets=[CentreDInteret.ONGLES, CentreDInteret.COIFFURE],
     )
 
     # 2. Confirmée : tous les paliers ouverts, et c'est elle qui parcourra le
@@ -620,6 +624,11 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
         nom="Alvarez",
         ville="Wynwood",
         bio="Beauty and wellness in Wynwood and Little Haiti. Reels first, always same-day.",
+        interets=[
+            CentreDInteret.MAQUILLAGE,
+            CentreDInteret.SOIN_DU_VISAGE,
+            CentreDInteret.MASSAGE_ET_SPA,
+        ],
     )
 
     # 3. Plafonnée : l'audience ouvrirait tout, le score ferme le haut. Le score
@@ -634,6 +643,7 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
         nom="Duarte",
         ville="Wynwood",
         bio="Barbería y cuidado masculino. Grabo en corto, publico el mismo día.",
+        interets=[CentreDInteret.COIFFURE],
     )
 
     # 4. En vérification : l'écran persistant, daté, sans promesse de délai.
@@ -646,6 +656,7 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
         nom="Iglesias",
         ville="Brickell",
         bio="Spa y bienestar en Brickell. Prefiero formatos tranquilos, sin prisa.",
+        interets=[CentreDInteret.MASSAGE_ET_SPA, CentreDInteret.SOIN_DU_VISAGE],
         # Peu de publications pour un compte de cette taille : c'est le signal
         # de volume qui manque, et le contrôle de cohérence le relève de
         # lui-même. Rien n'est forcé.
@@ -664,6 +675,14 @@ async def creer_les_createurs(session: AsyncSession) -> dict[str, tuple[User, So
         nom="Costa",
         ville="Design District",
         bio="Design District. Nails, skin, and the occasional coffee shop.",
+        # Trois, dont un que le catalogue actuel ne sert pas : le filtre
+        # « café et brunch » doit pouvoir rendre une créatrice sans qu'aucun
+        # salon ne corresponde. C'est un état vrai du marché, pas une panne.
+        interets=[
+            CentreDInteret.ONGLES,
+            CentreDInteret.SOIN_DU_VISAGE,
+            CentreDInteret.CAFE_ET_BRUNCH,
+        ],
         # **Le jeton est vivant ici, et meurt plus bas.** Il naissait périmé, ce
         # qui interdisait à Nina de réserver quoi que ce soit : son écran de
         # paliers montrait un obstacle sur une créatrice qui n'avait jamais rien
