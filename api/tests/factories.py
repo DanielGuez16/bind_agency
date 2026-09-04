@@ -11,6 +11,7 @@ from typing import Any
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from app.core.age import AGE_MINIMAL, NAISSANCE_DES_JEUX_DE_DONNEES
 from app.core.security import hash_password
 from app.models import (
     Booking,
@@ -68,10 +69,22 @@ PASSWORD_HASH = hash_password(PASSWORD)
 
 
 async def new_user(conn: AsyncConnection, **overrides: Any) -> uuid.UUID:
+    """Un compte inséré en SQL direct, sans passer par le service.
+
+    **La date de naissance et sa marque sont posées ici**, parce que la
+    contrainte `birth_date_unless_anonymized` les exige sur tout compte vivant.
+    C'est délibérément un décor et non une vérification : ce que le portail
+    refuse s'éprouve par le service et par la route, pas par une fabrique qui
+    contourne les deux. Elle pose donc l'état qu'un compte inscrit **aurait**,
+    pour que les autres décors n'aient rien à en dire.
+    """
     values: dict[str, Any] = {
         "role": UserRole.CREATOR,
         "email": f"{uuid.uuid4()}@example.com",
         "password_hash": PASSWORD_HASH,
+        "date_of_birth": NAISSANCE_DES_JEUX_DE_DONNEES,
+        "age_verified_at": datetime.now(UTC),
+        "age_minimum_applique": AGE_MINIMAL,
     } | overrides
     result = await conn.execute(sa.insert(User).values(**values).returning(User.id))
     return result.scalar_one()

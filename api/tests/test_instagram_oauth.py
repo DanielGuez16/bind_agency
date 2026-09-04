@@ -87,7 +87,7 @@ async def createur(client: AsyncClient) -> dict:
     password = "tourbillon-cactus-91-vermeil"
     created = await client.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": password, "role": UserRole.CREATOR.value},
+        json={"email": email, "password": password, "role": UserRole.CREATOR.value, "date_of_birth": "1992-04-17"},
     )
     assert created.status_code == 201, created.text
     tokens = (
@@ -363,7 +363,7 @@ async def test_seul_un_createur_demarre_un_parcours(client_ig: AsyncClient) -> N
     password = "tourbillon-cactus-91-vermeil"
     await client_ig.post(
         f"{PREFIX}/auth/register",
-        json={"email": email, "password": password, "role": UserRole.BUSINESS_MEMBER.value},
+        json={"email": email, "password": password, "role": UserRole.BUSINESS_MEMBER.value, "date_of_birth": "1992-04-17"},
     )
     tokens = (
         await client_ig.post(f"{PREFIX}/auth/login", json={"email": email, "password": password})

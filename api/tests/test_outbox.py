@@ -17,13 +17,14 @@ balayage des rappels, où un service injoignable laissait sans rappel toutes les
 """
 
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import date, UTC, datetime, timedelta
 
 import pytest
 import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 
+from app.core.age import NAISSANCE_DES_JEUX_DE_DONNEES
 from app.core.config import get_settings
 from app.integrations.email import EmailError, Message
 from app.integrations.push import Verdict
@@ -83,6 +84,7 @@ async def destinataire(session: AsyncSession, **overrides) -> User:
         email=overrides.pop("email", f"{uuid.uuid4()}@example.com"),
         password=MOT_DE_PASSE,
         role=UserRole.CREATOR,
+        date_of_birth=NAISSANCE_DES_JEUX_DE_DONNEES,
     )
 
 

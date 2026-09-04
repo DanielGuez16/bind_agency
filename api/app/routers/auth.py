@@ -44,6 +44,7 @@ async def register(payload: RegisterRequest, session: SessionDep) -> UserRead:
             email=payload.email,
             password=payload.password,
             role=payload.role,
+            date_of_birth=payload.date_of_birth,
             locale=payload.locale,
         )
     except auth_service.EmailAlreadyUsed as error:

@@ -6,12 +6,13 @@ erreurs en codes HTTP. Aucune règle d'accès n'est écrite ailleurs.
 
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import age
 from app.core.config import get_settings
 from app.core.security import (
     InvalidToken,
@@ -71,14 +72,34 @@ async def register(
     email: str,
     password: str,
     role: UserRole,
+    date_of_birth: date,
     locale: Locale = Locale.EN,
 ) -> User:
+    """Crée un compte, et refuse d'en créer un sans portail d'âge franchi.
+
+    **`date_of_birth` est requis, sans défaut, et c'est tout le mécanisme.** Un
+    défaut ici ouvrirait un chemin de production qui contourne le portail — et
+    ce chemin serait précisément celui qu'on emprunte sans y penser. Les décors
+    de test ont le leur, dans leurs enveloppes ; le service n'en a pas.
+
+    **Le seuil est recopié sur le compte, pas seulement appliqué.** Il vaut
+    dix-huit aujourd'hui ; s'il changeait, une marque posée sous l'ancienne
+    règle dirait « vérifié » sans dire contre quoi.
+    """
+    # Vérifié une seconde fois, après le schéma. Ce n'est pas une redite : le
+    # schéma garde la route HTTP, ceci garde **le service**, qu'un seed ou une
+    # reprise de données appellent sans passer par Pydantic.
+    age.verifier(date_of_birth)
+
     user = User(
         email=normalize_email(email),
         password_hash=hash_password(password),
         role=role,
         locale=locale,
         status=UserStatus.ACTIVE,
+        date_of_birth=date_of_birth,
+        age_verified_at=datetime.now(UTC),
+        age_minimum_applique=age.AGE_MINIMAL,
     )
     session.add(user)
 

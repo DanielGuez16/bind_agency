@@ -32,6 +32,7 @@ import httpx
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.age import NAISSANCE_DES_JEUX_DE_DONNEES
 from app.integrations import photos_reelles
 from app.integrations.demo_images import COUVERTURE, PRESTATION, image
 from app.integrations.object_store import ObjectStoreError, get_object_store
@@ -93,6 +94,9 @@ async def _inscrire_verifie(session, **kwargs):
     """
     from app.services import email_verification as _verif
 
+    # Le défaut du portail vit dans les enveloppes, jamais dans `register` :
+    # un défaut au service ouvrirait un chemin de production qui le contourne.
+    kwargs.setdefault("date_of_birth", NAISSANCE_DES_JEUX_DE_DONNEES)
     user = await auth_service.register(session, **kwargs)
     jeton = await _verif.emettre(session, user=user)
     await _verif.confirmer(session, jeton=jeton)
@@ -2047,6 +2051,7 @@ async def poser_les_fiches_de_terrain(session: AsyncSession) -> int:
             email=f"terrain{rang}@bind.example",
             password=MOT_DE_PASSE,
             terms_version=get_settings().terms_version,
+            date_of_birth=NAISSANCE_DES_JEUX_DE_DONNEES,
         )
 
     await session.flush()

@@ -33,7 +33,7 @@ import hashlib
 import secrets
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from enum import StrEnum
 
 import sqlalchemy as sa
@@ -501,6 +501,7 @@ async def prendre_en_main(
     email: str,
     password: str,
     terms_version: str,
+    date_of_birth: date,
     locale: Locale = Locale.EN,
     maintenant: datetime | None = None,
 ) -> tuple[User, Business]:
@@ -528,6 +529,7 @@ async def prendre_en_main(
         email=email,
         password=password,
         role=UserRole.BUSINESS_MEMBER,
+        date_of_birth=date_of_birth,
         locale=locale,
     )
     await _assumer(

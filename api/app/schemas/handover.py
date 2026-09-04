@@ -1,10 +1,12 @@
 """Schémas de la fiche préparée et de sa prise en main."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
+from app.core import age, passwords
+from app.schemas.auth import PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH
 from app.models.enums import BusinessStatus, HandoverChannel
 from app.services.handover import EtatDeLaTournee, Locale
 
@@ -70,8 +72,41 @@ class PriseEnMain(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     email: EmailStr
-    password: str = Field(min_length=8, max_length=200)
+    #: **Les mêmes bornes que l'inscription, depuis le 2026-09-04.** Ce champ
+    #: acceptait huit caractères là où `RegisterRequest` en exige douze : deux
+    #: portes vers le même produit, deux règles, et rien qui les compare. La
+    #: seconde était la moins visible, donc la plus facile à oublier — et c'est
+    #: par elle qu'on serait entré avec un mot de passe que l'autre refuse.
+    password: str = Field(min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
+    #: **Le même portail que l'inscription, et pour la même raison.** Sans lui,
+    #: la prise en main d'un salon devient le chemin qui contourne la
+    #: vérification d'âge : on n'a pas deux règles selon la porte qu'on pousse.
+    date_of_birth: date
     locale: Locale = Locale.EN
+
+    @field_validator("date_of_birth")
+    @classmethod
+    def _majeur(cls, valeur: date) -> date:
+        """Voir `RegisterRequest._majeur` : même règle, même code, même raison."""
+        try:
+            age.verifier(valeur)
+        except age.AgeRefuse as refus:
+            raise ValueError(str(refus)) from refus
+        return valeur
+
+    @model_validator(mode="after")
+    def _mot_de_passe_solide(self) -> "PriseEnMain":
+        """La force du mot de passe, vérifiée ici aussi.
+
+        **Elle ne l'était pas.** Seule la longueur minimale gardait cette porte,
+        et à huit caractères : `password` y passait, que l'inscription refuse
+        depuis toujours.
+        """
+        try:
+            passwords.verifier(self.password, email=self.email)
+        except passwords.MotDePasseFaible as faible:
+            raise ValueError(str(faible)) from faible
+        return self
     #: La version acceptée, telle que l'écran l'a montrée. Comparée à celle en
     #: vigueur : un booléen ne dirait pas *quoi* a été accepté.
     terms_version: str = Field(min_length=1, max_length=50)

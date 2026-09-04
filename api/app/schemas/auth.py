@@ -1,11 +1,11 @@
 """Schémas d'entrée et de sortie de l'authentification."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
-from app.core import passwords
+from app.core import age, passwords
 from app.models.enums import Locale, UserRole, UserStatus
 
 # Les deux bornes restent ici pour les schémas ; la **force**, elle, vit dans
@@ -21,6 +21,30 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
     role: UserRole
     locale: Locale = Locale.EN
+    #: **Une date, jamais une case à cocher.** « Je certifie avoir 18 ans » se
+    #: recoche après un refus et suggère sa propre bonne réponse ; c'est la
+    #: forme que la FTC a sanctionnée. Le champ est requis : un portail
+    #: facultatif n'est pas un portail.
+    date_of_birth: date
+
+    @field_validator("date_of_birth")
+    @classmethod
+    def _majeur(cls, valeur: date) -> date:
+        """**Validateur de champ, contrairement au mot de passe.**
+
+        La règle ne croise rien : un âge se juge sur une date seule. Et le
+        `loc` du refus nomme alors le champ, là où le validateur de modèle du
+        mot de passe rapporte sur le corps entier — ce qui a rendu six messages
+        muets jusqu'à ce qu'on porte le code du refus dans la réponse.
+
+        Le code remonte tel quel dans le 422 : l'interface le traduit, et une
+        phrase écrite ici n'existerait qu'en anglais.
+        """
+        try:
+            age.verifier(valeur)
+        except age.AgeRefuse as refus:
+            raise ValueError(str(refus)) from refus
+        return valeur
 
     @model_validator(mode="after")
     def _mot_de_passe_solide(self) -> "RegisterRequest":

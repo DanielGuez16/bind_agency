@@ -9,13 +9,14 @@ il ne peut simplement pas engager quelqu'un d'autre.
 """
 
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import date, UTC, datetime, timedelta
 
 import pytest
 import sqlalchemy as sa
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.age import NAISSANCE_DES_JEUX_DE_DONNEES
 from app.core.config import get_settings
 from app.models import EmailVerification, User
 from app.models.enums import Locale, UserRole, UserStatus
@@ -33,6 +34,7 @@ async def inscrit(session: AsyncSession, *, locale: Locale = Locale.EN) -> User:
         email=f"{uuid.uuid4()}@example.com",
         password=MOT_DE_PASSE,
         role=UserRole.CREATOR,
+        date_of_birth=NAISSANCE_DES_JEUX_DE_DONNEES,
         locale=locale,
     )
 
