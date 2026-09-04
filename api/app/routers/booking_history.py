@@ -33,6 +33,7 @@ async def read_history(
     user: CurrentUser,
     session: SessionDep,
     status: Annotated[list[BookingStatus] | None, Query()] = None,
+    onglet: Annotated[service.OngletDuCreateur | None, Query()] = None,
     avant: Annotated[datetime | None, Query()] = None,
     limite: Annotated[int, Query(ge=1, le=service.PAGE_MAXIMUM)] = service.PAGE_PAR_DEFAUT,
 ) -> HistoriqueDuCreateurRead:
@@ -49,6 +50,7 @@ async def read_history(
         session,
         creator_id=user.id,
         statuts=frozenset(status) if status else None,
+        onglet=onglet,
         avant=avant,
         limite=limite,
     )

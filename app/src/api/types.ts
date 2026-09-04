@@ -616,6 +616,16 @@ export type OffreDeLaFiche = {
 };
 
 export type FichePublique = {
+  /**
+   * La version des conditions en vigueur, celle que l'écran de réservation
+   * montre avant de faire accepter.
+   *
+   * **Servie et non écrite en dur.** Ce que l'écran fait accepter doit être ce
+   * qu'il a montré : une version constante dans l'app annoncerait encore
+   * l'ancienne le jour où le texte change, et le serveur refuserait l'écart —
+   * ce refus n'a de sens que si la version vient de lui.
+   */
+  terms_version: string;
   business_id: string;
   name: string;
   category: BusinessCategory;
@@ -851,21 +861,21 @@ export type ReservationDuCreateur = {
   contrepartie: ContrepartieBreve | null;
 };
 
+/** Les quatre onglets de l'écran des réservations, nommés par le serveur. */
+export type OngletDesReservations = 'a-venir' | 'en-cours' | 'en-revue' | 'terminees';
+
 export type HistoriqueDuCreateur = {
   items: ReservationDuCreateur[];
   /** Tous les statuts, à zéro s'il le faut, calculés sur tout l'historique. */
   compteurs: Record<BookingStatus, number>;
   /**
-   * Le badge de l'onglet « à envoyer » : **ce qui attend un geste de la
-   * créatrice**, et rien d'autre.
+   * Un compte par onglet, sur tout l'historique.
    *
-   * **Servi, et non sommé depuis `compteurs`.** L'écran additionnait les
-   * statuts de l'onglet, ce qui répondait à une autre question : une
-   * publication soumise et en cours de contrôle est `consumed` elle aussi, et
-   * n'attend personne de ce côté. Le badge réclamait donc une action sur des
-   * dossiers où elle ne peut rien faire.
+   * **Nécessaire depuis qu'un onglet n'est plus un ensemble de statuts** :
+   * « à envoyer » et « en revue » portent tous les deux `consumed`, et
+   * `compteurs`, groupé par statut, les additionnerait.
    */
-  a_envoyer: number;
+  compteurs_par_onglet: Record<OngletDesReservations, number>;
 };
 
 /**

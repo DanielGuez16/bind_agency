@@ -32,6 +32,7 @@ from decimal import Decimal
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.models import Business, CapacityRule, CatalogItem, Tier, TierOffer
 from app.models.enums import BusinessCategory, BusinessStatus, ContentFormat, Platform
 from app.services import availability, business_menu, business_photos, eligibility, favorites
@@ -171,6 +172,19 @@ class FichePublique:
     #: « fermé le mardi » à quelqu'un qui regarde un mardi férié.
     horaires: tuple[PlageHebdomadaire, ...]
     offres: tuple[OffreDeLaFiche, ...]
+    #: La version des conditions en vigueur, celle que l'écran de réservation
+    #: montre avant de faire accepter.
+    #:
+    #: **Servie ici et pas sur l'offre**, alors que c'est l'offre qu'on réserve :
+    #: la fiche est un objet par écran, l'offre une ligne par prestation. Le
+    #: même mot répété douze fois dans la même réponse ne dirait rien de plus.
+    #:
+    #: **Et servie plutôt que constante côté client.** Ce que l'écran fait
+    #: accepter doit être ce qu'il a montré : une version en dur dans l'app
+    #: continuerait d'annoncer l'ancienne le jour où le texte change, et le
+    #: serveur enregistrerait une acceptation que personne n'a produite. Il
+    #: refuse l'écart, ce qui n'a de sens que si la version vient de lui.
+    terms_version: str
 
 
 def _obstacles_de(
@@ -313,6 +327,7 @@ async def fiche(
         )
 
     return FichePublique(
+        terms_version=get_settings().terms_version,
         business_id=business.id,
         name=business.name,
         category=business.category,

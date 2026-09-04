@@ -26,6 +26,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
+from enum import StrEnum
 from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
@@ -59,13 +60,49 @@ from app.models.enums import (
     Platform,
 )
 from app.services import availability, directory, eligibility, support
+from app.services import collaboration as collaboration_service
 from app.services.audit import AuditedEntity
 from app.services.booking_states import fin_de_l_annulation_libre, ouverture_de_l_absence
-from app.services.collaboration import ATTENDENT_LA_CREATRICE
 
 #: Une page d'historique. Au-delà, l'app pagine par `avant`.
 PAGE_PAR_DEFAUT = 50
 PAGE_MAXIMUM = 200
+
+
+class OngletDuCreateur(StrEnum):
+    """Les quatre onglets de l'écran des réservations.
+
+    **Ils vivent ici depuis qu'ils sont quatre, et c'est ce qui a changé.**
+    Le découpage était côté client : l'app envoyait une liste de `BookingStatus`
+    et le serveur l'appliquait. Ça tenait tant qu'un onglet valait un ensemble
+    de statuts de réservation — ce n'est plus vrai. « À envoyer » et « en revue »
+    portent **tous les deux** `consumed` ; ce qui les sépare est le statut de la
+    *contrepartie*, que le paramètre `status` ne sait pas exprimer.
+
+    Le motif est celui de `FiltreDeContrepartie`, côté commerce, qui a la même
+    forme depuis plus longtemps. La créatrice était le seul des deux côtés à ne
+    pas l'avoir.
+    """
+
+    #: Un rendez-vous existe, la prestation n'a pas eu lieu.
+    A_VENIR = "a-venir"
+    #: Servie, et la publication attend un geste de la créatrice.
+    A_ENVOYER = "en-cours"
+    #: Servie, la preuve est partie, le salon la contrôle. **Rien à faire de
+    #: votre côté** — et c'est précisément ce que l'onglet dit, là où la ligne
+    #: se noyait parmi celles qui appellent un geste.
+    EN_REVUE = "en-revue"
+    #: L'échange est clos, quelle qu'en soit la fin.
+    TERMINEES = "terminees"
+
+
+#: Ce qui distingue « en revue » du reste des dossiers servis.
+#:
+#: **Importé du service de contrepartie, jamais recopié.** C'est la même
+#: question que « ce que le commerce doit contrôler », posée depuis l'autre
+#: bord ; deux définitions finiraient par diverger, et c'est l'onglet qui
+#: mentirait.
+_EN_CONTROLE = collaboration_service.statuts_a_controler()
 
 
 @dataclass(frozen=True, slots=True)
@@ -194,19 +231,13 @@ class HistoriqueDuCreateur:
     #: trois ment dès la seconde. Les statuts sans réservation valent zéro et
     #: sont présents dans la clé : l'app n'a pas à connaître la liste.
     compteurs: dict[BookingStatus, int]
-    #: Combien de dossiers attendent **un geste de la créatrice**.
-    #:
-    #: **Servi, et non déduit d'un compteur de statuts.** Le badge de l'onglet
-    #: « à envoyer » sommait `compteurs['consumed']`, ce qui répondait à une
-    #: autre question : une publication soumise et en cours de contrôle est
-    #: `consumed` elle aussi, et elle n'attend personne de ce côté. Le badge
-    #: réclamait donc une action pour des dossiers où la créatrice ne peut rien
-    #: faire — et un chiffre qui demande sans qu'on puisse répondre finit par
-    #: ne plus rien demander du tout.
-    #:
-    #: Deux états seulement le nourrissent : le dossier jamais soumis, et celui
-    #: qu'on a renvoyé corriger.
-    a_envoyer: int
+    #: Un compte par onglet, sur tout l'historique. **Nécessaire depuis qu'un
+    #: onglet n'est plus un ensemble de statuts** : « à envoyer » et « en revue »
+    #: portent tous les deux `consumed`, et un `GROUP BY Booking.status` les
+    #: additionnerait. `compteurs` reste servi — il dit autre chose, l'état des
+    #: réservations, et le retirer casserait des lecteurs qui n'ont rien
+    #: demandé.
+    compteurs_par_onglet: dict[OngletDuCreateur, int]
 
 
 @dataclass(frozen=True, slots=True)
@@ -492,11 +523,61 @@ async def _derniers_motifs(
     return motifs
 
 
+def _predicat_de_l_onglet(onglet: OngletDuCreateur):
+    """Le `WHERE` d'un onglet, en une expression.
+
+    **Pas une simple table de statuts, contrairement au côté commerce.** La
+    jointure sur `Collaboration` est *externe* : deux onglets sur quatre n'ont
+    aucune contrainte de contrepartie, et un `Collaboration.status.in_(…)`
+    poserait `NULL NOT IN (…)` sur leurs lignes — donc les éliminerait toutes.
+
+    **« À envoyer » se définit par soustraction, et c'est ce qui garantit la
+    couverture.** `DECISIONS.md` du 2026-08-16 pose la règle : lier la lecture
+    aux onglets ferait disparaître de l'interface un statut qui existe en base.
+    Le nouvel onglet **découpe** donc dans l'ancien au lieu de s'ajouter à côté :
+    tout ce qui est `consumed` sans être en contrôle reste à envoyer, y compris
+    un état de contrepartie qu'on n'aurait pas prévu.
+    """
+    match onglet:
+        case OngletDuCreateur.A_VENIR:
+            return Booking.status.in_(
+                (
+                    BookingStatus.HELD,
+                    BookingStatus.AWAITING_BUSINESS,
+                    BookingStatus.CONFIRMED,
+                )
+            )
+        case OngletDuCreateur.EN_REVUE:
+            return sa.and_(
+                Booking.status == BookingStatus.CONSUMED,
+                Collaboration.status.in_(_EN_CONTROLE),
+            )
+        case OngletDuCreateur.A_ENVOYER:
+            return sa.and_(
+                Booking.status == BookingStatus.CONSUMED,
+                sa.or_(
+                    Collaboration.status.is_(None),
+                    Collaboration.status.not_in(_EN_CONTROLE),
+                ),
+            )
+        case OngletDuCreateur.TERMINEES:
+            return Booking.status.in_(
+                (
+                    BookingStatus.CLOSED,
+                    BookingStatus.CANCELLED,
+                    BookingStatus.NO_SHOW,
+                    BookingStatus.EXPIRED,
+                )
+            )
+    raise AssertionError(f"onglet sans prédicat : {onglet!r}")  # pragma: no cover
+
+
 async def historique_du_createur(
     session: AsyncSession,
     *,
     creator_id: uuid.UUID,
     statuts: frozenset[BookingStatus] | None = None,
+    onglet: OngletDuCreateur | None = None,
     avant: datetime | None = None,
     limite: int = PAGE_PAR_DEFAUT,
 ) -> HistoriqueDuCreateur:
@@ -524,7 +605,15 @@ async def historique_du_createur(
         ).join(Business, Business.id == Booking.business_id)
     ).where(
         Booking.creator_id == creator_id,
-        *([Booking.status.in_(statuts)] if statuts else []),
+        # **Les deux cohabitent, et ce n'est pas une hésitation.** `status` a
+        # deux usages qui ne sont pas des onglets : « mes publications » demande
+        # `consumed` et `closed`, un ensemble qui ne correspond à aucun onglet,
+        # et les réglages demandent tout l'historique sans aucun filtre. Le
+        # remplacer par l'onglet obligerait l'un à un cinquième onglet fantôme et
+        # l'autre à un paramètre vide. `onglet` prime quand les deux arrivent :
+        # une version d'app antérieure continue de marcher.
+        *([_predicat_de_l_onglet(onglet)] if onglet else []),
+        *([Booking.status.in_(statuts)] if statuts and not onglet else []),
         *([Booking.created_at < avant] if avant else []),
     )
 
@@ -551,21 +640,39 @@ async def historique_du_createur(
     ):
         compteurs[status] = nombre
 
-    # **Ce qui attend un geste, et non ce qui est consommé.** Voir
-    # `HistoriqueDuCreateur.a_envoyer` : les deux se confondaient, et le badge
-    # comptait des dossiers en contrôle sur lesquels personne ne peut agir.
-    a_envoyer = (
-        await session.scalar(
-            sa.select(sa.func.count(Collaboration.id))
-            .join(Booking, Booking.id == Collaboration.booking_id)
-            .where(
-                Booking.creator_id == creator_id,
-                Collaboration.status.in_(ATTENDENT_LA_CREATRICE),
+    # **Un compte par onglet, et non plus par statut.** Un `GROUP BY
+    # Booking.status` ne peut plus les produire : « à envoyer » et « en revue »
+    # partagent `consumed`, et le regroupement les additionnerait.
+    #
+    # Comptés en une requête, sur **tout** l'historique — ni `onglet` ni `avant`
+    # n'y entrent. `DECISIONS.md` du 2026-08-16 : « un onglet qui annonce trois
+    # parce que la première page en contient trois ment dès la seconde », et
+    # « un onglet ne se compte pas depuis le filtre d'un autre ».
+    #
+    # La jointure est la même qu'au-dessus, externe comprise : sans elle, les
+    # prédicats qui parlent de la contrepartie n'auraient rien à interroger.
+    par_onglet = (
+        await session.execute(
+            sa.select(
+                *[
+                    sa.func.count()
+                    .filter(_predicat_de_l_onglet(onglet_possible))
+                    .label(onglet_possible.name)
+                    for onglet_possible in OngletDuCreateur
+                ]
             )
+            .select_from(Booking)
+            .outerjoin(Collaboration, Collaboration.booking_id == Booking.id)
+            .where(Booking.creator_id == creator_id)
         )
-    ) or 0
+    ).one()
+    compteurs_par_onglet = {
+        onglet_possible: getattr(par_onglet, onglet_possible.name)
+        for onglet_possible in OngletDuCreateur
+    }
 
     return HistoriqueDuCreateur(
+        compteurs_par_onglet=compteurs_par_onglet,
         items=tuple(
             ReservationDuCreateur(
                 booking_id=ligne.booking_id,
@@ -598,7 +705,6 @@ async def historique_du_createur(
             for ligne in lignes
         ),
         compteurs=compteurs,
-        a_envoyer=a_envoyer,
     )
 
 

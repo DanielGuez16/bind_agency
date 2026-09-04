@@ -103,6 +103,12 @@ it('propose les heures encore libres du même jour, sans faire relire la liste',
   await act(async () => {
     await fireEvent.press(screen.getByLabelText('14:00'));
   });
+  // **Le consentement est un geste, et il est obligatoire.** Le bouton reste
+  // verrouillé tant qu'il n'a pas eu lieu : sans cette ligne, ce test presserait
+  // un bouton mort et n'éprouverait plus rien de ce qu'il prétend éprouver.
+  await act(async () => {
+    await fireEvent.press(screen.getByTestId('bascule-engagement'));
+  });
   await act(async () => {
     await fireEvent.press(screen.getByTestId('confirmer'));
   });
@@ -136,6 +142,12 @@ it('ne propose rien sur une panne : ce n’est pas le créneau qui manque', asyn
 
   await act(async () => {
     await fireEvent.press(screen.getByLabelText('14:00'));
+  });
+  // **Le consentement est un geste, et il est obligatoire.** Le bouton reste
+  // verrouillé tant qu'il n'a pas eu lieu : sans cette ligne, ce test presserait
+  // un bouton mort et n'éprouverait plus rien de ce qu'il prétend éprouver.
+  await act(async () => {
+    await fireEvent.press(screen.getByTestId('bascule-engagement'));
   });
   await act(async () => {
     await fireEvent.press(screen.getByTestId('confirmer'));

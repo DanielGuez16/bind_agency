@@ -177,13 +177,20 @@ function serveur() {
       // qu'une implémentation fautive produirait aussi bien : la ligne serait
       // là sur « en cours » comme sur « à venir », et l'assertion passerait
       // sans rien éprouver. Le vrai serveur filtre ; le montage aussi.
-      const demandes = new URL(chemin, 'https://api.test').searchParams.getAll('status');
-      const porte = demandes.includes(RESERVATION_EN_ATTENTE.status);
+      //
+      // **Filtré sur l'onglet, et non plus sur une liste de statuts.** Le
+      // découpage est parti au serveur : deux onglets partagent `consumed`, et
+      // seul le statut de la contrepartie les sépare — ce qu'une liste de
+      // `BookingStatus` ne sait pas dire. Le décor suit, et continue de filtrer
+      // pour de bon.
+      const demande = new URL(chemin, 'https://api.test').searchParams.get('onglet');
+      const porte = demande === 'a-venir';
       return rendre({
         items: porte ? [RESERVATION_EN_ATTENTE] : [],
         // Les compteurs portent sur tout l'historique, quel que soit l'onglet
         // lu : ils ne suivent pas le filtre.
         compteurs: { awaiting_business: 1 },
+        compteurs_par_onglet: { 'a-venir': 1, 'en-cours': 0, 'en-revue': 0, terminees: 0 },
       });
     }
     if (chemin.includes('/bookings') && options?.method === 'POST') {
@@ -233,6 +240,10 @@ async function reserverDepuisLeFil() {
   const groupe = screen.getByTestId('matin');
   await fireEvent.press(within(groupe).getAllByRole('button')[0]);
   await waitFor(() => expect(screen.getByTestId('confirmer')).toBeTruthy());
+  // **Le consentement fait partie du parcours depuis qu'il est obligatoire.**
+  // Sans ce geste, le bouton reste verrouillé et ce test presserait un bouton
+  // mort — il n'éprouverait plus l'atterrissage qu'il prétend éprouver.
+  await fireEvent.press(screen.getByTestId('bascule-engagement'));
   await fireEvent.press(screen.getByTestId('confirmer'));
 }
 
@@ -268,6 +279,10 @@ it('atterrit sur la liste des réservations, pas sur le code', async () => {
   const groupe = screen.getByTestId('matin');
   await fireEvent.press(within(groupe).getAllByRole('button')[0]);
   await waitFor(() => expect(screen.getByTestId('confirmer')).toBeTruthy());
+  // **Le consentement fait partie du parcours depuis qu'il est obligatoire.**
+  // Sans ce geste, le bouton reste verrouillé et ce test presserait un bouton
+  // mort — il n'éprouverait plus l'atterrissage qu'il prétend éprouver.
+  await fireEvent.press(screen.getByTestId('bascule-engagement'));
   await fireEvent.press(screen.getByTestId('confirmer'));
 
   // La liste : elle confirme que la place est prise, elle porte la date, et
@@ -286,7 +301,7 @@ it('atterrit sur la liste des réservations, pas sur le code', async () => {
   // L'onglet retenu se lit sur son état accessible, les deux formes : `aria-`
   // sur le web, `accessibilityState` en natif. C'est ce que pose
   // `etatAccessible`, et c'est la seule marque de sélection qui traverse.
-  // Le libellé porte le compteur — « Upcoming · 1 ».
+  // Le libellé porte le compteur — « Booked · 1 ».
   expect(ongletRetenu()).toContain(en.parcours.ongletAVenir);
 });
 

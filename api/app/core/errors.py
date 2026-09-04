@@ -87,6 +87,12 @@ class ErrorCode(StrEnum):
     #: Les conditions acceptées ne sont pas celles en vigueur — un lien ouvert
     #: la semaine dernière montre les conditions de la semaine dernière.
     HANDOVER_TERMS_OUTDATED = "handover_terms_outdated"
+    #: Les mêmes conditions, refusées sur l'autre chemin d'engagement : la
+    #: confirmation d'une réservation. **Un code distinct et non celui de la
+    #: prise en main** — les deux écrans n'expliquent pas la même chose, et un
+    #: message parlant de « cette fiche » sur un écran de créneau ne veut rien
+    #: dire.
+    BOOKING_TERMS_OUTDATED = "booking_terms_outdated"
 
     # Reprise d'un compte commerce
     #: Un motif vide ne dit pas pourquoi on est entré. C'est lui qui distingue

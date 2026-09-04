@@ -20,11 +20,16 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.models import Booking, BusinessMember, TierOffer
-from app.models.enums import BookingStatus, BusinessMemberRole, UserRole
+from app.models import Booking, BusinessMember, Collaboration, TierOffer
+from app.models.enums import (
+    BookingStatus,
+    BusinessMemberRole,
+    CollaborationStatus,
+    UserRole,
+)
+from app.services import audit, booking_states
 from app.services import availability as service_dispo
 from app.services import booking_history as service
-from app.services import booking_states
 from tests.conftest import inscrire_verifie
 from tests.test_booking_create import monter_le_decor, premier_creneau, reserver
 
@@ -950,3 +955,137 @@ async def test_la_bande_decoupe_les_jours_dans_le_fuseau_du_commerce(
     comptes = {jour.jour: jour.decisions for jour in bande.jours}
     assert comptes[veille] == 1
     assert comptes[veille + timedelta(days=1)] == 0
+
+
+# --------------------------------------------------------------------------
+# les onglets, depuis que le serveur les connaît
+#
+# **Le découpage vivait côté client, et il ne pouvait plus.** L'app envoyait une
+# liste de `BookingStatus` ; ça tenait tant qu'un onglet valait un ensemble de
+# statuts de réservation. « À envoyer » et « en revue » portent tous les deux
+# `consumed` — ce qui les sépare est le statut de la *contrepartie*, que le
+# paramètre `status` ne sait pas exprimer.
+# --------------------------------------------------------------------------
+
+
+def test_les_onglets_couvrent_tous_les_statuts_de_reservation() -> None:
+    """**La propriété que `DECISIONS.md` du 2026-08-16 exige.**
+
+    « Lier la lecture aux onglets ferait disparaître de l'interface un statut
+    qui existe en base. » Depuis que le serveur porte le découpage, c'est
+    exactement le risque : un `BookingStatus` qu'aucun onglet ne réclame devient
+    injoignable — la réservation existe, aucun écran ne la montre, et rien ne le
+    dit.
+
+    Éprouvé sur les **statuts**, pas sur les prédicats : comparer les prédicats
+    reviendrait à relire le code qu'on vient d'écrire.
+    """
+    couverts: set[BookingStatus] = set()
+    for onglet in service.OngletDuCreateur:
+        clause = str(
+            service._predicat_de_l_onglet(onglet).compile(compile_kwargs={"literal_binds": True})
+        )
+        couverts |= {statut for statut in BookingStatus if f"'{statut.value}'" in clause}
+
+    assert couverts == set(BookingStatus), (
+        f"statuts qu'aucun onglet ne montre : {sorted(set(BookingStatus) - couverts)}"
+    )
+
+
+async def _servie(session: AsyncSession, decor) -> Booking:
+    """Une réservation consommée, avec sa contrepartie ouverte.
+
+    Par les services, jamais posée : c'est la consommation qui ouvre la
+    contrepartie, et la fabriquer à la main donnerait un décor qu'aucun chemin
+    du produit ne produit.
+    """
+    creneau = await premier_creneau(session, decor)
+    booking = await reserver(session, decor, starts_at=creneau)
+    await booking_states.confirmer(session, booking=booking, creator_id=decor["createur"].id)
+    await booking_states.consommer(
+        session,
+        booking=booking,
+        actor=audit.Actor(kind=audit.ActorKind.BUSINESS_MEMBER, user_id=decor["proprietaire"].id),
+    )
+    await session.flush()
+    return booking
+
+
+async def test_en_revue_et_a_envoyer_se_partagent_consumed(session: AsyncSession) -> None:
+    """Deux dossiers servis, deux onglets, selon ce que la contrepartie attend.
+
+    **Le cas divergent de tout ce chantier.** Les deux réservations portent le
+    même `Booking.status` ; une implémentation qui ne regarderait que lui les
+    mettrait dans le même onglet, et c'est exactement ce que faisait le produit.
+    """
+    decor = await monter_le_decor(session)
+    a_envoyer = await _servie(session, decor)
+    en_revue = await _servie(session, decor)
+    await session.execute(
+        sa.update(Collaboration)
+        .where(Collaboration.booking_id == en_revue.id)
+        .values(status=CollaborationStatus.SUBMITTED)
+    )
+    await session.flush()
+
+    page_envoi = await service.historique_du_createur(
+        session, creator_id=decor["createur"].id, onglet=service.OngletDuCreateur.A_ENVOYER
+    )
+    page_revue = await service.historique_du_createur(
+        session, creator_id=decor["createur"].id, onglet=service.OngletDuCreateur.EN_REVUE
+    )
+
+    assert [ligne.booking_id for ligne in page_envoi.items] == [a_envoyer.id]
+    assert [ligne.booking_id for ligne in page_revue.items] == [en_revue.id]
+
+
+async def test_les_compteurs_par_onglet_ne_dependent_pas_de_l_onglet_ouvert(
+    session: AsyncSession,
+) -> None:
+    """Un onglet ne se compte pas depuis le filtre d'un autre.
+
+    L'invariant de 2026-08-16, transposé : il portait sur `compteurs`, il porte
+    maintenant aussi sur `compteurs_par_onglet`, qui est ce que l'écran lit.
+    """
+    decor = await monter_le_decor(session)
+    await _servie(session, decor)
+    en_revue = await _servie(session, decor)
+    await session.execute(
+        sa.update(Collaboration)
+        .where(Collaboration.booking_id == en_revue.id)
+        .values(status=CollaborationStatus.UNDER_REVIEW)
+    )
+    await session.flush()
+
+    ouvert_sur_envoi = await service.historique_du_createur(
+        session, creator_id=decor["createur"].id, onglet=service.OngletDuCreateur.A_ENVOYER
+    )
+
+    assert ouvert_sur_envoi.compteurs_par_onglet[service.OngletDuCreateur.A_ENVOYER] == 1
+    assert ouvert_sur_envoi.compteurs_par_onglet[service.OngletDuCreateur.EN_REVUE] == 1
+
+
+async def test_l_onglet_des_terminees_porte_les_quatre_fins(session: AsyncSession) -> None:
+    """**La garde que le client tenait, transposée au serveur.**
+
+    `reservations-08.test.tsx` exigeait `status=closed` et `status=cancelled`
+    dans l'appel réseau, parce que le découpage vivait dans l'app. Il a changé
+    de bord ; la propriété, elle, reste vraie et doit rester gardée quelque part.
+
+    **`closed` en tête, et c'est ce que l'onglet manquait.** Une prestation
+    servie dont la publication a été acceptée est la seule chose qu'on vient
+    vraiment chercher là — et c'était la seule qui n'y arrivait jamais.
+    """
+    clause = str(
+        service._predicat_de_l_onglet(service.OngletDuCreateur.TERMINEES).compile(
+            compile_kwargs={"literal_binds": True}
+        )
+    )
+
+    for fin in (
+        BookingStatus.CLOSED,
+        BookingStatus.CANCELLED,
+        BookingStatus.NO_SHOW,
+        BookingStatus.EXPIRED,
+    ):
+        assert f"'{fin.value}'" in clause, f"{fin.value} manque à l'onglet des terminées"

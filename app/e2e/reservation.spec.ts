@@ -47,6 +47,10 @@ test('réserver un créneau, puis retrouver son code', async ({ page }) => {
   await expect(creneau, 'aucun créneau libre dans l’horizon').toBeVisible();
   await creneau.click();
 
+  // **Le consentement est un geste, et il est obligatoire depuis C3.** Sans lui
+  // le bouton reste verrouillé : le test attendait deux minutes sur un bouton
+  // mort, et c'est le seul endroit du parcours de bout en bout qui l'aurait dit.
+  await page.getByTestId('ecran-creneaux').getByTestId('bascule-engagement').click();
   await page.getByTestId('ecran-creneaux').getByTestId('confirmer').click();
 
   // **On atterrit sur la liste, pas sur le code.** La prestation est dans
@@ -85,11 +89,15 @@ test('une réservation confirmée mène à son code', async ({ page }) => {
   // **L'onglet d'abord, depuis la v7.** Les onglets suivent l'ordre de ce qu'on
   // doit faire : celui qui s'ouvre porte les contreparties à envoyer, dont le
   // geste mène à l'écran de preuve. Une réservation confirmée vit sous
-  // « Upcoming », et prendre le premier geste de l'écran ouvrait donc le bon
+  // « Booked », et prendre le premier geste de l'écran ouvrait donc le bon
   // bouton d'un autre parcours — un test vert qui aurait éprouvé autre chose.
-  // Par le rôle et non par le texte : l'onglet affiche « Upcoming · 3 », son
+  // Par le rôle et non par le texte : l'onglet affiche « Booked · 3 », son
   // compte compris, et un libellé exact n'y trouvait rien.
-  await page.getByRole('tab', { name: /Upcoming/ }).click();
+  // **« Booked » et non « Upcoming » depuis le quatrième onglet** : la cellule
+  // est passée de 103,3 à 73,5 points et `Upcoming` en rendait 74,0 — il
+  // débordait. La garde de largeur l'acceptait pourtant, sa formule se trompant
+  // de 11 % dans le sens dangereux.
+  await page.getByRole('tab', { name: /Booked/ }).click();
 
   const ouvrable = page
     .getByTestId('ecran-historique')
