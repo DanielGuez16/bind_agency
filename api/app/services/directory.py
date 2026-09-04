@@ -35,7 +35,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models import Business, CreatorProfile, SocialAccount, User
-from app.models.enums import ContentFormat, Platform, SocialAccountStatus, UserStatus
+from app.models.enums import (
+    CentreDInteret,
+    ContentFormat,
+    Platform,
+    SocialAccountStatus,
+    UserStatus,
+)
 from app.services import eligibility, portee_locale
 
 #: Où mène un pseudonyme, par plateforme.
@@ -139,6 +145,14 @@ class CreateurVu:
     #: peut réserver, et le rayon ne peut rien dire d'elle. Elle passe en fin de
     #: tri plutôt que d'être écartée.
     distance_metres: int | None
+    #: Ce qu'elle a déclaré vouloir couvrir, entre un et trois. Vide quand elle
+    #: n'a rien déclaré — la majorité, tant que l'écran de saisie est neuf.
+    #:
+    #: **Exposé parce que la carte le montre.** C'est la règle du reste de ce
+    #: fichier : ce qu'un écran ne montre pas ne part pas. Ici l'inverse vaut
+    #: aussi — le salon qui filtre sur « ongles » doit voir sur quoi la ligne a
+    #: répondu, sinon le filtre agit sans se justifier.
+    interets: tuple[str, ...]
     #: Le volume cumulé des comptes rattachés. Un ordre de grandeur d'audience,
     #: jamais une portée atteinte — la même précaution que sur les rapports.
     audience_totale: int
@@ -192,9 +206,21 @@ class FiltreDAnnuaire:
     #: n'est écartée que lorsqu'on demande une garantie qu'elle ne peut pas
     #: donner.
     distance_max_metres: int | None = None
+    #: Les centres d'intérêt retenus. Vide veut dire « tous », jamais « aucun ».
+    #:
+    #: **Au moins un en commun**, comme les paliers et pour la même raison :
+    #: le salon qui coche « ongles » et « maquillage » cherche l'une ou
+    #: l'autre, pas quelqu'un qui fait les deux.
+    #:
+    #: Celle qui n'a rien déclaré est écartée dès que ce filtre est posé —
+    #: même règle que la distance inconnue : on ne peut pas affirmer d'elle
+    #: qu'elle couvre ce qu'on demande. Sans filtre, elle reste.
+    interets: frozenset[CentreDInteret] = frozenset()
 
     def __bool__(self) -> bool:
-        return bool(self.paliers or self.reseau or self.distance_max_metres)
+        return bool(
+            self.paliers or self.reseau or self.distance_max_metres or self.interets
+        )
 
 
 def _retenue(vu: CreateurVu, filtre: FiltreDAnnuaire) -> bool:
@@ -208,6 +234,8 @@ def _retenue(vu: CreateurVu, filtre: FiltreDAnnuaire) -> bool:
     if filtre.paliers and not (set(vu.paliers_ouverts) & filtre.paliers):
         return False
     if filtre.reseau and not any(compte.platform is filtre.reseau for compte in vu.comptes):
+        return False
+    if filtre.interets and not (set(vu.interets) & filtre.interets):
         return False
     # Inconnue écartée : le filtre demande une garantie qu'on ne peut pas donner
     # d'elle. Sans filtre, elle reste et passe en fin de tri.
@@ -308,6 +336,7 @@ async def annuaire(
                 CreatorProfile.user_id,
                 CreatorProfile.city,
                 CreatorProfile.bio,
+                CreatorProfile.interests,
                 CreatorProfile.reliability_score,
                 CreatorProfile.completed_collabs_count,
                 distance.label("distance_metres"),
@@ -436,6 +465,7 @@ async def annuaire(
                 distance_metres=(
                     int(profil.distance_metres) if profil.distance_metres is not None else None
                 ),
+                interets=tuple(profil.interests or ()),
                 audience_totale=sum(ligne.followers_count or 0 for ligne in lignes),
             )
         )

@@ -30,7 +30,7 @@ from app.models import CreatorProfile
 #: Les champs que le titulaire peut écrire. Sert aussi de garde-fou : tout
 #: autre nom présent dans une charge utile serait ignoré silencieusement, ce que
 #: le schéma Pydantic interdit en amont.
-CHAMPS_MODIFIABLES = ("first_name", "last_name", "city", "bio")
+CHAMPS_MODIFIABLES = ("first_name", "last_name", "city", "bio", "interests")
 
 
 class CreatorProfileError(Exception):
@@ -58,7 +58,10 @@ async def get_profile(session: AsyncSession, user_id: uuid.UUID) -> CreatorProfi
 
 
 async def update_profile(
-    session: AsyncSession, *, user_id: uuid.UUID, modifications: dict[str, str | None]
+    session: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    modifications: dict[str, str | list[str] | None],
 ) -> CreatorProfile:
     """Écrit les champs fournis, laisse les autres.
 

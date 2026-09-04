@@ -11,7 +11,7 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.enums import ContentFormat, Platform
+from app.models.enums import CentreDInteret, ContentFormat, Platform
 from app.schemas.reporting import PorteeLocaleRead
 
 
@@ -58,6 +58,10 @@ class CreateurVuRead(BaseModel):
     creator_id: uuid.UUID
     city: str | None
     bio: str | None
+    #: Ce qu'elle a déclaré vouloir couvrir, entre un et trois. Vide tant
+    #: qu'elle n'a rien déclaré. La carte les montre : un filtre qui trie sans
+    #: dire sur quoi il a trié se lit comme une liste tronquée au hasard.
+    interets: list[CentreDInteret]
     comptes: list[CompteVuRead]
     #: Les formats qu'elle ouvre **chez ce salon**. L'annuaire évaluait
     #: l'éligibilité contre tous les paliers du produit : la liste répondait

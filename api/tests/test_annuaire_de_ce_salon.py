@@ -25,6 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.models import CreatorProfile, SocialAccount
 from app.models.enums import (
+    CentreDInteret,
     ContentFormat,
     Platform,
     ReliabilityEventType,
@@ -34,6 +35,7 @@ from app.models.enums import (
 )
 from app.schemas.directory import CreateurVuRead
 from app.schemas.tier_offers import TierOfferCreate
+from app.services import creator_profile as creator_profile_service
 from app.services import directory, reliability
 from app.services import metrics as metrics_service
 from app.services import tier_offers as tier_offer_service
@@ -58,6 +60,7 @@ async def creatrice(
     ou: tuple[float, float] | None,
     followers: int = 5_000,
     collabs: int = 0,
+    interets: list[CentreDInteret] | None = None,
 ):
     user = await inscrire_verifie(
         session,
@@ -70,6 +73,12 @@ async def creatrice(
             sa.update(CreatorProfile)
             .where(CreatorProfile.user_id == user.id)
             .values(geo=sa.func.ST_SetSRID(sa.func.ST_MakePoint(*ou), 4326))
+        )
+    if interets is not None:
+        # Par le service, et non par un UPDATE : c'est le chemin qu'emprunte
+        # l'écran de saisie, et c'est lui qu'on veut voir tenir.
+        await creator_profile_service.update_profile(
+            session, user_id=user.id, modifications={"interests": interets}
         )
     compte = SocialAccount(
         creator_id=user.id,
@@ -393,6 +402,48 @@ async def test_le_filtre_de_reseau_ignore_un_compte_revoque(
 
     assert tiktok.total == 0
     assert elle.id in {v.creator_id for v in instagram.createurs}
+
+
+async def test_le_filtre_d_interet_retient_au_moins_un_et_ecarte_la_muette(
+    session: AsyncSession,
+) -> None:
+    """**Un décor qui diverge des deux implémentations fausses.**
+
+    Deux erreurs sont possibles ici, et un décor à une seule créatrice les
+    laisserait toutes les deux passer.
+
+    La première serait d'exiger **tous** les intérêts demandés : le salon qui
+    coche « ongles » et « maquillage » cherche l'une ou l'autre, pas quelqu'un
+    qui fait les deux. Elle n'a déclaré que les ongles et doit rester.
+
+    La seconde serait de garder celle qui **n'a rien déclaré**. C'est le cas
+    de la majorité des créatrices inscrites avant ce champ, et les garder
+    viderait le filtre de son sens : il retiendrait tout le monde en donnant
+    l'impression d'avoir trié. La règle est celle de la distance inconnue — on
+    ne peut pas affirmer d'elle qu'elle couvre ce qu'on demande, donc elle
+    sort dès que le filtre est posé, et reste quand il ne l'est pas.
+    """
+    decor = await monter_le_decor(session, tier_id=STORY)
+    elle = await creatrice(session, ou=TOUT_PRES, interets=[CentreDInteret.ONGLES])
+    muette = await creatrice(session, ou=TOUT_PRES)
+
+    filtree = await directory.annuaire(
+        session,
+        business=decor["business"],
+        filtre=directory.FiltreDAnnuaire(
+            interets=frozenset({CentreDInteret.ONGLES, CentreDInteret.MAQUILLAGE})
+        ),
+    )
+    sans = await directory.annuaire(session, business=decor["business"])
+
+    vues = {v.creator_id for v in filtree.createurs}
+    # Un seul des deux intérêts demandés, et elle reste.
+    assert elle.id in vues
+    # Aucun, et elle sort — mais seulement parce qu'on a posé le filtre.
+    assert muette.id not in vues
+    assert muette.id in {v.creator_id for v in sans.createurs}
+    # Le total suit le filtre, comme les trois autres.
+    assert filtree.total == len(filtree.createurs)
 
 
 async def test_le_filtre_de_distance_ecarte_l_inconnue(session: AsyncSession) -> None:

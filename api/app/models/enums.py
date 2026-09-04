@@ -85,6 +85,50 @@ class BusinessCategory(StrEnum):
     OTHER = "other"
 
 
+class CentreDInteret(StrEnum):
+    """Ce qu'une créatrice déclare vouloir couvrir, et rien d'autre.
+
+    **Une liste fermée, pour la même raison que les quartiers.** C'est un axe de
+    navigation : le salon filtre son annuaire dessus, et deux créatrices qui
+    écriraient « ongles » et « nail art » ne se compteraient pas ensemble. Le
+    champ libre rendrait le filtre inutilisable le jour où il servirait.
+
+    **Plus fine que `BusinessCategory`, et c'est le but.** La catégorie décrit
+    ce qu'un commerce *est* — `beauty` couvre aussi bien un coloriste qu'une
+    prothésiste ongulaire, et le catalogue du jeu de données porte les deux
+    sous la même étiquette. L'intérêt décrit ce qu'une créatrice *veut faire* :
+    les confondre ramènerait le filtre à l'axe qui existe déjà.
+
+    Chaque valeur retombe malgré tout sur une catégorie connue, sinon le filtre
+    de l'annuaire promettrait des salons qu'aucun commerce ne peut servir.
+    """
+
+    #: `beauty` — ce que le catalogue actuel porte déjà : coloration racines,
+    #: longueurs, balayage.
+    COIFFURE = "coiffure"
+    #: `beauty` — manucure classique, pose gel, vernis semi-permanent.
+    ONGLES = "ongles"
+    #: `beauty` — soin visage hydratant.
+    SOIN_DU_VISAGE = "soin_du_visage"
+    #: `beauty` — massage relaxant, massage profond, rituel duo.
+    MASSAGE_ET_SPA = "massage_et_spa"
+    #: `beauty` — aucun item du jeu de données pour l'instant, mais c'est la
+    #: spécialité créatrice la plus courante du secteur, et l'absence de valeur
+    #: forcerait à choisir une étiquette fausse.
+    MAQUILLAGE = "maquillage"
+    #: `restaurant`
+    RESTAURANT = "restaurant"
+    #: `restaurant` — distingué du précédent parce que ce sont deux moments et
+    #: deux audiences, pas deux mots pour la même chose.
+    CAFE_ET_BRUNCH = "cafe_et_brunch"
+    #: `fitness`
+    FITNESS = "fitness"
+    #: `museum`
+    CULTURE = "culture"
+    #: `family_activity`
+    FAMILLE = "famille"
+
+
 class BusinessStatus(StrEnum):
     #: **Une fiche préparée par quelqu'un d'autre, que personne n'assume
     #: encore.** C'est ce que la fondatrice remplit au comptoir pendant la

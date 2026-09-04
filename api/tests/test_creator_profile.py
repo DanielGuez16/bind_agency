@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.models import CreatorProfile, SocialAccount, User
 from app.models.enums import (
+    CentreDInteret,
     Platform,
     SocialAccountStatus,
     UserRole,
@@ -240,6 +241,10 @@ async def test_l_anonymisation_efface_tout_ce_qui_est_personnel(
         last_name="Alvarez",
         city="Wynwood",
         bio="Beauté et bien-être à Miami.",
+        # Posé par le service, comme le reste : c'est aussi ce qui prouve que
+        # `CHAMPS_MODIFIABLES` le laisse passer. Un `UPDATE` direct ici
+        # écrirait la colonne sans rien dire du chemin d'écriture réel.
+        interests=[CentreDInteret.ONGLES, CentreDInteret.MAQUILLAGE],
     )
     user_id = profil.user_id
 
