@@ -232,6 +232,7 @@ async def test_la_locale_est_posee_a_l_inscription(client: AsyncClient) -> None:
             "password": "tourbillon-cactus-91-vermeil",
             "role": "creator",
             "locale": "es",
+            "date_of_birth": "1992-04-17",
         },
     )
 
@@ -246,6 +247,7 @@ async def test_la_locale_par_defaut_est_l_anglais(client: AsyncClient) -> None:
             "email": "defaut@example.com",
             "password": "tourbillon-cactus-91-vermeil",
             "role": "creator",
+            "date_of_birth": "1992-04-17",
         },
     )
 
@@ -280,6 +282,7 @@ async def test_une_locale_inconnue_est_refusee(client: AsyncClient) -> None:
             "password": "tourbillon-cactus-91-vermeil",
             "role": "creator",
             "locale": "kl",
+            "date_of_birth": "1992-04-17",
         },
     )
     assert response.status_code == 422

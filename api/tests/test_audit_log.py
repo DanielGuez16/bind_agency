@@ -245,6 +245,7 @@ async def test_une_inscription_refusee_ne_laisse_aucune_ligne(
         "email": "doublon@example.com",
         "password": "tourbillon-cactus-91-vermeil",
         "role": "creator",
+        "date_of_birth": "1992-04-17",
     }
     avant = len(await journal(conn, entity="app_user"))
 

@@ -13,6 +13,7 @@ import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError, InternalError
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from app.core.age import NAISSANCE_DES_JEUX_DE_DONNEES
 from app.models import (
     AuditLog,
     Business,
@@ -341,8 +342,7 @@ async def test_email_differant_par_la_casse_est_refuse(conn: AsyncConnection) ->
         sa.insert(User).values(
             role=UserRole.ADMIN,
             email="rebecca@example.com",
-            password_hash=PASSWORD_HASH,
-        ),
+            password_hash=PASSWORD_HASH, date_of_birth=NAISSANCE_DES_JEUX_DE_DONNEES),
         constraint="uq_app_user_email_lower",
     )
 
@@ -354,8 +354,7 @@ async def test_compte_sans_empreinte_est_refuse_hors_anonymisation(
     await assert_rejected(
         conn,
         sa.insert(User).values(
-            role=UserRole.CREATOR, email="sans-mdp@example.com", password_hash=None
-        ),
+            role=UserRole.CREATOR, email="sans-mdp@example.com", password_hash=None, date_of_birth=NAISSANCE_DES_JEUX_DE_DONNEES),
         constraint="ck_app_user_password_unless_anonymized",
     )
 
@@ -420,7 +419,7 @@ async def test_compte_sans_email_est_refuse_hors_anonymisation(conn: AsyncConnec
     """Sans adresse, le compte n'a plus aucun moyen de connexion."""
     await assert_rejected(
         conn,
-        sa.insert(User).values(role=UserRole.CREATOR, email=None),
+        sa.insert(User).values(role=UserRole.CREATOR, email=None, date_of_birth=NAISSANCE_DES_JEUX_DE_DONNEES),
         constraint="ck_app_user_email_unless_anonymized",
     )
 

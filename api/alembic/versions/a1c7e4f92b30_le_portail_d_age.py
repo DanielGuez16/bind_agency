@@ -1,7 +1,7 @@
 """le portail d'age a l'inscription
 
 Revision ID: a1c7e4f92b30
-Revises: c7d4e1a90b52
+Revises: d4e980bb7072
 Create Date: 2026-09-04
 
 Écrite à la main, et pour trois raisons que l'autogénération ne voit pas.
@@ -35,7 +35,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "a1c7e4f92b30"
-down_revision: str | Sequence[str] | None = "c7d4e1a90b52"
+down_revision: str | Sequence[str] | None = "d4e980bb7072"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

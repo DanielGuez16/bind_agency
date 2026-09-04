@@ -106,6 +106,7 @@ async def test_une_fiche_bloquee_sur_l_engagement_ne_se_relance_pas(
             "password": MOT_DE_PASSE,
             "terms_version": "une-version-qui-n-est-pas-la-bonne",
             "locale": "en",
+            "date_of_birth": "1992-04-17",
         },
     )
     assert refus.status_code >= 400, refus.text
@@ -137,6 +138,7 @@ async def test_une_fiche_assumee_l_emporte_sur_tout_le_reste(
             "password": MOT_DE_PASSE,
             "terms_version": "mauvaise",
             "locale": "en",
+            "date_of_birth": "1992-04-17",
         },
     )
     prise = await client.post(
@@ -146,6 +148,7 @@ async def test_une_fiche_assumee_l_emporte_sur_tout_le_reste(
             "password": MOT_DE_PASSE,
             "terms_version": get_settings().terms_version,
             "locale": "en",
+            "date_of_birth": "1992-04-17",
         },
     )
     assert prise.status_code == 200, prise.text
