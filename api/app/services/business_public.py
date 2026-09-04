@@ -137,6 +137,14 @@ class FichePublique:
     latitude: float | None
     timezone: str
     phone: str | None
+    #: Le salon tranche-t-il chaque réservation à la main ?
+    #:
+    #: **Servi pour être dit avant, et non après.** Le champ existe depuis le
+    #: premier lot et n'était exposé par aucun schéma : une créatrice apprenait
+    #: qu'un accord était nécessaire une fois la demande envoyée, sur l'écran
+    #: qui dit « en attente du salon ». Le geste est le même dans les deux cas —
+    #: c'est l'écran qui doit dire ce qui se passera.
+    requires_booking_approval: bool
     #: Où le salon se montre ailleurs, quand il l'a renseigné. Rendus tels
     #: qu'écrits : ce sont des adresses que le salon donne, pas des liens
     #: dérivés d'un pseudonyme.
@@ -336,6 +344,7 @@ async def fiche(
         latitude=None if point is None else point.latitude,
         timezone=business.timezone,
         phone=business.phone,
+        requires_booking_approval=business.requires_booking_approval,
         instagram_url=business.instagram_url,
         tiktok_url=business.tiktok_url,
         facebook_url=business.facebook_url,

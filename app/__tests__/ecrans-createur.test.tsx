@@ -229,6 +229,8 @@ const FICHE = {
   // l'accès ne doit alors rien montrer du tout.
   menu_pages: [],
   menu_url: null,
+  // Le serveur le sert toujours : un décor qui l\'omet ment sur le contrat.
+  horaires: [],
   offres: [OFFRE],
 };
 

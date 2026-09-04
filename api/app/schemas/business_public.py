@@ -75,6 +75,9 @@ class FichePubliqueRead(BaseModel):
     latitude: float | None
     timezone: str
     phone: str | None
+    #: Voir la dataclass du service : dit avant la réservation ce que l'écran
+    #: d'attente disait après.
+    requires_booking_approval: bool
     #: Où le salon se montre ailleurs, quand il l'a renseigné. Rendus tels
     #: qu'écrits : ce sont des adresses que le salon donne, pas des liens
     #: dérivés d'un pseudonyme.

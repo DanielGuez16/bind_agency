@@ -62,6 +62,8 @@ const FICHE = {
   photos: [],
   menu_pages: [] as string[],
   menu_url: null as string | null,
+  // Le serveur le sert toujours : un décor qui l\'omet ment sur le contrat.
+  horaires: [],
   offres: [OFFRE],
 };
 
