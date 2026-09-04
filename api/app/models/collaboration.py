@@ -79,6 +79,23 @@ class Proof(UUIDPrimaryKey, Base):
     )
     media_key: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     screenshot_key: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    #: Le type MIME de ce qui est archivé, relevé **sur les octets** à la
+    #: soumission.
+    #:
+    #: **Une clé ne dit pas ce qu'elle désigne.** Elle est une empreinte et ne
+    #: porte pas d'extension — volontairement, se fier à une extension fournie
+    #: par l'appelant permettrait de faire servir n'importe quoi. Sans cette
+    #: colonne, la seule question qu'on savait poser était « un fichier
+    #: existe-t-il », et la réponse valait « oui » pour une image comme pour une
+    #: vidéo. L'écran des publications s'en servait comme d'un « il y a une
+    #: image » et demandait la vignette d'un MP4 à un composant d'image.
+    #:
+    #: **Nul veut dire « avant que la question se pose ».** Aucune reprise
+    #: rétroactive : jusqu'à l'acceptation de la vidéo, le sélecteur et le
+    #: serveur ne prenaient que des images, donc toute preuve antérieure en est
+    #: une. Les lecteurs traitent donc `NULL` comme une image plutôt que comme
+    #: une inconnue — c'est un fait d'histoire, pas une supposition.
+    media_content_type: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     content_hash: Mapped[str] = mapped_column(sa.Text, nullable=False)
     #: Les quatre champs qui rendent une contrepartie **vérifiable** plutôt
     #: qu'attestée. Ils ne peuvent venir que de la plateforme, et donc que d'une

@@ -1089,3 +1089,72 @@ async def test_l_onglet_des_terminees_porte_les_quatre_fins(session: AsyncSessio
         BookingStatus.EXPIRED,
     ):
         assert f"'{fin.value}'" in clause, f"{fin.value} manque à l'onglet des terminées"
+
+
+# --------------------------------------------------------------------------
+# ce qui est archivé, et si l'écran peut en tirer une vignette
+# --------------------------------------------------------------------------
+
+
+async def test_une_preuve_video_ne_promet_pas_d_image(session: AsyncSession) -> None:
+    """**« Un fichier existe » n'est pas « c'est une image ».**
+
+    Le champ rendait `bool(media_key or screenshot_key)`. Tant que le produit
+    n'acceptait que des images, les deux questions avaient la même réponse et
+    la confusion ne coûtait rien. Depuis que la vidéo est acceptée, une preuve
+    MP4 répondait « oui » : le repli vers la photo du service ne se déclenchait
+    plus, et l'URL d'un MP4 partait vers un composant d'image.
+
+    **Les trois cas divergent, et c'est pour ça qu'ils sont ensemble.** Une
+    implémentation qui ne regarde que « un fichier existe » passe le premier et
+    tombe sur le deuxième. Une implémentation qui exige un type connu passe les
+    deux premiers et tombe sur le troisième — celui des preuves archivées avant
+    que la question ne se pose, qui n'ont pas de type relevé et sont pourtant
+    toutes des images.
+    """
+    from app.models import Proof
+    from app.services import proof as proof_service
+    from app.services.audit import Actor
+    from tests.test_collaboration import capture, contrepartie
+
+    async def publication_de(contenu: bytes):
+        ligne, decor = await contrepartie(session)
+        await proof_service.soumettre(
+            session,
+            collaboration=ligne,
+            capture=capture(contenu=contenu),
+            actor=Actor.from_user(decor["createur"]),
+        )
+        return ligne, decor["createur"].id
+
+    async def relire(creator_id):
+        historique = await service.historique_du_createur(session, creator_id=creator_id)
+        return historique.items[0].contrepartie
+
+    # 1. Une image : l'écran a de quoi illustrer.
+    _, elle = await publication_de(b"\x89PNG\r\n\x1a\n reste du fichier")
+    image = await relire(elle)
+    assert image is not None
+    assert image.post_a_une_image is True
+
+    # 2. Une vidéo : le fichier existe, l'image non. C'est le cas qui échouait.
+    #    Les quatre premiers octets portent la taille de la boîte, `ftyp` suit.
+    _, elle = await publication_de(b"\x00\x00\x00\x18ftypmp42 reste du fichier")
+    video = await relire(elle)
+    assert video is not None
+    assert video.post_a_une_image is False
+
+    # 3. Une preuve d'avant la question : aucun type relevé. Elle est une image,
+    #    parce qu'à l'époque le serveur n'acceptait rien d'autre. Posée par un
+    #    `UPDATE` direct — c'est un état que le code d'aujourd'hui ne produit
+    #    plus, et aucun service ne sait le fabriquer.
+    ligne, elle = await publication_de(b"\x89PNG\r\n\x1a\n une autre")
+    await session.execute(
+        sa.update(Proof)
+        .where(Proof.collaboration_id == ligne.id)
+        .values(media_content_type=None)
+    )
+    await session.flush()
+    ancienne = await relire(elle)
+    assert ancienne is not None
+    assert ancienne.post_a_une_image is True
