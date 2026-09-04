@@ -475,7 +475,6 @@ export const en = {
     ficheDuree: '{{count}} minutes',
     fichePhotosCompte: '{{count}} photos',
     fichePhotosCompteUne: 'One photo',
-    fichePasEncore: 'Not unlocked yet',
     ficheOuvertes: '{{count}} you can book',
     fichePasEncoreCompte: '{{count}} not unlocked yet',
     // **Ce n'est plus un refus, c'est deux réservations de plus.** Le nombre
@@ -1146,7 +1145,6 @@ export const en = {
     porteCommerce: 'Fill your quiet hours, get seen locally',
     porteCommerceAction: 'Register my business',
     etapeCreateur1: 'Connect Instagram or TikTok, so tiers can open',
-    etapeCreateur2: 'Book a service that is unlocked for you',
     etapeCreateur3: 'Show your code at the counter, publish within the agreed time',
     etapeCommerce1: 'Publish your services and the hours you can take someone',
     etapeCommerce2: 'A creator books a quiet slot and shows a code at the counter',
