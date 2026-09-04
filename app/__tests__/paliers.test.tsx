@@ -355,6 +355,56 @@ describe('quand le compte est en cause', () => {
     // pas de viser un palier.
     expect(screen.queryByTestId('etat-prochain')).toBeNull();
   });
+
+  it('et dit concrètement ce qu’il tient et ce qu’il ouvre', async () => {
+    // **« En pause » était le seul état sans détail chiffré**, et c'était
+    // structurel : l'état est défini par l'absence d'obstacle propre, donc le
+    // bloc « To open it » ne s'y affichait jamais. Quatre mots répondaient
+    // seuls à « accès limité ? une seule prestation ? niveau insuffisant ? ».
+    //
+    // **Deux paliers qui divergent sur le nombre**, sans quoi une
+    // implémentation qui écrirait toujours le pluriel rendrait le même verdict
+    // qu'une bonne : `post` n'ouvre qu'une prestation, `story` en ouvre douze.
+    await monter(
+      <PaliersScreen />,
+      vueDe([
+        palier('story', { accessible: false, obstacles: [JETON_MORT], min_followers: 1000 }),
+        palier('post', {
+          accessible: false,
+          obstacles: [JETON_MORT],
+          offres_disponibles: 1,
+          min_followers: 5000,
+        }),
+      ]),
+    );
+
+    // Le seuil que le palier demande, et que la créatrice tient déjà — c'est
+    // ce qui rend « pas perdu » vérifiable au lieu d'être une promesse.
+    expect(screen.getByTestId('en-pause-acquis-instagram-story')).toHaveTextContent(/1,000/);
+    expect(screen.getByTestId('en-pause-acquis-instagram-post')).toHaveTextContent(/5,000/);
+
+    // Ce qu'il ouvre, au singulier près.
+    expect(screen.getByTestId('en-pause-ouvre-instagram-story')).toHaveTextContent(/12/);
+    expect(screen.getByTestId('en-pause-ouvre-instagram-post')).toHaveTextContent(
+      new RegExp(en.tiers.opensOne),
+    );
+  });
+
+  it('et un palier en pause qui n’ouvre rien le dit, plutôt que d’écrire zéro', async () => {
+    // « 0 services open at this tier » se lit comme une panne ; la phrase
+    // dédiée dit que personne ne le propose encore, ce qui est autre chose.
+    await monter(
+      <PaliersScreen />,
+      vueDe([
+        palier('story', { accessible: false, obstacles: [JETON_MORT] }),
+        palier('post', { accessible: false, obstacles: [JETON_MORT], offres_disponibles: 0 }),
+      ]),
+    );
+
+    expect(screen.getByTestId('en-pause-ouvre-instagram-post')).toHaveTextContent(
+      new RegExp(en.tiers.opensNone),
+    );
+  });
 });
 
 // --------------------------------------------------------------------------
