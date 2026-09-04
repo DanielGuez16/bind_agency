@@ -1,6 +1,9 @@
 """Point d'entrée de l'API BIND."""
 
 import logging
+import re
+from collections.abc import Mapping
+from typing import Any
 
 from fastapi import FastAPI, Request, Response, status
 from fastapi.exceptions import RequestValidationError
@@ -65,6 +68,30 @@ from app.routers import (
 logger = logging.getLogger(__name__)
 
 
+#: Ce qu'un refus écrit par nous ressemble : `password_too_short`, jamais une
+#: phrase. Les validateurs du produit lèvent un `ValueError` dont le message
+#: **est** le code — voir `core/passwords.py` — et Pydantic le préfixe de
+#: « Value error, ». Ce motif reconnaît le code et refuse tout le reste.
+#:
+#: **Volontairement étroit.** Un message de Pydantic lui-même — « Input should
+#: be a valid date » — ne passe pas, et c'est ce qu'on veut : il est en anglais,
+#: il n'est pas dans nos catalogues, et le rendre tel quel écrirait de l'anglais
+#: dans une interface espagnole.
+_CODE_DE_REFUS = re.compile(r"^Value error, ([a-z][a-z0-9_]*)$")
+
+
+def _code_du_refus(item: Mapping[str, Any]) -> str | None:
+    """Le code que notre validateur a levé, s'il en a levé un.
+
+    **Le message n'est pas recopié, il est reconnu.** On ne renvoie que ce qui
+    a la forme d'un de nos codes ; tout ce qui n'est pas reconnu ne sort pas du
+    serveur, ce qui est la seule façon de garantir qu'aucune valeur reçue ne
+    repart par ce chemin.
+    """
+    correspondance = _CODE_DE_REFUS.match(str(item.get("msg", "")))
+    return correspondance.group(1) if correspondance else None
+
+
 async def _validation_error_handler(_: Request, error: RequestValidationError) -> JSONResponse:
     """Uniformise le 422 sur un code du catalogue, et n'y renvoie aucune valeur reçue.
 
@@ -72,9 +99,21 @@ async def _validation_error_handler(_: Request, error: RequestValidationError) -
     rejetée : un mot de passe trop court repartait tel quel vers l'appelant.
     Seuls le chemin du champ et la nature du défaut sont conservés, comme pour
     les erreurs de configuration.
+
+    **Et le code du refus, depuis aujourd'hui.** Il manquait, et son absence
+    rendait muets six messages écrits dans les deux langues : `passwords.py`
+    lève `password_too_short`, le schéma le reconvertit, et ce handler le
+    jetait avec `msg`. L'écran affichait donc « Check this: password » là où
+    « Use at least 12 characters » attendait dans le catalogue depuis toujours.
+    Aucune garde ne pouvait le voir — celle des traductions ne cherche pas les
+    clés que plus personne n'appelle, et elle le dit d'elle-même.
     """
     champs = [
-        {"loc": [str(part) for part in item["loc"]], "type": item["type"]}
+        {
+            "loc": [str(part) for part in item["loc"]],
+            "type": item["type"],
+            **({"code": code} if (code := _code_du_refus(item)) else {}),
+        }
         for item in error.errors()
     ]
     return JSONResponse(
