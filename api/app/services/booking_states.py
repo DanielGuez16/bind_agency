@@ -122,6 +122,18 @@ class HoldExpired(BookingStateError):
     """Le garde est passé : la place a été rendue, elle ne se confirme plus."""
 
 
+class ConditionsPerimees(BookingStateError):
+    """La version acceptée n'est pas celle en vigueur.
+
+    **Le même refus que sur la prise en main, et pour la même raison.** Un écran
+    ouvert la semaine dernière montre les conditions de la semaine dernière.
+    Enregistrer la version courante sur cette acceptation-là serait écrire au
+    journal une preuve que personne n'a produite — et c'est précisément ce
+    journal qu'on ira lire le jour où quelqu'un contestera avoir accepté quoi
+    que ce soit.
+    """
+
+
 class NotYours(BookingStateError):
     """Réservation d'un autre créateur."""
 
@@ -207,6 +219,7 @@ async def transitionner(
     actor: audit.Actor,
     reason: str | None = None,
     evenement: ReliabilityEventType | None = None,
+    extra: dict | None = None,
 ) -> Booking:
     """Le seul chemin. Vérifie la flèche, écrit l'état, écrit le journal.
 
@@ -252,6 +265,7 @@ async def transitionner(
         to_status=vers.value,
         actor=actor,
         reason=reason,
+        extra=extra,
     )
 
     # Le code naît de l'arrivée dans `confirmed`, quelle que soit la porte
@@ -282,7 +296,13 @@ async def transitionner(
     return booking
 
 
-async def confirmer(session: AsyncSession, *, booking: Booking, creator_id: uuid.UUID) -> Booking:
+async def confirmer(
+    session: AsyncSession,
+    *,
+    booking: Booking,
+    creator_id: uuid.UUID,
+    terms_version: str | None = None,
+) -> Booking:
     """Le créateur confirme, dans le délai de garde.
 
     Le garde est relu ici, pas seulement au passage du job : entre l'échéance et
@@ -294,12 +314,28 @@ async def confirmer(session: AsyncSession, *, booking: Booking, creator_id: uuid
     validation reçoit la réservation en attente ; les autres la confirment tout
     de suite. Le créateur fait le même geste dans les deux cas — c'est l'écran
     qui lui dit ensuite ce qui se passe.
+
+    **C'est ici que l'engagement se recueille, et pas à la pose du garde.**
+    `SPEC.md` §4.1 nomme l'acte : « confirmation créateur » est la seule flèche
+    que la créatrice tire elle-même vers un état où le salon l'attend. Le `held`
+    n'est qu'un verrou de capacité qui expire tout seul au bout de dix minutes —
+    y recueillir un consentement produirait des acceptations enregistrées sur
+    des réservations qui n'ont jamais existé du point de vue du salon.
+
+    **`terms_version` reste facultative au service, exigée à la route.** Le
+    service a soixante-trois appelants — tests, semis, autres services — dont
+    aucun ne parle de conditions ; les forcer à en fournir une leur ferait
+    fabriquer une preuve qu'aucun humain n'a produite. C'est la route qui porte
+    l'engagement, parce que c'est elle que la créatrice atteint.
     """
     if booking.creator_id != creator_id:
         raise NotYours(str(booking.id))
 
     if booking.hold_expires_at is not None and booking.hold_expires_at <= datetime.now(UTC):
         raise HoldExpired(str(booking.id))
+
+    if terms_version is not None and terms_version != get_settings().terms_version:
+        raise ConditionsPerimees(terms_version)
 
     a_valider = await session.scalar(
         sa.select(Business.requires_booking_approval).where(Business.id == booking.business_id)
@@ -310,6 +346,12 @@ async def confirmer(session: AsyncSession, *, booking: Booking, creator_id: uuid
         booking=booking,
         vers=BookingStatus.AWAITING_BUSINESS if a_valider else BookingStatus.CONFIRMED,
         actor=audit.Actor(kind=audit.ActorKind.CREATOR, user_id=creator_id),
+        # **La preuve de l'engagement vit au journal, pas sur la réservation.**
+        # Le journal est immuable et ne se supprime pas avec la ligne ; une
+        # colonne recopiée peut diverger sous un `UPDATE`. Qui, quand, sur
+        # quelle version — les trois choses qu'on regardera le jour où
+        # quelqu'un contestera. Même choix que la prise en main.
+        extra={"terms_version": terms_version} if terms_version else None,
     )
 
 

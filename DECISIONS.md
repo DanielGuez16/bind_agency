@@ -11875,3 +11875,62 @@ caractère, qui reproduit le rendu à 0,4 point près. Mesurée en *paire* et no
 isolément : un caractère seul porte son interlettrage de queue, la différence
 entre « XX » et « X » donne l'avance qui s'accumule dans un mot. La méthode de
 régénération est dans le fichier.
+
+---
+
+## 2026-09-04 — Le consentement de la créatrice, recueilli là où l'engagement a lieu
+
+**Le bouton s'appelait déjà « Confirm booking », et rien n'était confirmé.**
+L'écran affichait « à quoi tu t'engages » — contrepartie, mention, échéance,
+règle d'annulation — puis laissait réserver d'un appui, sans qu'aucune trace
+n'atteste que ce bloc ait été vu. Le produit avait pourtant le motif complet :
+la prise en main d'une fiche fait accepter une version des conditions, refuse
+l'écart, et l'écrit au journal d'audit. Il n'existait que du côté commerce.
+
+**À la confirmation, jamais à la pose du garde.** `SPEC.md` §4.1 nomme l'acte :
+« confirmation créateur » est la seule flèche que la créatrice tire elle-même
+vers un état où le salon l'attend. Le `held` posé une milliseconde plus tôt
+n'est qu'un verrou de capacité qui expire seul au bout de dix minutes ; y
+recueillir un consentement produirait des acceptations enregistrées sur des
+réservations qui n'ont jamais existé du point de vue du salon.
+
+**Exigé à la route, facultatif au service — et c'est ce qui rend le chantier
+possible sans rien casser.** `confirmer` a soixante-trois appelants : tests,
+semis, autres services. Aucun ne parle de conditions, et leur imposer une
+version leur ferait fabriquer une preuve qu'aucun humain n'a produite — le
+journal ne vaudrait alors plus rien, puisqu'on ne saurait plus distinguer les
+vraies. La route est le seul chemin qu'une créatrice emprunte, donc le seul
+endroit où l'engagement existe. **Zéro test cassé**, ce que l'audit avait prédit
+et que la suite a confirmé.
+
+Un test garde chaque moitié, et c'est la paire qui compte : la route refuse un
+corps absent, et une confirmation *par le service* ne laisse **aucune** trace
+d'engagement. Sans le second, on pourrait croire la tolérance inoffensive.
+
+**La preuve vit au journal d'audit, pas sur la réservation.** Même choix que la
+prise en main, et sa raison est écrite là-bas : le journal est immuable et ne se
+supprime pas avec la ligne, là où une colonne recopiée peut diverger sous un
+`UPDATE`. Qui, quand, sur quelle version — les trois choses qu'on regardera le
+jour où quelqu'un contestera. `transitionner` a gagné un `extra` pour cela ;
+deux appelants s'en servaient déjà par d'autres chemins.
+
+**La version est servie sur la fiche, pas sur l'offre.** La fiche est un objet
+par écran, l'offre une ligne par prestation : le même mot répété douze fois dans
+la même réponse ne dirait rien de plus. Et servie plutôt qu'écrite en dur côté
+client — une constante dans l'app annoncerait encore l'ancienne le jour où le
+texte change, et le serveur refuserait l'écart. Ce refus n'a de sens que si la
+version vient de lui.
+
+**Un code d'erreur distinct de celui de la prise en main.** Les deux refusent la
+même chose et n'expliquent pas la même suite : « rechargez cette page » n'a
+aucun sens sur un écran de créneau, où l'on revient choisir une heure.
+
+**Le verrou porte aussi les reprises.** Les boutons « reprendre 16 h » appellent
+la même fonction hors de la barre de confirmation ; sans le même `disabled`, le
+consentement se contournait d'un appui.
+
+**Ce que la mutation a montré, et qu'une relecture n'aurait pas vu.** Rendre la
+bascule décorative — affichée, mais non lue par le verrou — laisse passer *tous*
+les autres tests : le bouton marche, l'envoi part, la version est jointe. Un
+seul cas distingue « on demande » de « on affiche », et c'est celui-là qu'il
+fallait écrire.
