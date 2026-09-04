@@ -162,6 +162,22 @@ export type EcranProps<T> = {
   testID?: string;
 };
 
+/**
+ * La marge latérale de l'écran, celle que son contenu respecte.
+ *
+ * **Exportée parce qu'une bande collante doit la reposer.** `barre` est rendue
+ * hors du conteneur qui porte les marges — il faut bien, la bande du fil y
+ * range une ligne de catégories qui défile à fond perdu. L'appelant marge donc
+ * ce qu'il fournit, et il le fait avec **cette** valeur : recopier « 16 » à
+ * côté marchait tant qu'un seul écran s'en servait, et se serait décalé de huit
+ * points le jour où l'un des deux passe en grand format.
+ */
+export function useMargeLaterale(): number {
+  const { density } = useTheme();
+  const { large } = useGabarit();
+  return large ? density.screenPaddingLarge : density.screenPadding;
+}
+
 export function Ecran<T>({
   requete,
   titre,
@@ -191,7 +207,7 @@ export function Ecran<T>({
     requete.etat === 'pret' && requete.rechargement === true,
   );
 
-  const margeLaterale = large ? density.screenPaddingLarge : density.screenPadding;
+  const margeLaterale = useMargeLaterale();
   /** Ce qu'`Ecran` compose lui-même garde sa marge, même à fond perdu. */
   const margeDeSecours = bordAbord ? { paddingHorizontal: margeLaterale } : null;
 

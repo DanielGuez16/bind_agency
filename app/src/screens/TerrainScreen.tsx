@@ -274,6 +274,9 @@ export function TerrainScreen({
     <Ecran
       requete={requete}
       titre={t('terrain.titre')}
+      // **984 points de colonnes, 672 offerts par le repli `merchant`.** L'état
+      // de la tournée et le délai d'attente tombaient hors du cadre.
+      nature="reports"
       // **Le nom de l'écran, et il manquait.** Un parcours de bout en bout se
       // porte par l'écran qu'il éprouve — la garde des sélecteurs l'exige — et
       // sans ce nom il ne pouvait pas s'y porter du tout : l'exploration a dû

@@ -11452,3 +11452,111 @@ elle, là où un nom fixe était repris au passage suivant. La commande de ramas
 est dans la docstring d'`empreinte_de_l_execution`. C'est le prix de l'isolement,
 et il est plus bas que trois quarts d'heure de diagnostic sur un défaut qui
 n'existe pas.
+## 2026-09-03 — Une borne de largeur ne se vérifie pas contre elle-même
+
+Rebecca a rapporté trois défauts sur l'administration — « barre de
+recherche mal cadrée, tableau coupé, dates illisibles ». Les trois
+avaient la même cause, et deux choses méritent d'être écrites : ce
+qu'elle était, et pourquoi rien ne l'avait vue.
+
+**La cause.** `Ecran` borne son contenu selon la `nature` que l'écran
+déclare, et retombe sur `merchant` — 720 points, 672 utiles — quand
+l'écran n'en déclare aucune. Quatre des cinq écrans de l'administration
+n'en déclaraient pas, pour des tables de 888 à 984 points. Le cadre est
+en `overflow: 'hidden'` et aucun de ces écrans n'a de défilement
+horizontal : **ce qui dépasse n'est pas mal placé, il n'existe pas.**
+Salons y perdait sa colonne d'action, c'est-à-dire le seul geste de
+l'écran ; Creators le lien de profil, ce qui explique des « liens
+Instagram qui ne marchent pas » alors que les liens fonctionnaient.
+
+**Pourquoi rien ne l'avait vue.** Les tests rendent l'arbre sans mise en
+page : une colonne hors cadre y est présente et interrogeable. La e2e ne
+visite pas ces écrans. Le défaut ne pouvait se voir que dans un
+navigateur, et il s'est vu en trente secondes dès qu'on en a ouvert un.
+
+**Et la garde écrite pour l'empêcher est passée au vert sur un écran
+encore coupé.** L'arbitrage déclarait déjà `reports` et restait coupé :
+son panneau de détail prend 440 points fixes, donc la file recevait 712
+pour 760. La borne `adminListeDetail` a été posée pour ça — et sa
+première version oubliait les marges que `Ecran` pose *à l'intérieur*
+d'elle. L'assertion écrite dans la foulée reproduisait la même omission,
+donc elle confirmait le calcul au lieu de le confronter : verte, écran
+cassé. C'est le navigateur qui a tranché.
+
+La formulation qui reste : **une garde qui recalcule la formule qu'elle
+doit vérifier n'éprouve que sa propre arithmétique.** Ce qu'il fallait
+confronter n'était pas « la somme est-elle cohérente » mais « la place
+réelle suffit-elle », et cette question a une seule réponse fiable, qui
+est de la mesurer là où elle se pose.
+
+Deux défauts ne se voyaient que parce que le premier les masquait : la
+colonne d'action de Salons était comptée deux fois — déclarée dans
+`COLONNES` *et* rendue par `fin`, donc la rangée dépassait son en-tête
+de 168 points, exactement ce que le commentaire de `LARGEUR_ACTION`
+jurait impossible — et son libellé se repliait sur deux lignes. Corriger
+un cadrage rend visible ce qu'il cachait ; il faut donc regarder l'écran
+après, pas seulement la mesure.
+
+**`LienExterne`, enfin.** `Pressable` + `Linking.openURL` rend un
+`<div role="link">` sur le web : le clic marche et rien d'autre — ni
+clic-milieu, ni nouvel onglet, ni « copier l'adresse », et un
+`window.open` hors ancre reste à la merci d'un bloqueur. Onze appels du
+produit ont cette forme ; celui de l'annuaire admin est migré, les dix
+autres attendent.
+
+## 2026-09-03 — Un échec sans assertion n'est pas un échec de code
+
+Quatre exécutions de la même suite jest, sur le même arbre, à quelques
+minutes d'intervalle : **50 échecs, puis 19, puis 13, puis 0.** Les
+fichiers nommés changeaient à chaque fois. Rien dans la sortie ne disait
+que la machine était en cause — elle disait que des tests échouaient, et
+elle donnait des noms.
+
+Le tri tient en deux commandes, et il coûte trente secondes :
+
+```
+grep -c "Exceeded timeout" journal.log     # les échecs d'attente
+grep -E "expect\(received" journal.log     # les échecs d'assertion
+```
+
+**Zéro assertion et N dépassements, c'est la machine.** Une seule
+assertion, c'est le code. Ce soir-là : 100 dépassements, zéro assertion —
+deux suites jest tournaient en parallèle, et des fichiers qui s'exécutent
+en 2 s en mettaient 157.
+
+**La règle générale.** Un échec d'attente — dépassement, connexion
+refusée, base absente, serveur qui ne répond pas — **nomme toujours celui
+qui attendait, jamais celui qui manquait.** Le symptôme désigne l'endroit
+où l'on regarde, pas l'endroit où c'est cassé. Et l'endroit où l'on
+regarde est presque toujours la dernière chose écrite, ce qui rend le
+faux coupable très convaincant.
+
+Trois cas de la même soirée, dans trois registres :
+
+1. **La CI de la PR #447 était rouge sur `e2e`, verte sur `app`.** Même
+   arbre, même commit, et le seul job qui tombait était celui qui attend
+   un serveur : `Timed out waiting 120000ms from config.webServer`, trois
+   lignes de journal, aucune autre erreur. La cause était l'absence de
+   `serve` dans les dépendances — un téléchargement npm sous plafond de
+   120 s, corrigé par la #448 d'une autre session. Sans son annonce
+   préalable, j'aurais bisecté `Ecran.tsx` et `gabarit.tsx`, deux
+   fichiers que tout l'écran traverse, donc les premiers suspects.
+2. **Côté api, 57 erreurs sur `test_seed.py`** — toutes des `ERROR` de
+   montage groupées sur un fichier, **zéro `FAILED` avec assertion**. Un
+   `ERROR` groupé sans un seul `assert` en échec est un défaut de
+   montage : la machine, ou une session voisine. C'était le dépôt
+   d'objets local, suffixé par le seul `PYTEST_XDIST_WORKER`, donc
+   partagé entre deux suites simultanées.
+3. **Et la contre-épreuve coûteuse, qu'il faut savoir ne pas faire.**
+   Établir « ce n'est pas mon code » en relançant la CI d'un commit connu
+   vert, deux fois, puis en attendant qu'elle repasse seule, a coûté près
+   d'une heure de CI. Le grep ci-dessus tranchait sur le premier journal.
+
+**Le corollaire, qui est le vrai coût.** Devant un symptôme mal attribué,
+le remède plausible supprime le symptôme sans toucher la cause — et
+**clôt la question**, ce qui est pire que de ne rien faire. Deux fois ce
+soir : monter `max_connections` aurait rendu la suite verte un jour sur
+deux, alors que le pic mesuré était de 17 sur 100 ; et une garde de
+largeur écrite en même temps que le code qu'elle vérifie a reproduit son
+omission, donc elle est passée au vert sur un écran encore coupé. Dans
+les deux cas, plus personne ne cherche ensuite.

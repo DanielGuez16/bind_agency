@@ -84,6 +84,11 @@ export function PlansScreen() {
     <Ecran
       requete={requete}
       titre={t('admin.plansTitre')}
+      // **924 points pour la table des plans, 672 offerts par le repli.** La
+      // durée d'engagement et le revenu mensuel tombaient hors du cadre — les
+      // deux colonnes pour lesquelles on ouvre cet écran. La table des abonnés
+      // en dessous tenait déjà (624) et ne change pas de rendu.
+      nature="reports"
       squelette={<SkeletonLignes combien={3} testID="squelette-plans" />}
       testID="ecran-plans"
       vide={<EmptyState title={t('admin.plansTitre')} body={t('admin.plansVide')} />}
