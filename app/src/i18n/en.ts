@@ -165,6 +165,8 @@ export const en = {
     voirPlus: 'See more',
     chargement: 'Loading…',
     voirLeProfil: 'Open their {{reseau}}',
+    ouvrirLaFiche: 'Open their profile',
+    publieSur: 'Publishes on {{reseau}}',
     porteeSur: 'of {{total}} within {{km}} km',
     porteePeuvent: 'can book what you have open today.',
     porteeGain: 'Opening the {{palier}} tier would bring that to {{total}}.',
@@ -178,6 +180,11 @@ export const en = {
     abonnementRequis: 'The directory comes with a subscription.',
     abonnementRequisAide: 'It is what a subscription buys: seeing who you can reach before you open a single service.',
     voirLesPlans: 'See the plans',
+  },
+  creatrice: {
+    reseaux: 'Where they publish',
+    abonnes: '{{count}} followers',
+    audienceTotale: '{{count}} followers across {{reseaux}} networks',
   },
   quartiers: {
     wynwood: 'Wynwood',

@@ -158,6 +158,8 @@ export const es: Catalogue = {
     voirPlus: 'Ver más',
     chargement: 'Cargando…',
     voirLeProfil: 'Abrir su {{reseau}}',
+    ouvrirLaFiche: 'Ver su perfil',
+    publieSur: 'Publica en {{reseau}}',
     porteeSur: 'de {{total}} en {{km}} km',
     porteePeuvent: 'pueden reservar lo que tienes abierto hoy.',
     porteeGain: 'Abrir el nivel {{palier}} lo llevaría a {{total}}.',
@@ -171,6 +173,11 @@ export const es: Catalogue = {
     abonnementRequis: 'El directorio viene con la suscripción.',
     abonnementRequisAide: 'Es lo que compra una suscripción: ver a quién puedes llegar antes de abrir una sola prestación.',
     voirLesPlans: 'Ver los planes',
+  },
+  creatrice: {
+    reseaux: 'Dónde publica',
+    abonnes: '{{count}} seguidores',
+    audienceTotale: '{{count}} seguidores en {{reseaux}} redes',
   },
   quartiers: {
     wynwood: 'Wynwood',

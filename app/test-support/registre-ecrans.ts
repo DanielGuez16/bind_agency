@@ -28,6 +28,7 @@ export const ECRANS_CREATEUR = [
 export const ECRANS_COMMERCE = [
   'AbonnementScreen.tsx',
   'AnnuaireScreen.tsx',
+  'CreatriceScreen.tsx',
   'CatalogueScreen.tsx',
   'CommercesScreen.tsx',
   'CreateursAdminScreen.tsx',

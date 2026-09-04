@@ -27,8 +27,10 @@ fait tomber la page à trois cents.
 """
 
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -242,6 +244,150 @@ def _retenue(vu: CreateurVu, filtre: FiltreDAnnuaire) -> bool:
     )
 
 
+def _vu_de(
+    profil: Any,
+    lignes: Sequence[Any],
+    paliers: Sequence[Any],
+    *,
+    maintenant: datetime,
+    age_max: timedelta,
+) -> CreateurVu | None:
+    """Ce qu'un salon voit d'une seule créatrice, sans aucune requête.
+
+    **Extraite pour être appelée deux fois, et c'est la seule façon que la
+    liste et la fiche disent la même chose.** Les tenir séparées ferait deux
+    endroits où la règle peut diverger le jour où l'une des deux change —
+    l'argument déjà rendu dans `eligibility` entre `evaluer_createur` et
+    `evaluer_createurs`, sur cette donnée précisément.
+
+    **Pure, et c'est ce qui garde le lot à trois requêtes.** Elle reçoit ce
+    que l'appelant a déjà lu ; l'annuaire l'appelle dans sa boucle sans rien
+    demander de plus, et la garde qui compte les requêtes reste verte par
+    construction.
+
+    Rend `None` quand la créatrice n'a aucun compte rattaché : pour la liste
+    c'est une ligne qu'on saute, pour la fiche c'est un 404.
+    """
+    if not lignes:
+        return None
+
+    evalues = [
+        eligibility.CompteEvalue(
+            social_account_id=ligne.id,
+            platform=ligne.platform,
+            status=ligne.status,
+            verification_status=ligne.verification_status,
+            followers=ligne.followers_count,
+            captured_at=ligne.captured_at,
+            connected_at=ligne.connected_at,
+            token_expires_at=ligne.token_expires_at,
+        )
+        for ligne in lignes
+    ]
+
+    verdict = eligibility.evaluer(
+        eligibility.CreateurEvalue(
+            creator_id=profil.user_id,
+            reliability_score=profil.reliability_score,
+            completed_collabs=profil.completed_collabs_count,
+        ),
+        evalues,
+        paliers,
+        maintenant=maintenant,
+        age_max=age_max,
+    )
+
+    accessibles = [palier for palier in paliers if palier.tier_id in verdict.paliers_accessibles]
+    ouverts = {palier.content_format for palier in accessibles}
+    # Le plus exigeant des paliers ouverts : c'est celui qui décrit le
+    # mieux ce qu'elle peut faire ici, et le seul qui tienne sur une ligne.
+    meilleur = max(
+        accessibles,
+        key=lambda palier: ORDRE_DES_FORMATS.index(palier.content_format),
+        default=None,
+    )
+
+    return CreateurVu(
+        creator_id=profil.user_id,
+        city=profil.city,
+        # **La biographie part avec le reste, et ce n'est pas de
+        # l'excès de zèle.** C'est du texte libre : « écris-moi sur
+        # @rebecca.miami » y tient très bien, et masquer le champ
+        # `handle` en laissant passer la bio rendrait le pseudonyme par
+        # l'autre porte. Une règle qui ferme les champs qu'on a nommés
+        # et laisse ouverte la seule zone où l'utilisateur écrit ce
+        # qu'il veut ne protège rien.
+        bio=profil.bio,
+        comptes=tuple(
+            CompteVu(
+                platform=ligne.platform,
+                # Le réseau reste, ce qui l'identifie part. Savoir
+                # qu'elle est sur TikTok ne dit pas qui elle est.
+                handle=ligne.handle,
+                followers=ligne.followers_count,
+                avatar_key=ligne.avatar_key,
+                profil_url=lien_public(ligne.platform, ligne.handle),
+            )
+            for ligne in lignes
+            # Un compte révoqué ou refusé n'est pas un réseau atteignable.
+            if ligne.status is SocialAccountStatus.ACTIVE
+        ),
+        paliers_ouverts=tuple(f for f in ORDRE_DES_FORMATS if f in ouverts),
+        peut_reserver_ici=bool(accessibles),
+        palier_accessible=(
+            PalierAccessibleIci(
+                tier_id=meilleur.tier_id,
+                platform=meilleur.platform,
+                content_format=meilleur.content_format,
+            )
+            if meilleur is not None
+            else None
+        ),
+        distance_metres=(
+            int(profil.distance_metres) if profil.distance_metres is not None else None
+        ),
+        interets=tuple(profil.interests or ()),
+        audience_totale=sum(ligne.followers_count or 0 for ligne in lignes),
+    )
+
+
+def _portee_du_salon(business: Business) -> tuple[Any, list[Any]]:
+    """Qui ce salon a le droit de voir, et à quelle distance.
+
+    **Une seule écriture pour deux lectures.** L'annuaire liste, la fiche
+    ouvre. Si chacune décidait de son côté qui est visible, l'écart ne se
+    verrait pas comme un désaccord : il se lirait comme une rangée qui mène à
+    une page vide — la créatrice est bien dans la liste, sa fiche répond
+    « introuvable », et rien à l'écran ne l'explique.
+
+    La distance est nulle quand l'une des deux positions manque : une fiche en
+    préparation n'a pas de rayon, une créatrice sans position n'a pas de
+    distance.
+
+    **Le rayon n'écarte pas les sans-position.** Elles n'ont pas de distance,
+    donc pas de preuve d'être loin ; les jeter serait décider à leur place.
+    Elles passent en fin de tri, ce qui est le bon traitement d'une inconnue —
+    visible, et jamais devant ce qu'on sait.
+    """
+    distance = (
+        sa.func.ST_Distance(CreatorProfile.geo, business.geo)
+        if business.geo is not None
+        else sa.literal(None)
+    )
+
+    conditions = [CreatorProfile.anonymized_at.is_(None), User.status == UserStatus.ACTIVE]
+    if business.geo is not None:
+        conditions.append(
+            sa.or_(
+                CreatorProfile.geo.is_(None),
+                sa.func.ST_DWithin(
+                    CreatorProfile.geo, business.geo, get_settings().feed_radius_metres
+                ),
+            )
+        )
+    return distance, conditions
+
+
 async def annuaire(
     session: AsyncSession,
     *,
@@ -304,29 +450,7 @@ async def annuaire(
     settings = get_settings()
     maintenant = datetime.now(UTC)
 
-    # La distance en mètres, calculée par la base. Nulle quand l'une des deux
-    # positions manque — une fiche en préparation n'a pas de rayon, et une
-    # créatrice sans position n'a pas de distance.
-    distance = (
-        sa.func.ST_Distance(CreatorProfile.geo, business.geo)
-        if business.geo is not None
-        else sa.literal(None)
-    )
-
-    conditions = [CreatorProfile.anonymized_at.is_(None), User.status == UserStatus.ACTIVE]
-    if business.geo is not None:
-        # **Le rayon, et il n'écarte pas les sans-position.** Elles n'ont pas de
-        # distance, donc pas de preuve d'être loin : les jeter serait décider à
-        # leur place. Elles passent en fin de tri, ce qui est le bon traitement
-        # d'une inconnue — visible, et jamais devant ce qu'on sait.
-        conditions.append(
-            sa.or_(
-                CreatorProfile.geo.is_(None),
-                sa.func.ST_DWithin(
-                    CreatorProfile.geo, business.geo, get_settings().feed_radius_metres
-                ),
-            )
-        )
+    distance, conditions = _portee_du_salon(business)
 
     profils = (
         await session.execute(
@@ -381,92 +505,15 @@ async def annuaire(
 
     vus: list[CreateurVu] = []
     for profil in profils:
-        lignes = par_createur.get(profil.user_id, [])
-        if not lignes:
-            continue
-
-        evalues = [
-            eligibility.CompteEvalue(
-                social_account_id=ligne.id,
-                platform=ligne.platform,
-                status=ligne.status,
-                verification_status=ligne.verification_status,
-                followers=ligne.followers_count,
-                captured_at=ligne.captured_at,
-                connected_at=ligne.connected_at,
-                token_expires_at=ligne.token_expires_at,
-            )
-            for ligne in lignes
-        ]
-
-        verdict = eligibility.evaluer(
-            eligibility.CreateurEvalue(
-                creator_id=profil.user_id,
-                reliability_score=profil.reliability_score,
-                completed_collabs=profil.completed_collabs_count,
-            ),
-            evalues,
+        vu = _vu_de(
+            profil,
+            par_createur.get(profil.user_id, []),
             paliers,
             maintenant=maintenant,
             age_max=timedelta(seconds=settings.metrics_max_age_seconds),
         )
-
-        accessibles = [
-            palier for palier in paliers if palier.tier_id in verdict.paliers_accessibles
-        ]
-        ouverts = {palier.content_format for palier in accessibles}
-        # Le plus exigeant des paliers ouverts : c'est celui qui décrit le
-        # mieux ce qu'elle peut faire ici, et le seul qui tienne sur une ligne.
-        meilleur = max(
-            accessibles,
-            key=lambda palier: ORDRE_DES_FORMATS.index(palier.content_format),
-            default=None,
-        )
-
-        vus.append(
-            CreateurVu(
-                creator_id=profil.user_id,
-                city=profil.city,
-                # **La biographie part avec le reste, et ce n'est pas de
-                # l'excès de zèle.** C'est du texte libre : « écris-moi sur
-                # @rebecca.miami » y tient très bien, et masquer le champ
-                # `handle` en laissant passer la bio rendrait le pseudonyme par
-                # l'autre porte. Une règle qui ferme les champs qu'on a nommés
-                # et laisse ouverte la seule zone où l'utilisateur écrit ce
-                # qu'il veut ne protège rien.
-                bio=profil.bio,
-                comptes=tuple(
-                    CompteVu(
-                        platform=ligne.platform,
-                        # Le réseau reste, ce qui l'identifie part. Savoir
-                        # qu'elle est sur TikTok ne dit pas qui elle est.
-                        handle=ligne.handle,
-                        followers=ligne.followers_count,
-                        avatar_key=ligne.avatar_key,
-                        profil_url=lien_public(ligne.platform, ligne.handle),
-                    )
-                    for ligne in lignes
-                    # Un compte révoqué ou refusé n'est pas un réseau atteignable.
-                    if ligne.status is SocialAccountStatus.ACTIVE
-                ),
-                paliers_ouverts=tuple(f for f in ORDRE_DES_FORMATS if f in ouverts),
-                peut_reserver_ici=bool(accessibles),
-                palier_accessible=(
-                    PalierAccessibleIci(
-                        tier_id=meilleur.tier_id,
-                        platform=meilleur.platform,
-                        content_format=meilleur.content_format,
-                    )
-                    if meilleur is not None
-                    else None
-                ),
-                distance_metres=(
-                    int(profil.distance_metres) if profil.distance_metres is not None else None
-                ),
-                interets=tuple(profil.interests or ()),
-                audience_totale=sum(ligne.followers_count or 0 for ligne in lignes),
-            )
-        )
+        if vu is not None:
+            vus.append(vu)
 
     # **Le tri, puis la page.** Accès d'abord, proximité ensuite, identifiant en
     # dernier — sans ce troisième critère, deux créatrices à égalité pourraient
@@ -490,4 +537,89 @@ async def annuaire(
         # Le total avant la page : « 20 sur 128 » demande de savoir combien il y
         # en a, et une page pleine ne dit pas s'il en reste.
         total=len(vus),
+    )
+
+
+async def creatrice(
+    session: AsyncSession,
+    *,
+    business: Business,
+    creator_id: uuid.UUID,
+) -> CreateurVu | None:
+    """Une créatrice de l'annuaire, lue seule.
+
+    **Elle rend exactement ce que la rangée montrait**, en plus complet : même
+    portée, mêmes conditions, mêmes paliers de ce salon. Le type est celui de
+    la liste — `CreateurVu` — et pas un cousin qui lui ressemblerait. Deux
+    formes du même objet finissent par ne plus s'accorder, et le désaccord se
+    lit à l'écran comme un volume qui change en ouvrant la fiche.
+
+    **`None` quand elle n'est pas visible d'ici**, et la route en fait un 404.
+    Trois façons de ne pas l'être, toutes déjà celles de la liste : le profil
+    n'existe pas ou il est anonymisé, le compte n'est plus actif, la créatrice
+    est hors du rayon de ce salon. La quatrième est dans `_vu_de` : aucun
+    réseau rattaché, donc rien à montrer à un commerce.
+
+    **Un identifiant ne donne pas le droit de lire.** La portée est celle du
+    salon qui demande, jamais celle du salon d'à côté : reprendre l'identifiant
+    vu depuis un autre commerce ne rend rien de plus qu'une créatrice hors de
+    portée — « introuvable », et non « voici, puisque vous avez l'adresse ».
+    C'est aussi pourquoi ce service prend le `business` et non son seul rayon.
+
+    **Le refus d'abonnement reste sur la route**, comme pour la liste. Une
+    fonction de lecture qui déciderait aussi qui a le droit de lire finirait
+    par être appelée d'ailleurs, sans le contrôle.
+    """
+    settings = get_settings()
+    maintenant = datetime.now(UTC)
+
+    distance, conditions = _portee_du_salon(business)
+
+    profil = (
+        await session.execute(
+            sa.select(
+                CreatorProfile.user_id,
+                CreatorProfile.city,
+                CreatorProfile.bio,
+                CreatorProfile.interests,
+                CreatorProfile.reliability_score,
+                CreatorProfile.completed_collabs_count,
+                distance.label("distance_metres"),
+            )
+            .join(User, User.id == CreatorProfile.user_id)
+            .where(*conditions, CreatorProfile.user_id == creator_id)
+        )
+    ).first()
+    if profil is None:
+        return None
+
+    releve = eligibility._dernier_releve()
+    comptes = (
+        await session.execute(
+            sa.select(
+                SocialAccount.id,
+                SocialAccount.creator_id,
+                SocialAccount.platform,
+                SocialAccount.handle,
+                SocialAccount.avatar_key,
+                SocialAccount.status,
+                SocialAccount.verification_status,
+                SocialAccount.connected_at,
+                SocialAccount.token_expires_at,
+                releve.c.followers_count,
+                releve.c.captured_at,
+            )
+            .outerjoin(releve, releve.c.social_account_id == SocialAccount.id)
+            .where(SocialAccount.creator_id == creator_id)
+        )
+    ).all()
+
+    paliers = await portee_locale.paliers_ouverts_du_commerce(session, business_id=business.id)
+
+    return _vu_de(
+        profil,
+        list(comptes),
+        paliers,
+        maintenant=maintenant,
+        age_max=timedelta(seconds=settings.metrics_max_age_seconds),
     )

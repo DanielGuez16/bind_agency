@@ -575,6 +575,15 @@
         ]
       }
     },
+    "/api/v1/business/{business_id}/creators/{creator_id}": {
+      "get": {
+        "operationId": "read_creator_api_v1_business__business_id__creators__creator_id__get",
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/api/v1/business/{business_id}/link-clicks": {
       "get": {
         "operationId": "read_business_audience_api_v1_business__business_id__link_clicks_get",

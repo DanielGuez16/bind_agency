@@ -1263,6 +1263,23 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       publiera. Trois écrans basculés. Après ce passage, aucun schéma
       destiné à un commerce ne porte de nom civil. 1 test neuf, 5 repris,
       2 mutations vérifiées*
+- [x] **La fiche d'une créatrice, où la rangée mène enfin**
+      *L'annuaire listait, et le seul geste d'une rangée était d'en sortir : on
+      ouvrait Instagram dans un onglet, avant toute décision, et ce que
+      l'abonnement achète restait derrière. `GET /business/{id}/creators/{id}`
+      rend la **même** créatrice que la liste, champ pour champ, sur les mêmes
+      trois requêtes et la même `_vu_de`. Les conditions de visibilité sont
+      extraites plutôt que recopiées — deux lectures de « qui ce salon a le
+      droit de voir » finiraient par diverger, et l'écart se lirait comme une
+      rangée qui mène à une page vide. L'exigence d'abonnement remonte au
+      routeur : écrite en ligne dans la route de la liste, elle aurait manqué à
+      celle-ci. 404 et non 403 hors du rayon, indiscernable d'un identifiant
+      inventé. Les abonnés reviennent, et à l'endroit que le commentaire de
+      leur retrait désignait — `paliers_ouverts` et `audience_totale` sortent
+      de la table des champs sans lecteur, avec l'exception d'homonyme qui
+      protégeait la seconde. La garde de lecture seule passe en trichotomie :
+      sortir, ouvrir une fiche, agir — seul le dernier reste interdit. 10 tests
+      serveur et 3 écran neufs, 6 mutations vérifiées*
 - [x] **Le pseudonyme est l'identité de l'annuaire**
       *`first_name` et `last_name` retirés de l'annuaire, **dans les deux états
       d'abonnement** : ils ne s'achètent pas, l'écran ne les montre nulle part.

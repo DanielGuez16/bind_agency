@@ -69,24 +69,28 @@ const NON_RENDUS: Record<string, string> = {
   // dans la table voisine, et `TASKS.md`.
   'EtatDeLaComposition.prestations_masquees': 'a-instruire',
   'EtatDeLaComposition.jours_ouverts': 'a-instruire',
-  // --- a-instruire : servis, et la grille v3 ne les lit plus ---
+  // **Les deux champs de l'annuaire sont sortis de cette table le 2026-09-04,
+  // et c'est la fiche créatrice qui les en a sortis.** Ils y étaient portés
+  // « candidats au retrait de la réponse » parce que la grille ne les lisait
+  // plus : `paliers_ouverts` répétait en liste le palier que la rangée montre,
+  // `audience_totale` cumulait un volume que la rangée avait cessé d'écrire.
   //
-  // **Deux champs que le contrat commerce-scopé a rendus redondants.** La
-  // grille montre le palier accessible **chez ce salon** (`palier_accessible`)
-  // et le volume du réseau porté par la carte ; `paliers_ouverts` répétait le
-  // premier en liste, et `audience_totale` le second en cumul. Les deux sont
-  // candidats au retrait de la réponse ; d'ici là, leur absence de lecteur est
-  // écrite plutôt que subie.
+  // Le raisonnement tenait à une chose qui a changé : il n'y avait pas d'écran
+  // où les mettre. Le commentaire du retrait des abonnés le disait déjà —
+  // « l'audience appartient à la fiche qu'on ouvre pour décider, pas à une
+  // liste qu'on parcourt » — et promettait donc un écran qui n'existait pas.
+  // Tant qu'il n'existait pas, le retrait valait suppression.
   //
-  // **La bio est sortie de cette table le 2026-09-04, et l'objection qui l'y
-  // tenait n'a pas disparu.** Elle disait : du texte libre peut porter un
+  // La fiche existe. `CreatriceScreen` rend les deux : la liste complète des
+  // paliers en badges, et le cumul sous les réseaux dès qu'il y en a plus d'un.
+  //
+  // **La bio est sortie de cette table le même jour**, et l'objection qui l'y
+  // tenait n'a pas disparu. Elle disait : du texte libre peut porter un
   // pseudonyme que la paroi payante retient ailleurs, donc l'afficher offre un
   // contournement. C'est vrai, et c'est un coût accepté — la rangée ne disait
   // que le pseudonyme, la ville et la distance, de quoi reconnaître mais pas
   // de quoi choisir, et c'est ce que l'annuaire est censé permettre. Le
   // renversement est daté et argumenté dans `DECISIONS.md`.
-  'CreateurDeLAnnuaire.paliers_ouverts': 'a-instruire',
-  'CreateurDeLAnnuaire.audience_totale': 'a-instruire',
   // --- a-instruire : servi, et l'écran refuse délibérément de le lire ---
   //
   // **Le nom civil des créatrices, servi à tout salon abonné.** L'annuaire v3
@@ -284,11 +288,14 @@ describe('un champ servi est rendu, ou sa raison est écrite', () => {
     // vérification porte le même nom de champ et n'est rendue nulle part. Sans
     // cette exception, sa ligne passerait pour périmée et se retirerait — c'est
     // la garde qui s'effacerait elle-même.
-    // `audience_totale` a rejoint la liste avec l'annuaire de
-    // l'administration, qui la rend. Celui du commerce porte le même nom de
-    // champ et ne le rend pas — sa ligne passerait pour périmée et se
-    // retirerait, c'est-à-dire que la garde s'effacerait elle-même.
-    const HOMONYMES = new Set(['created_at', 'item_photo_key', 'audience_totale']);
+    // **`audience_totale` en est sortie le 2026-09-04.** Elle y était parce que
+    // l'annuaire de l'administration la rendait et que celui du commerce ne la
+    // rendait pas : sans l'exception, la ligne du second passait pour périmée
+    // parce que le premier lisait le même nom de champ. La fiche créatrice la
+    // rend désormais aussi, il n'y a plus de ligne à protéger — et une
+    // exception qu'on garde après sa cause est exactement ce qui fait passer
+    // une garde pour vivante alors qu'elle ne tient plus rien.
+    const HOMONYMES = new Set(['created_at', 'item_photo_key']);
 
     const perimees = Object.keys(NON_RENDUS).filter(
       (clef) =>
