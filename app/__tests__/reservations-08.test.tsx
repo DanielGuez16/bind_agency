@@ -101,6 +101,7 @@ async function monter(
   items: ReservationDuCreateur[],
   locale: 'en' | 'es' = 'en',
   onglet?: string,
+  onOuvrirLeCommerce?: (businessId: string) => void,
 ) {
   const api = new ApiClient({
     baseUrl: 'https://api.test',
@@ -116,7 +117,11 @@ async function monter(
     <I18nProvider initialLocale={locale}>
       <ThemeProvider role="creator">
         <ApiProvider client={api}>
-          <HistoriqueScreen onOuvrir={() => {}} ongletDemande={onglet} />
+          <HistoriqueScreen
+            onOuvrir={() => {}}
+            onOuvrirLeCommerce={onOuvrirLeCommerce}
+            ongletDemande={onglet}
+          />
         </ApiProvider>
       </ThemeProvider>
     </I18nProvider>,
@@ -792,5 +797,27 @@ describe('l’onglet des terminées reçoit ce qui a été honoré', () => {
     expect(within(carte).getByTestId('etat-r-sf')).not.toHaveTextContent(
       en.parcours.issueAnnulee,
     );
+  });
+});
+
+describe('le nom du salon mène à sa fiche', () => {
+  it('ouvre le commerce, sans passer par l’action de la carte', async () => {
+    // **Il était écrit et mort.** Le mécanisme existait et servait déjà au fil
+    // et aux favoris ; il manquait seulement ici.
+    const onOuvrirLeCommerce = jest.fn();
+    await monter([reservation()], 'en', undefined, onOuvrirLeCommerce);
+
+    await fireEvent.press(await screen.findByTestId('ouvrir-le-salon-r1'));
+
+    expect(onOuvrirLeCommerce).toHaveBeenCalledWith('b1');
+  });
+
+  it('et reste du texte quand il n’y a pas de fiche à ouvrir', async () => {
+    // La pile du commerce monte le même écran sans destination : un mot qui
+    // répond au doigt sans rien ouvrir apprend à ne plus essayer.
+    await monter([reservation()]);
+
+    await screen.findByTestId('quand-r1');
+    expect(screen.queryByTestId('ouvrir-le-salon-r1')).toBeNull();
   });
 });
