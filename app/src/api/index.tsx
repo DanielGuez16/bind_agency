@@ -1441,7 +1441,9 @@ export function ApiProvider({
         // Une panne de transport n'est pas une erreur d'API : la phrase à dire
         // n'est pas la même, et « réessaie » n'a de sens que dans ce cas-là.
         if (erreur instanceof NetworkError) return t('errors.network');
-        if (erreur instanceof ApiError) return messageDeRefus(t, erreur.code, erreur.champs);
+        if (erreur instanceof ApiError) {
+          return messageDeRefus(t, erreur.code, erreur.champs, erreur.codes);
+        }
         return t('errors.generic');
       },
     }),

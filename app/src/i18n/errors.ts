@@ -53,6 +53,34 @@ const CHAMPS_NOMMES: Record<string, string> = {
  * garde le **dernier** segment — `body` dit d'où vient le champ, pas lequel il
  * est — et on écarte les doublons, un même champ pouvant être refusé deux fois.
  */
+/**
+ * Les codes de refus portés par les champs d'un 422.
+ *
+ * **Le serveur nomme enfin ce qu'il refuse.** Il rendait `loc` et `type` seuls,
+ * donc l'écran ne pouvait que nommer le champ : « Check this: password ».
+ * Six messages écrits dans les deux langues — « Use at least 12 characters »
+ * et ses voisins — n'étaient lus par personne, et la garde des traductions ne
+ * pouvait pas le dire : elle ne cherche pas les clés devenues orphelines.
+ *
+ * Rendus dans l'ordre reçu et dédoublonnés, comme les champs. On ne prend que
+ * ce que le catalogue sait traduire : un code inconnu vaut mieux tu que rendu
+ * brut, et c'est déjà la règle d'`errorMessageKey`.
+ */
+export function codesEnCause(body: unknown): string[] {
+  if (typeof body !== 'object' || body === null) return [];
+  const fields = (body as { fields?: unknown }).fields;
+  if (!Array.isArray(fields)) return [];
+
+  const codes: string[] = [];
+  for (const champ of fields) {
+    const code = (champ as { code?: unknown })?.code;
+    if (typeof code === 'string' && code.length > 0 && !codes.includes(code)) {
+      codes.push(code);
+    }
+  }
+  return codes;
+}
+
 export function champsEnCause(body: unknown): string[] {
   if (typeof body !== 'object' || body === null) return [];
   const fields = (body as { fields?: unknown }).fields;
@@ -82,7 +110,22 @@ export function messageDeRefus(
   t: (key: string, valeurs?: Record<string, unknown>) => string,
   code: string | null | undefined,
   champs: string[],
+  /**
+   * Les codes que le serveur a portés sur les champs, s'il en a porté.
+   *
+   * Facultatif : les appelants qui ne les ont pas gardent le comportement
+   * d'avant, qui nomme le champ. C'est ce qui permet d'ajouter le transport du
+   * code sans réécrire tous les sites d'appel du même coup.
+   */
+  codes: string[] = [],
 ): string {
+  // **Ce que le serveur refuse, avant le champ où il le refuse.** « Use at
+  // least 12 characters » dit quoi corriger ; « Check this: password » dit
+  // seulement où regarder. Le premier code connu l'emporte : un refus en porte
+  // rarement deux, et les empiler ferait une phrase que personne ne lit.
+  const explicite = codes.find((c) => CODES_CONNUS.has(c) && c !== 'generic');
+  if (explicite) return t(`errors.${explicite}`);
+
   const nommables = champs.map((c) => CHAMPS_NOMMES[c]).filter((cle): cle is string => !!cle);
   if (code !== 'validation_failed' || nommables.length === 0) {
     return t(errorMessageKey(code));

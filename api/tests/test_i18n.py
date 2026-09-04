@@ -109,6 +109,56 @@ async def test_un_422_ne_renvoie_jamais_la_valeur_rejetee(client: AsyncClient) -
     assert "input" not in response.text
 
 
+async def test_un_422_porte_le_code_du_refus(client: AsyncClient) -> None:
+    """Le code sort, la valeur non — et c'est la même réponse qui doit les deux.
+
+    **Six messages en dépendaient.** `passwords.verifier` lève
+    `password_too_short` ; le schéma le reconvertit ; le handler gardait `loc`
+    et `type` et jetait `msg`, qui le portait. L'écran ne pouvait donc que
+    nommer le champ — « Check this: password » — pendant que « Use at least 12
+    characters » attendait dans les deux catalogues sans lecteur.
+    """
+    # **Douze caractères, et pourtant refusé.** `Field(min_length=12)` refuse
+    # avant nos validateurs ; pour éprouver *notre* code il faut un mot de passe
+    # que Pydantic laisse passer et que `passwords.verifier` refuse — ici la
+    # variété, six caractères distincts exigés.
+    response = await client.post(
+        f"{PREFIX}/auth/register",
+        json={"email": "x@example.com", "password": "aaaabbbbcccc", "role": "creator"},
+    )
+
+    assert response.status_code == 422
+    champs = response.json()["fields"]
+    assert [c.get("code") for c in champs] == ["password_too_repetitive"]
+
+    # **Et `loc` ne nomme pas le champ, ce qui rend le code indispensable.**
+    # `_mot_de_passe_solide` est un validateur de *modèle* — il lit le mot de
+    # passe avec l'adresse — donc Pydantic rapporte le refus sur le corps
+    # entier. `champsEnCause` écarte « body », si bien que l'écran n'avait même
+    # pas « Check this: password » : il tombait sur la phrase générique. Le code
+    # est la seule chose qui traverse.
+    assert champs[0]["loc"] == ["body"]
+
+
+async def test_un_422_de_pydantic_ne_porte_aucun_code(client: AsyncClient) -> None:
+    """Le pendant, et c'est lui qui fait diverger les deux implémentations.
+
+    Un handler qui recopierait `msg` sans le reconnaître passerait le test
+    précédent **et** ferait sortir « Input should be a valid string » — de
+    l'anglais que nos catalogues ne portent pas, dans une interface espagnole.
+    Ici le champ manque tout court : le refus vient de Pydantic, pas de nous.
+    """
+    response = await client.post(
+        f"{PREFIX}/auth/register",
+        json={"email": "x@example.com", "role": "creator"},
+    )
+
+    assert response.status_code == 422
+    champs = response.json()["fields"]
+    assert champs, "le refus doit nommer le champ manquant"
+    assert all("code" not in c for c in champs)
+
+
 # --------------------------------------------------------------------------
 # catalogue serveur
 # --------------------------------------------------------------------------
