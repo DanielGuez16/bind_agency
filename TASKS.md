@@ -1343,6 +1343,19 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       la bannière part d'elle-même. Le renvoi relit le compte même en échec,
       sans quoi le 409 « déjà vérifiée » afficherait une erreur pour annoncer
       une réussite. 5 tests neufs, 4 mutations vérifiées*
+- [x] **`serve` déclaré, au lieu d'être téléchargé à chaque e2e**
+      *Le `webServer` de Playwright faisait `npx --yes serve` et `serve`
+      n'était déclaré nulle part : téléchargé depuis npm à chaque exécution,
+      sous le plafond de 120 s. Une lenteur du registre rendait la CI rouge sur
+      du code juste, sous un message qui n'en dit rien — « Timed out waiting
+      from config.webServer » — et qui accuse la dernière ligne écrite.*
+
+      ***Établi par contre-épreuve** : la e2e de `main`, relancée sur un commit
+      dont elle était verte, a échoué deux fois de suite, puis est repassée au
+      vert une heure plus tard sans qu'une ligne bouge. Node épinglé par
+      `.nvmrc`, `serve` non publié depuis six mois : restait le téléchargement.
+      Sans cette contre-épreuve, deux PR étaient soupçonnées à tort.*
+
 - [x] **La suite en parallèle** — 651 s à 300 s, mesuré
       *`pytest-xdist` avec `--dist loadgroup`. Les deux tests de concurrence
       partagent `xdist_group("concurrence")` : même worker, sériels entre eux, et
