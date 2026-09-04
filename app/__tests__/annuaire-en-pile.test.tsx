@@ -25,6 +25,11 @@ const CREATEUR = (n: number) => ({
   creator_id: `c${n}`,
   distance_metres: 1200,
   acces: 'ouvert',
+  // Servi par le schéma comme une liste, jamais absent : `CreateurVuRead` le
+  // déclare non optionnel. Le décor le porte donc aussi — un montage sans lui
+  // éprouverait une forme que le serveur n'envoie pas, et laisserait passer
+  // une fiche qui tombe sur la vraie réponse.
+  interets: n === 1 ? ['ongles', 'maquillage'] : [],
   comptes: [
     {
       platform: 'instagram',
@@ -205,4 +210,95 @@ it('porte le retour nommé sur l’écran qu’on voit, pas sur le mur', async (
   expect(retour.props.accessibilityLabel).toBe('More');
   expect(screen.queryByTestId('retour-vers')).toBeNull();
   expect(screen.queryByText('More')).toBeNull();
+});
+
+/**
+ * Les quatre filtres, et la pagination qui doit repartir avec eux.
+ *
+ * **Trois d'entre eux étaient servis, appliqués et éprouvés côté serveur, et
+ * personne ne les appelait.** `annuaireDesCreateurs` n'envoyait que `limite`
+ * et `decalage` ; `palier`, `reseau` et `distance_max_metres` attendaient un
+ * appelant depuis l'origine. Un filtre sans appelant ne rougit nulle part.
+ */
+async function monterAvecPages() {
+  const appels: string[] = [];
+  const api = new ApiClient({
+    baseUrl: 'https://api.test',
+    coffre: { lire: async () => null, ecrire: async () => {} },
+    fetchImpl: (async (url: RequestInfo | URL) => {
+      const chemin = String(url);
+      appels.push(chemin);
+      if (chemin.includes('/creators')) {
+        // La seconde page rend d'autres créatrices : sans cela, « la suite a
+        // été jetée » et « la suite est restée » rendraient le même écran, et
+        // le décor ne prouverait rien.
+        const suite = chemin.includes('decalage=2');
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            total: 128,
+            portee: PORTEE,
+            createurs: suite ? [CREATEUR(3), CREATEUR(4)] : [CREATEUR(1), CREATEUR(2)],
+          }),
+        } as Response;
+      }
+      return { ok: true, status: 200, json: async () => ({}) } as Response;
+    }) as unknown as typeof fetch,
+  });
+
+  await render(
+    <I18nProvider initialLocale="en">
+      <ThemeProvider role="merchant">
+        <GabaritProvider>
+          <ApiProvider client={api}>
+            <AnnuaireScreen businessId="b1" onRetour={() => {}} retourVers="More" />
+          </ApiProvider>
+        </GabaritProvider>
+      </ThemeProvider>
+    </I18nProvider>,
+  );
+  await waitFor(() => expect(screen.getByTestId('createur-c1')).toBeTruthy());
+  return { appels };
+}
+
+describe('les filtres de l’annuaire', () => {
+  it('partent sur le fil, et font repartir la pagination de zéro', async () => {
+    const { appels } = await monterAvecPages();
+
+    // Une seconde page, empilée sous la première.
+    await fireEvent.press(screen.getByTestId('voir-plus'));
+    await waitFor(() => expect(screen.getByTestId('createur-c3')).toBeTruthy());
+    expect(screen.getByTestId('createur-c1')).toBeTruthy();
+
+    // Puis un filtre. Le repli s'ouvre d'abord : les chips n'existent pas
+    // tant qu'il est fermé.
+    await fireEvent.press(screen.getByTestId('filtres-annuaire-entete'));
+    await fireEvent.press(screen.getByTestId('interet-ongles'));
+
+    const dernier = appels.filter((a) => a.includes('/creators')).at(-1) ?? '';
+    // Le filtre part.
+    expect(dernier).toContain('interet=ongles');
+    // **Et il repart de la première page.** Un décalage calculé sur la liste
+    // d'avant, servi avec un filtre neuf, rendrait une page qui ne suit pas
+    // la précédente.
+    expect(dernier).not.toContain('decalage=');
+
+    // La suite d'avant a été jetée : c'est ce que le décor divergent éprouve.
+    // Sans la remise à zéro, c3 et c4 resteraient collées sous une première
+    // page filtrée, sous un total qui ne les compte plus.
+    await waitFor(() => expect(screen.queryByTestId('createur-c3')).toBeNull());
+  });
+
+  it('et les trois autres passent par la même porte', async () => {
+    const { appels } = await monterAvecPages();
+    await fireEvent.press(screen.getByTestId('filtres-annuaire-entete'));
+
+    await fireEvent.press(screen.getByTestId('filtre-palier-reel'));
+    await fireEvent.press(screen.getByTestId('filtre-reseau-tiktok'));
+
+    const dernier = appels.filter((a) => a.includes('/creators')).at(-1) ?? '';
+    expect(dernier).toContain('palier=reel');
+    expect(dernier).toContain('reseau=tiktok');
+  });
 });
