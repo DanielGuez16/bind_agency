@@ -98,7 +98,7 @@ export const en = {
     opensOne: '1 service open at this tier',
     opensNone: 'No business offers this tier yet',
     opensHelp: 'Counts cover every business on BIND, not only those near you.',
-    ouvertMaintenant: '{{count}} services are open to you at the {{palier}} tier',
+    ouvertMaintenant: '{{count}} services you can book at the {{palier}} tier',
     toUnlock: 'To open it',
     counterpart: 'You commit to',
     connectTitle: 'Connect a network to start',
@@ -142,8 +142,8 @@ export const en = {
     paiementAFinirAide: 'The subscription is created but not paid. Reopen the page to finish. Starting again would create a second one.',
     reprendreLePaiement: 'Finish the payment',
     actifTitre: 'Your subscription is running',
-    actifCorps: 'The directory is open to you.',
-    actifJusquA: 'Paid until {{date}}. The directory is open to you.',
+    actifCorps: 'Your business is showing in the directory.',
+    actifJusquA: 'Paid until {{date}}. Your business is showing in the directory.',
     resilier: 'Stop the subscription',
     impayeTitre: 'A payment did not go through',
     impayeAide: 'The directory stays open for now. Update the card on our provider’s page before it closes.',
@@ -287,7 +287,7 @@ export const en = {
     audienceScoreOuvre: 'Opens the higher tiers',
     audienceScoreCeQuiLeFait: 'What raises it, what lowers it, and what it never does',
     audiencePasEncoreDeScoreDetail:
-      'It starts after your first collaboration. Until then the story tier is open to you like everyone else.',
+      'It starts after your first collaboration. Until then the story tier is unlocked for you, as it is for everyone.',
     audienceVoirMesPaliersSous: 'What is open, and what comes next',
     // --- Le score, en détail ---
     scoreTitre: 'Reliability',
@@ -348,7 +348,7 @@ export const en = {
     verificationEnCours: 'We are checking this account. You can keep using BIND meanwhile.',
     verificationSignaux: 'What we looked at',
     tiersTitre: 'Your tiers',
-    tiersVide: 'No tier is open to you yet.',
+    tiersVide: 'No tier is unlocked yet.',
     tiersNouveau: 'New creator',
     tiersOuvert: 'Open',
     tiersFerme: 'Locked',
@@ -405,7 +405,6 @@ export const en = {
     filDecouvrir: 'Discover',
     // Deux phrases distinctes et non une à trou : « 6 nail services » place la
     // catégorie avant le nom commun, ce que l'espagnol n'ordonne pas ainsi.
-    murServicesOuverts: '{{salons}} salons · {{count}} services you can book in {{quartier}}',
     murServicesDeCategorie: '{{salons}} salons · {{count}} {{categorie}} services in {{quartier}}',
     murLePlusPres: 'Closest to you',
     murToutVoir: 'All {{count}}',
@@ -476,9 +475,9 @@ export const en = {
     ficheDuree: '{{count}} minutes',
     fichePhotosCompte: '{{count}} photos',
     fichePhotosCompteUne: 'One photo',
-    fichePasEncore: 'Not open to you yet',
-    ficheOuvertes: '{{count}} open to you',
-    fichePasEncoreCompte: '{{count}} not open to you yet',
+    fichePasEncore: 'Not unlocked yet',
+    ficheOuvertes: '{{count}} you can book',
+    fichePasEncoreCompte: '{{count}} not unlocked yet',
     // **Ce n'est plus un refus, c'est deux réservations de plus.** Le nombre
     // porte l'argument : « connecte TikTok » sans lui ne fait renoncer
     // personne à renoncer.
@@ -499,7 +498,7 @@ export const en = {
     contrepartieApres: ' on {{plateforme}}, within {{heures}} h',
     // Dit seulement quand le lien est la seule forme : sur un téléphone,
     // « revenir » n'est pas toujours un geste évident.
-    ficheFerme: 'Not open to you yet',
+    ficheFerme: 'Shown so you know it exists. Not unlocked for you yet.',
     ficheComplet: 'Fully booked for now',
     ficheAttendu: 'They expect: {{quoi}}',
     ficheMention: 'a mention of {{mention}}',
@@ -1147,7 +1146,7 @@ export const en = {
     porteCommerce: 'Fill your quiet hours, get seen locally',
     porteCommerceAction: 'Register my business',
     etapeCreateur1: 'Connect Instagram or TikTok, so tiers can open',
-    etapeCreateur2: 'Book a service that is open to you',
+    etapeCreateur2: 'Book a service that is unlocked for you',
     etapeCreateur3: 'Show your code at the counter, publish within the agreed time',
     etapeCommerce1: 'Publish your services and the hours you can take someone',
     etapeCommerce2: 'A creator books a quiet slot and shows a code at the counter',
@@ -1192,7 +1191,7 @@ export const en = {
     titre: 'Saved',
     videTitre: 'Nothing saved yet',
     retraitEchec: 'We couldn’t remove {{prestation}}. Tap again to retry.',
-    videCorps: 'The heart on a service keeps it here, useful for what is not open to you yet.',
+    videCorps: 'The heart on a service keeps it here, useful for what is not unlocked for you yet.',
     duree: '{{n}} min',
     // **Le seul réglage de notification du produit.** Tout le reste est
     // transactionnel — déclenché par celui qui le reçoit. Celui-ci part trois
