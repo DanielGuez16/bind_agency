@@ -225,6 +225,9 @@ export const es: Catalogue = {
     ouvrirLesReglages: 'Ajustes',
     sansPseudonyme: 'Tu perfil',
     abonnes: '{{n}} seguidores',
+    maDeclaration: 'Sobre ti',
+    maDeclarationVide:
+      'Aquí no hay nada todavía. Los comercios que buscan creadoras filtran por lo que cubres, así que una línea sobre ti y hasta tres intereses te hacen más fácil de encontrar. Añádelos en Ajustes.',
     mesPublications: 'Mis publicaciones',
     // --- lo que una creadora declara de sí misma ---
     declareTitre: 'Sobre ti',
