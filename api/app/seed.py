@@ -171,14 +171,34 @@ async def _offrir(
     session: AsyncSession,
     business_id: uuid.UUID,
     couples: list[tuple[Platform, ContentFormat, CatalogItem]],
+    *,
+    mention: str | None = None,
 ) -> int:
-    """Compose les offres d'un commerce. Jamais un parent, seulement des variantes."""
-    for platform, format_, item in couples:
+    """Compose les offres d'un commerce. Jamais un parent, seulement des variantes.
+
+    **Une offre sur deux porte les critères de publication, jamais toutes.**
+    Le champ est écrivable depuis peu ; il est resté vide sur les trente-quatre
+    offres du jeu, si bien que l'écran de réservation ne montrait aucune mention
+    et que le défaut se lisait comme une régression de l'affichage.
+
+    Toutes les remplir serait le symétrique du même défaut : le cas « ce salon
+    ne demande rien » n'existerait dans aucune démonstration, et personne ne
+    verrait que la ligne se retire au lieu de rester vide. On alterne donc, et
+    `required_geotag` suit un rythme différent de la mention — les deux sont
+    indépendants côté produit, et les voir toujours ensemble ferait croire le
+    contraire.
+    """
+    for rang, (platform, format_, item) in enumerate(couples):
         tier = await _tier(session, platform, format_)
         await tier_offer_service.create_offer(
             session,
             business_id=business_id,
-            payload=TierOfferCreate(tier_id=tier.id, catalog_item_id=item.id),
+            payload=TierOfferCreate(
+                tier_id=tier.id,
+                catalog_item_id=item.id,
+                required_mention=mention if mention and rang % 2 == 0 else None,
+                required_geotag=bool(mention) and rang % 3 != 2,
+            ),
         )
     return len(couples)
 
@@ -230,6 +250,19 @@ class SalonDuMarche:
     offres: tuple[tuple[Platform, ContentFormat, int], ...]
     ouverture: tuple[str, str] = ("09:00:00", "19:00:00")
     places: int = 2
+    #: Le numéro du salon, tel qu'il le donnerait. **Aucun n'en avait**, et
+    #: seuls les quatre salons écrits à la main en portaient un : un testeur qui
+    #: ouvrait une fiche au hasard avait une chance sur six de voir un
+    #: téléphone, et la ligne passait pour absente du produit.
+    telephone: str | None = None
+    #: Le pseudonyme du salon, dont dérive la mention proposée sur ses offres.
+    #: Nul quand le salon n'exige aucune citation — le cas doit exister aussi.
+    pseudonyme: str | None = None
+    #: **Faux veut dire « confirmation d'office »**, et il faut que ça se voie.
+    #: Vingt-trois salons sur vingt-quatre demandaient une validation manuelle,
+    #: si bien que la distinction annoncée sur la fiche — « l'appui dit ce qu'il
+    #: déclenche » — n'était démontrable que sur un seul.
+    accord_prealable: bool = True
     #: L'adresse d'une carte en ligne. Posée sur le restaurant qui laisse un
     #: choix : c'est elle qui rend son offre publiable.
     menu_url: str | None = None
@@ -252,6 +285,8 @@ def courriel_du_gerant(fiche: "SalonDuMarche") -> str:
 MARCHE: tuple[SalonDuMarche, ...] = (
     SalonDuMarche(
         nom="Calle Ocho Barber Co.",
+        telephone="+13055554000",
+        pseudonyme="@calle.ocho",
         categorie="beauty",
         quartier=Neighborhood.LITTLE_HAVANA,
         adresse="1642 SW 8th St, Miami, FL 33135",
@@ -273,6 +308,9 @@ MARCHE: tuple[SalonDuMarche, ...] = (
     ),
     SalonDuMarche(
         nom="Verre Skin Studio",
+        telephone="+13055554007",
+        pseudonyme="@verre.skin",
+        accord_prealable=False,
         categorie="beauty",
         quartier=Neighborhood.DESIGN_DISTRICT,
         adresse="140 NE 39th St, Miami, FL 33137",
@@ -298,6 +336,7 @@ MARCHE: tuple[SalonDuMarche, ...] = (
     ),
     SalonDuMarche(
         nom="La Mesa Larga",
+        telephone="+13055554014",
         categorie="restaurant",
         quartier=Neighborhood.LITTLE_HAITI,
         adresse="5900 NE 2nd Ave, Miami, FL 33137",
@@ -319,6 +358,8 @@ MARCHE: tuple[SalonDuMarche, ...] = (
     ),
     SalonDuMarche(
         nom="Edgewater Coffee House",
+        telephone="+13055554021",
+        pseudonyme="@edgewater.coffee",
         categorie="restaurant",
         quartier=Neighborhood.EDGEWATER,
         adresse="3401 Biscayne Blvd, Miami, FL 33137",
@@ -338,6 +379,9 @@ MARCHE: tuple[SalonDuMarche, ...] = (
     ),
     SalonDuMarche(
         nom="Panadería del Sol",
+        telephone="+13055554028",
+        pseudonyme="@panaderia.sol",
+        accord_prealable=False,
         categorie="restaurant",
         quartier=Neighborhood.LITTLE_HAVANA,
         adresse="2306 SW 8th St, Miami, FL 33135",
@@ -363,6 +407,8 @@ MARCHE: tuple[SalonDuMarche, ...] = (
     ),
     SalonDuMarche(
         nom="Brickell Highball",
+        telephone="+13055554035",
+        pseudonyme="@brickell.highball",
         categorie="restaurant",
         quartier=Neighborhood.BRICKELL,
         adresse="900 S Miami Ave, Miami, FL 33130",
@@ -380,6 +426,9 @@ MARCHE: tuple[SalonDuMarche, ...] = (
     ),
     SalonDuMarche(
         nom="Midtown Brunch Club",
+        telephone="+13055554042",
+        pseudonyme="@midtown.brunch",
+        accord_prealable=False,
         categorie="restaurant",
         quartier=Neighborhood.MIDTOWN,
         adresse="3252 NE 1st Ave, Miami, FL 33137",
@@ -398,6 +447,7 @@ MARCHE: tuple[SalonDuMarche, ...] = (
     ),
     SalonDuMarche(
         nom="Wynwood Strength",
+        telephone="+13055554049",
         categorie="fitness",
         quartier=Neighborhood.WYNWOOD,
         adresse="250 NW 24th St, Miami, FL 33127",
@@ -424,6 +474,8 @@ MARCHE: tuple[SalonDuMarche, ...] = (
     ),
     SalonDuMarche(
         nom="Coconut Grove Yoga",
+        telephone="+13055554056",
+        pseudonyme="@coconutgrove.yoga",
         categorie="fitness",
         quartier=Neighborhood.COCONUT_GROVE,
         adresse="3390 Mary St, Miami, FL 33133",
@@ -438,6 +490,9 @@ MARCHE: tuple[SalonDuMarche, ...] = (
     ),
     SalonDuMarche(
         nom="Gables Pilates Room",
+        telephone="+13055554063",
+        pseudonyme="@gables.pilates",
+        accord_prealable=False,
         categorie="fitness",
         quartier=Neighborhood.CORAL_GABLES,
         adresse="270 Giralda Ave, Coral Gables, FL 33134",
@@ -459,6 +514,8 @@ MARCHE: tuple[SalonDuMarche, ...] = (
     ),
     SalonDuMarche(
         nom="Galería Sur",
+        telephone="+13055554070",
+        pseudonyme="@galeria.sur",
         categorie="museum",
         quartier=Neighborhood.LITTLE_HAITI,
         adresse="7218 NW 2nd Ave, Miami, FL 33150",
@@ -481,6 +538,8 @@ MARCHE: tuple[SalonDuMarche, ...] = (
     ),
     SalonDuMarche(
         nom="Clay & Co. Studio",
+        telephone="+13055554077",
+        pseudonyme="@clay.and.co",
         categorie="family_activity",
         quartier=Neighborhood.DESIGN_DISTRICT,
         adresse="4141 NE 2nd Ave, Miami, FL 33137",
@@ -498,6 +557,7 @@ MARCHE: tuple[SalonDuMarche, ...] = (
     ),
     SalonDuMarche(
         nom="Bayside Play Loft",
+        telephone="+13055554084",
         categorie="family_activity",
         quartier=Neighborhood.EDGEWATER,
         adresse="601 NE 36th St, Miami, FL 33137",
@@ -512,6 +572,9 @@ MARCHE: tuple[SalonDuMarche, ...] = (
     ),
     SalonDuMarche(
         nom="Objet Concept Store",
+        telephone="+13055554091",
+        pseudonyme="@objet.concept",
+        accord_prealable=False,
         categorie="other",
         quartier=Neighborhood.MIDTOWN,
         adresse="3401 N Miami Ave, Miami, FL 33127",
@@ -534,6 +597,8 @@ MARCHE: tuple[SalonDuMarche, ...] = (
     ),
     SalonDuMarche(
         nom="Fleur de Biscayne",
+        telephone="+13055554098",
+        pseudonyme="@fleur.biscayne",
         categorie="other",
         quartier=Neighborhood.SOUTH_BEACH,
         adresse="1656 Meridian Ave, Miami Beach, FL 33139",
@@ -547,6 +612,8 @@ MARCHE: tuple[SalonDuMarche, ...] = (
     ),
     SalonDuMarche(
         nom="Librería Aurora",
+        telephone="+13055554105",
+        pseudonyme="@libreria.aurora",
         categorie="other",
         quartier=Neighborhood.CORAL_GABLES,
         adresse="265 Aragon Ave, Coral Gables, FL 33134",
@@ -597,6 +664,8 @@ async def _semer_un_salon(
             timezone="America/New_York",
             default_locale=fiche.locale,
             menu_url=fiche.menu_url,
+            phone=fiche.telephone,
+            instagram_handle=fiche.pseudonyme,
         ),
         creator=owner,
         geocoder=ManualGeocoder(),
@@ -636,7 +705,12 @@ async def _semer_un_salon(
         session,
         business.id,
         [(plateforme, format_, items[rang]) for plateforme, format_, rang in fiche.offres],
+        mention=fiche.pseudonyme,
     )
+
+    if not fiche.accord_prealable:
+        business.requires_booking_approval = False
+        await session.flush()
 
     await _declarer_la_couverture(business)
     await business_service.activate_business(
@@ -752,6 +826,7 @@ async def _ocean_beauty(session: AsyncSession, owner: User) -> tuple[int, int, i
             (Platform.INSTAGRAM, ContentFormat.POST, variantes["Coloration racines"]),
             (Platform.INSTAGRAM, ContentFormat.REEL, variantes["Coloration + balayage"]),
         ],
+        mention="@ocean.beauty",
     )
 
     await _declarer_la_couverture(business)
@@ -856,6 +931,7 @@ async def _wynwood_nails(session: AsyncSession, owner: User) -> tuple[int, int, 
                 sans_reservation["Vernis semi-permanent à emporter"],
             ),
         ],
+        mention="@wynwood.nails",
     )
 
     await _declarer_la_couverture(business)
@@ -955,6 +1031,7 @@ async def _brickell_spa(session: AsyncSession, owner: User) -> tuple[int, int, i
             (Platform.INSTAGRAM, ContentFormat.REEL, items["Massage profond 90 min"]),
             (Platform.TIKTOK, ContentFormat.STORY, items["Soin visage hydratant"]),
         ],
+        mention="@brickell.spa",
     )
 
     await _declarer_la_couverture(business)
