@@ -28,21 +28,13 @@ import { useEffect, useState } from 'react';
 import * as Presse from 'expo-clipboard';
 import { View } from 'react-native';
 
-import { Button, StatusMessage, vibration } from '../../components';
+import { Button, StatusMessage, Texte, vibration } from '../../components';
 import { useI18n } from '../../i18n';
 import { messageDePosition } from '../../shell/messageDePosition';
 import type { EtatDePosition } from '../../shell/usePosition';
-import { SchemaAaSafari } from './SchemaAaSafari';
 
 /** Le même délai que le bouton de copie de la preuve : une copie ne se fête pas. */
 const RETOUR_DU_BOUTON_MS = 2_000;
-
-/**
- * Les deux seules variantes où « l'icône Aa » a un sens à montrer. Les
- * autres navigateurs iOS ont leur propre réglage de site, ailleurs — le
- * texte le dit, le schéma ne le sait pas dessiner sans se tromper.
- */
-const AVEC_SCHEMA = new Set(['web_ios_safari', 'web_ios_autre']);
 
 export function BlocPositionRefusee({
   etat,
@@ -55,12 +47,24 @@ export function BlocPositionRefusee({
 }) {
   const { t } = useI18n();
   const [copie, setCopie] = useState(false);
+  // **Ce que le bouton « réessayer » ne disait pas.** Sur un refus déjà acquis
+  // le navigateur répond sans rien afficher, et l'écran revient exactement là
+  // où il était : l'appui est indiscernable d'un bouton mort. Une ligne le
+  // dit, le temps qu'on la lise, puis s'efface — la même mécanique que le
+  // retour du bouton de copie juste au-dessus.
+  const [essaiSansEffet, setEssaiSansEffet] = useState(false);
 
   useEffect(() => {
     if (!copie) return;
     const minuteur = setTimeout(() => setCopie(false), RETOUR_DU_BOUTON_MS);
     return () => clearTimeout(minuteur);
   }, [copie]);
+
+  useEffect(() => {
+    if (!essaiSansEffet) return;
+    const minuteur = setTimeout(() => setEssaiSansEffet(false), RETOUR_DU_BOUTON_MS);
+    return () => clearTimeout(minuteur);
+  }, [essaiSansEffet]);
 
   const message = messageDePosition(etat);
   // Ne peut pas arriver : `etat.etat` vaut toujours `'refusee'` ici, et
@@ -82,10 +86,23 @@ export function BlocPositionRefusee({
   return (
     <View testID={testID} style={{ gap: 12 }}>
       <StatusMessage level="neutral" body={corps} testID="fil-sans-position" />
-      {AVEC_SCHEMA.has(etat.ouReactiver) ? <SchemaAaSafari testID="fil-schema-aa" /> : null}
+      {essaiSansEffet ? (
+        <Texte variante="type.caption" couleur="ink.soft" testID="fil-essai-sans-effet">
+          {t('parcours.filToujoursBloque')}
+        </Texte>
+      ) : null}
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ flex: 1 }}>
-          <Button label={t('parcours.filReessayer')} onPress={onReessayer} testID="fil-reessayer" />
+          <Button
+            label={t('parcours.filReessayer')}
+            onPress={() => {
+              // Marqué avant l'appel : si le refus tient, l'état ne change pas
+              // et rien d'autre ne signalerait que le bouton a répondu.
+              setEssaiSansEffet(true);
+              onReessayer();
+            }}
+            testID="fil-reessayer"
+          />
         </View>
         <View style={{ flex: 1 }}>
           <Button
