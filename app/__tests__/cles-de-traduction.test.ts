@@ -121,12 +121,13 @@ describe('les clés de traduction', () => {
     // multipliaient, la garde couvrirait de moins en moins sans le dire.
     // Passé à 42 le 2026-08-24 : la ligne des favoris compose le nom du
     // palier requis, deux fois — avec le chiffre et sans lui.
-    // Passé à 44 le 2026-09-04 : les dix centres d'intérêt, composés à deux
+    // Passé à 45 le 2026-09-05 : les dix centres d'intérêt, composés à trois
     // endroits — la chip qui les fait choisir, la fiche d'annuaire qui les
-    // montre. Ce que cette garde y perd est rendu ailleurs :
-    // `centres-d-interet.test.ts` résout les dix clés dans les deux langues,
-    // et lit la liste dans l'énumération Python plutôt que de la recopier.
-    expect(composees).toBeLessThan(44);
+    // montre, et la section du profil qui les relit. Ce que cette garde y perd
+    // est rendu ailleurs : `centres-d-interet.test.ts` résout les dix clés
+    // dans les deux langues, et lit la liste dans l'énumération Python plutôt
+    // que de la recopier.
+    expect(composees).toBeLessThan(45);
   });
 });
 

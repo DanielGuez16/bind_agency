@@ -19,12 +19,13 @@
  */
 import { Pressable, View } from 'react-native';
 
-import { useApi, type AudienceDuCompte } from '../api';
+import { useApi, type AudienceDuCompte, type MonProfilDeclare } from '../api';
 import { EnTeteDEcran, Icone, Photo, SkeletonLignes, Texte } from '../components';
 import { formatNumber } from '../format';
 import { useI18n } from '../i18n';
 import { radius, useColors } from '../theme';
 import { Ecran } from './Ecran';
+import { MaDeclaration } from './profil/MaDeclaration';
 import { useRequete } from './useRequete';
 
 /** Le compte qui représente la créatrice : celui qui porte le plus d'abonnés. */
@@ -68,13 +69,22 @@ export function ProfilScreen({
    * que `fil.favoris_total` annonce. Deux façons de compter la même chose
    * finiraient par diverger.
    */
-  const requete = useRequete<{ comptes: AudienceDuCompte[]; favoris: number | null }>(
+  const requete = useRequete<{
+    comptes: AudienceDuCompte[];
+    favoris: number | null;
+    declare: MonProfilDeclare | null;
+  }>(
     async (signal) => {
-      const [comptes, favoris] = await Promise.all([
+      // **Le profil déclaré ne bloque pas l'écran non plus.** Même règle que
+      // le compte de favoris juste à côté : s'il échoue, la section se tait et
+      // le reste s'affiche. Un pseudonyme et une audience valent un écran ;
+      // une bio manquante ne vaut pas un écran d'erreur.
+      const [comptes, favoris, declare] = await Promise.all([
         api.monAudience(signal),
         api.mesFavoris(signal).then((liste) => liste.length).catch(() => null),
+        api.monProfil(signal).catch(() => null),
       ]);
-      return { comptes, favoris };
+      return { comptes, favoris, declare };
     },
     {
       // **Jamais vide.** Une créatrice sans réseau rattaché a quand même un
@@ -116,7 +126,7 @@ export function ProfilScreen({
         />
       }
     >
-      {({ comptes, favoris }) => {
+      {({ comptes, favoris, declare }) => {
         const tete = compteDeTete(comptes);
         const photo = tete?.avatar_key ? api.urlDeLaVignette(tete.avatar_key) : null;
 
@@ -154,6 +164,14 @@ export function ProfilScreen({
                 ) : null}
               </View>
             </View>
+
+            {/* **Entre l'identité et les portes.** Ce qu'on a déclaré
+                appartient à la présentation, pas à la navigation : le poser
+                sous les trois destinations l'aurait rangé parmi des boutons.
+                Se tait entièrement si sa route a échoué. */}
+            {declare ? (
+              <MaDeclaration bio={declare.bio} interets={declare.interests} />
+            ) : null}
 
             <View style={{ gap: 2 }}>
               <Ligne

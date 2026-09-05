@@ -232,6 +232,9 @@ export const en = {
     ouvrirLesReglages: 'Settings',
     sansPseudonyme: 'Your profile',
     abonnes: '{{n}} followers',
+    maDeclaration: 'About you',
+    maDeclarationVide:
+      'Nothing here yet. Businesses browsing for creators filter on what you cover, so a line about yourself and up to three interests make you easier to find. Add them in Settings.',
     mesPublications: 'My posts',
     // --- ce qu'une créatrice déclare d'elle-même ---
     declareTitre: 'About you',
