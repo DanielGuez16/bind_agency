@@ -140,15 +140,17 @@ async def test_une_cle_sans_genre_ne_se_depose_pas(session: AsyncSession) -> Non
     """Un message qu'aucune préférence ne commande ne se dépose pas plus qu'il
     ne s'envoie : le laisser entrer dans la boîte le ferait partir plus tard.
 
-    `account.welcome` est le dernier message du catalogue dans ce cas : écrit,
-    traduit, et émis par personne. Les deux autres — l'ouverture d'une
-    contrepartie et sa non-honoration — ont reçu leur genre et sont désormais
-    envoyés.
+    **La clé n'a pas besoin d'exister dans le catalogue pour éprouver ceci** :
+    `deposer` consulte `GENRE_PAR_CLE`, jamais les fichiers de traduction. Une
+    clé y était prise comme exemple — `account.welcome` — mais elle a fini par
+    laisser croire que la propriété dépendait du catalogue, ce qui l'a rendue
+    fragile au jour où cette clé morte a été retirée : écrite, traduite, et
+    émise par personne, elle n'avait plus de raison d'exister ailleurs qu'ici.
     """
     utilisateur = await destinataire(session)
 
     with pytest.raises(KeyError):
-        await outbox.deposer(session, user_id=utilisateur.id, cle="account.welcome")
+        await outbox.deposer(session, user_id=utilisateur.id, cle="genre.jamais.declare")
 
 
 # --------------------------------------------------------------------------
