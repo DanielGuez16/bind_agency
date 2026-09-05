@@ -2208,3 +2208,57 @@ async def test_les_decisions_s_etalent_sur_la_semaine(seed_conn: AsyncConnection
     # porteraient chacun les deux mêmes jours laisseraient la semaine plate.
     toutes = {jour for jours in jours_par_salon.values() for jour in jours}
     assert len(toutes) >= 3, f"la semaine ne porte que {len(toutes)} journée(s) de décisions"
+
+
+async def test_des_salons_portent_leurs_liens_publics(seed_conn: AsyncConnection) -> None:
+    """**Le bloc existait, la donnée non — et rien ne le disait.**
+
+    Les quatre colonnes de liens sont sur le commerce depuis longtemps, la
+    fiche du salon et la carte de réservation les rendent, et `LesLiensDuSalon`
+    se tait quand les quatre sont nulles. Aucun salon du jeu n'en portait un
+    seul : le bloc était donc invisible partout, sur les quatre onglets comme
+    sur la fiche, et se lisait comme un écran incomplet plutôt que comme un
+    salon qui n'a rien renseigné.
+
+    **Trois compositions différentes, et c'est ce que le test éprouve.** Un jeu
+    où les trois salons porteraient les mêmes liens laisserait passer un écran
+    qui n'en rend qu'un, ou qui les rend tous quelle que soit la donnée. Il
+    faut donc au moins un salon à quatre liens, un à un seul, et un qui porte
+    Facebook — le champ le plus récent, celui qu'aucun décor n'exerçait.
+    """
+    lignes = dict(
+        (
+            await seed_conn.execute(
+                sa.select(
+                    Business.name,
+                    sa.func.concat_ws(
+                        "|",
+                        Business.instagram_url,
+                        Business.tiktok_url,
+                        Business.facebook_url,
+                        Business.website_url,
+                    ),
+                ).where(Business.name.in_(["Ocean Beauty Studio", "Wynwood Nails & Care"]))
+            )
+        ).all()
+    )
+
+    # Le salon de la démonstration : tout ce que le composant sait rendre.
+    ocean = lignes["Ocean Beauty Studio"]
+    assert "instagram.com" in ocean
+    assert "tiktok.com" in ocean
+    assert "oceanbeautystudio.example" in ocean
+
+    # Et un salon qui n'a renseigné qu'un lien : l'écran doit rendre une ligne,
+    # pas quatre dont trois vides.
+    wynwood = lignes["Wynwood Nails & Care"]
+    assert "instagram.com" in wynwood
+    assert "tiktok.com" not in wynwood
+
+    # Facebook, servi par un troisième salon. Le champ est le plus récent des
+    # quatre et aucun jeu de données ne l'exerçait.
+    facebook = await seed_conn.scalar(
+        sa.select(Business.facebook_url).where(Business.name == "Brickell Spa Collective")
+    )
+    assert facebook is not None
+    assert "facebook.com" in facebook
