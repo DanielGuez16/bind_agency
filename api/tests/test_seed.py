@@ -2262,3 +2262,82 @@ async def test_des_salons_portent_leurs_liens_publics(seed_conn: AsyncConnection
     )
     assert facebook is not None
     assert "facebook.com" in facebook
+
+
+async def test_le_jeu_pose_des_mentions_et_des_offres_sans_mention(
+    seed_conn: AsyncConnection,
+) -> None:
+    """**Le champ était écrivable et personne ne l'écrivait.**
+
+    `required_mention` est devenu saisissable — route, écran de composition,
+    journal de configuration — et le semis ne le posait sur aucune des
+    trente-quatre offres. Vu de l'écran de réservation, c'est exactement le même
+    symptôme qu'avant : aucune mention nulle part. Un champ qui passe de
+    « impossible à écrire » à « personne ne l'a écrit » ne se distingue pas à
+    l'usage.
+
+    **Les deux cas, et c'est le sujet du test.** Tout remplir serait le
+    symétrique du défaut : « ce salon n'exige aucune citation » n'existerait
+    dans aucune démonstration, et la ligne paraîtrait obligatoire. Un décor qui
+    ne montre qu'un des deux états ne prouve pas que l'autre se rend.
+    """
+    avec = await seed_conn.scalar(
+        sa.select(sa.func.count())
+        .select_from(TierOffer)
+        .where(TierOffer.required_mention.is_not(None))
+    )
+    sans = await seed_conn.scalar(
+        sa.select(sa.func.count())
+        .select_from(TierOffer)
+        .where(TierOffer.required_mention.is_(None))
+    )
+
+    assert avec > 0, (
+        "aucune offre ne porte de mention : l'écran de réservation n'en montrera aucune"
+    )
+    assert sans > 0, "toutes les offres en portent une : le cas « rien à citer » ne se démontre pas"
+
+
+async def test_chaque_salon_en_ligne_porte_un_telephone(seed_conn: AsyncConnection) -> None:
+    """Quatre salons sur vingt-quatre en avaient un.
+
+    Un testeur qui ouvrait une fiche au hasard avait une chance sur six de voir
+    la ligne, et son absence se lisait comme un manque du produit plutôt que du
+    jeu de données. **Seulement les salons en ligne** : une fiche préparée en
+    mode terrain n'a pas encore de propriétaire pour la renseigner.
+    """
+    sans = list(
+        await seed_conn.scalars(
+            sa.select(Business.name).where(
+                Business.status == BusinessStatus.ACTIVE, Business.phone.is_(None)
+            )
+        )
+    )
+
+    assert sans == [], f"salons en ligne sans téléphone : {sans}"
+
+
+async def test_les_deux_regimes_d_accord_se_demontrent(seed_conn: AsyncConnection) -> None:
+    """La fiche annonce ce que l'appui déclenche — encore faut-il deux cas.
+
+    Vingt-trois salons sur vingt-quatre exigeaient une validation manuelle : la
+    distinction existait à l'écran et n'était visible sur aucun parcours.
+    """
+    manuel = await seed_conn.scalar(
+        sa.select(sa.func.count())
+        .select_from(Business)
+        .where(
+            Business.status == BusinessStatus.ACTIVE, Business.requires_booking_approval.is_(True)
+        )
+    )
+    auto = await seed_conn.scalar(
+        sa.select(sa.func.count())
+        .select_from(Business)
+        .where(
+            Business.status == BusinessStatus.ACTIVE,
+            Business.requires_booking_approval.is_(False),
+        )
+    )
+
+    assert manuel > 1, "un seul salon en validation manuelle : le cas ne se parcourt pas"
+    assert auto > 1, "un seul salon en confirmation d'office : la distinction reste invisible"
