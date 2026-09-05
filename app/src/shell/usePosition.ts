@@ -182,7 +182,6 @@ export function usePosition() {
   const demander = useCallback(async () => {
     if (enVol.current) return;
     enVol.current = true;
-    setEtat({ etat: 'en_cours' });
 
     try {
       let accorde: boolean;
@@ -192,9 +191,22 @@ export function usePosition() {
         // rien.
         const actuel = await Location.getForegroundPermissionsAsync();
         if (actuel.status === 'denied' && !actuel.canAskAgain) {
+          // **Et sans passer par `en_cours`, ce qui était le vrai défaut du
+          // bouton « réessayer ».** L'état d'attente était posé avant cette
+          // lecture : sur un refus déjà acquis, l'écran quittait le bloc,
+          // affichait « on cherche votre position » pendant les quelques
+          // millisecondes de la lecture, puis revenait au même bloc. Rien ne
+          // bougeait à l'œil, et le bloc étant démonté puis remonté, il
+          // perdait aussi tout moyen de dire « j'ai essayé ». Annoncer une
+          // recherche qu'on est sur le point de découvrir impossible n'était
+          // de toute façon pas vrai.
           setEtat({ etat: 'refusee', ouReactiver: ouReactiver() });
           return;
         }
+
+        // Passé ce point, quelque chose peut réellement se produire : une
+        // fenêtre du navigateur, ou une lecture de position.
+        setEtat({ etat: 'en_cours' });
 
         if (actuel.granted) {
           accorde = true;

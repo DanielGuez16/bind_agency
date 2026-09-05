@@ -428,9 +428,9 @@ export const es: Catalogue = {
     filPositionRefusee:
       'La ubicación está desactivada para BIND, así que no podemos ordenar por distancia.',
     filReactiverIosSafariWeb:
-      'Toca el icono «Aa» a la izquierda de la barra de direcciones, luego Ajustes del sitio web, y pon Ubicación en «Permitir». El ajuste general de Localización del iPhone puede estar activado aunque Safari recuerde un rechazo anterior para este sitio en concreto: son dos interruptores distintos, y es este el que hay que revisar.',
+      'Activa la Localización para Safari en los Ajustes de tu iPhone y recarga esta página.',
     filReactiverIosAutreWeb:
-      'Abre los ajustes de sitio de este navegador para BIND, normalmente desde el icono junto a la barra de direcciones, y pon Ubicación en «Permitir». El ajuste general de Localización del iPhone puede estar activado aunque este navegador recuerde un rechazo anterior para este sitio en concreto: son dos interruptores distintos, y es este el que hay que revisar.',
+      'Activa la Localización para tu navegador en los Ajustes de tu iPhone y recarga esta página.',
     filReactiverAndroidWeb:
       'Toca el icono del candado a la izquierda de la barra de direcciones, luego Permisos, y pon Ubicación en «Permitir».',
     filReactiverDesktopWeb:
@@ -444,6 +444,7 @@ export const es: Catalogue = {
     filPositionSansReponse:
       'Seguimos esperando una respuesta. Si tu navegador te lo está pidiendo, elige «Permitir»; si no, vuelve a intentarlo.',
     filReessayer: 'Reintentar',
+    filToujoursBloque: 'Sigue bloqueado. Cambia el ajuste de arriba y vuelve.',
     filCopierLesInstructions: 'Copiar las instrucciones',
     filInstructionsCopiees: 'Copiado',
     filPopulaireTitre: 'Popular ahora mismo',

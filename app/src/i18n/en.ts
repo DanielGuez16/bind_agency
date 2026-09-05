@@ -484,9 +484,9 @@ export const en = {
     // navigateur sont deux interrupteurs différents, et c'est le second
     // qui compte ici.
     filReactiverIosSafariWeb:
-      'Tap the “Aa” icon at the left of the address bar, then Website Settings, then set Location to “Allow”. iPhone’s general Location Services can be on while Safari still remembers an earlier refusal for this site specifically: they’re two different switches, and this is the one to check.',
+      'Turn on Location Services for Safari in your iPhone Settings, then reload this page.',
     filReactiverIosAutreWeb:
-      'Open this browser’s site settings for BIND, usually via the icon next to the address bar, and set Location to “Allow”. iPhone’s general Location Services can be on while this browser still remembers an earlier refusal for this site specifically: they’re two different switches, and this is the one to check.',
+      'Turn on Location Services for your browser in your iPhone Settings, then reload this page.',
     filReactiverAndroidWeb:
       'Tap the lock icon left of the address bar, then Permissions, then set Location to “Allow”.',
     filReactiverDesktopWeb:
@@ -498,6 +498,7 @@ export const en = {
     filPositionSansReponse:
       'We are still waiting for an answer. If your browser is asking, choose “Allow”. Otherwise, try again.',
     filReessayer: 'Try again',
+    filToujoursBloque: 'Still blocked. Change the setting above, then come back.',
     filCopierLesInstructions: 'Copy instructions',
     filInstructionsCopiees: 'Copied',
     filPopulaireTitre: 'Popular right now',
