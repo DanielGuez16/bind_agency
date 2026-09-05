@@ -38,7 +38,7 @@ from app.integrations.geocoding import ManualGeocoder
 from app.integrations.social import IdentiteSociale, JetonEchange, MetriquesProfil
 from app.models import CatalogItem, Tier, User
 from app.models.enums import ContentFormat, Locale, Neighborhood, Platform, UserRole
-from app.schemas.business import BusinessCreate, CoordinatesPayload
+from app.schemas.business import BusinessCreate, BusinessUpdate, CoordinatesPayload
 from app.schemas.capacity import CapacityExceptionCreate, CapacityRuleCreate
 from app.schemas.catalog import CatalogItemCreate
 from app.schemas.tier_offers import TierOfferCreate
@@ -669,6 +669,24 @@ async def _ocean_beauty(session: AsyncSession, owner: User) -> tuple[int, int, i
         geocoder=ManualGeocoder(),
     )
 
+    # **Les liens publics, posés par le service qui les écrit.** Les quatre
+    # colonnes existaient, la carte de réservation et la fiche du salon les
+    # rendent depuis toujours, et **aucun salon du jeu n'en portait un seul** :
+    # le bloc se taisait partout, sur les quatre onglets comme sur la fiche, et
+    # se lisait comme un écran incomplet. Trois salons, trois compositions
+    # différentes, pour que les variantes du composant se voient.
+    await business_service.update_business(
+        session,
+        business=business,
+        payload=BusinessUpdate(
+            instagram_url="https://www.instagram.com/oceanbeautystudio",
+            instagram_handle="@oceanbeautystudio",
+            tiktok_url="https://www.tiktok.com/@oceanbeauty",
+            website_url="https://oceanbeautystudio.example",
+        ),
+        geocoder=ManualGeocoder(),
+    )
+
     coloration = await catalog_service.create_item(
         session,
         business=business,
@@ -762,6 +780,22 @@ async def _wynwood_nails(session: AsyncSession, owner: User) -> tuple[int, int, 
         geocoder=ManualGeocoder(),
     )
 
+    # **Les liens publics, posés par le service qui les écrit.** Les quatre
+    # colonnes existaient, la carte de réservation et la fiche du salon les
+    # rendent depuis toujours, et **aucun salon du jeu n'en portait un seul** :
+    # le bloc se taisait partout, sur les quatre onglets comme sur la fiche, et
+    # se lisait comme un écran incomplet. Trois salons, trois compositions
+    # différentes, pour que les variantes du composant se voient.
+    await business_service.update_business(
+        session,
+        business=business,
+        payload=BusinessUpdate(
+            instagram_url="https://www.instagram.com/wynwoodnails",
+            instagram_handle="@wynwoodnails",
+        ),
+        geocoder=ManualGeocoder(),
+    )
+
     # Le seul salon en automatique du jeu de données. Les autres valident, ce
     # qui est le défaut du produit ; il en faut un de chaque côté pour que la
     # démonstration montre les deux parcours.
@@ -847,6 +881,23 @@ async def _brickell_spa(session: AsyncSession, owner: User) -> tuple[int, int, i
             phone="+13055550133",
         ),
         creator=owner,
+        geocoder=ManualGeocoder(),
+    )
+
+    # **Les liens publics, posés par le service qui les écrit.** Les quatre
+    # colonnes existaient, la carte de réservation et la fiche du salon les
+    # rendent depuis toujours, et **aucun salon du jeu n'en portait un seul** :
+    # le bloc se taisait partout, sur les quatre onglets comme sur la fiche, et
+    # se lisait comme un écran incomplet. Trois salons, trois compositions
+    # différentes, pour que les variantes du composant se voient.
+    await business_service.update_business(
+        session,
+        business=business,
+        payload=BusinessUpdate(
+            instagram_url="https://www.instagram.com/brickellspa",
+            instagram_handle="@brickellspa",
+            facebook_url="https://www.facebook.com/brickellspacollective",
+        ),
         geocoder=ManualGeocoder(),
     )
 
