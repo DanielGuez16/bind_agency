@@ -295,9 +295,9 @@ MARCHE: tuple[SalonDuMarche, ...] = (
         couverture="05",
         locale=Locale.ES,
         items=(
-            ("Corte clásico", 4500, 30),
-            ("Corte y barba", 6500, 45, "Corte, arreglo de barba y toalla caliente."),
-            ("Afeitado", 3500, 20),
+            ("Classic cut", 4500, 30),
+            ("Cut and beard", 6500, 45, "Haircut, beard trim and a hot towel."),
+            ("Straight-razor shave", 3500, 20),
         ),
         offres=(
             (Platform.INSTAGRAM, ContentFormat.STORY, 0),
@@ -349,7 +349,7 @@ MARCHE: tuple[SalonDuMarche, ...] = (
         # règle refuse d'ouvrir l'offre. `menu_url` la rend publiable ; le semis
         # des photos y ajoute des pages déposées, pour que les deux formes se
         # voient — l'une n'exclut pas l'autre.
-        items=(("Menú del día", 3200, 75), ("Postre del día", 900, 15)),
+        items=(("Set lunch", 3200, 75), ("Dessert of the day", 900, 15)),
         offres=((Platform.INSTAGRAM, ContentFormat.REEL, 0),),
         ouverture=("12:00:00", "22:00:00"),
         places=6,
@@ -390,8 +390,8 @@ MARCHE: tuple[SalonDuMarche, ...] = (
         couverture="09",
         locale=Locale.ES,
         items=(
-            ("Taller de pastelería", 5500, 60),
-            ("Pastelito de guayaba", 350, None),
+            ("Pastry workshop", 5500, 60),
+            ("Guava pastry", 350, None),
             ("Café con leche", 400, None),
         ),
         # **Les deux plateformes.** Avec TikTok seul, ce salon n'apparaissait
@@ -501,10 +501,10 @@ MARCHE: tuple[SalonDuMarche, ...] = (
         couverture="14",
         locale=Locale.ES,
         items=(
-            ("Reformer privado", 7500, 55),
-            ("Clase en grupo", 3200, 55),
-            ("Evaluación postural", 4500, 40),
-            ("Bono de tres clases", 8800, 55),
+            ("Private reformer", 7500, 55),
+            ("Group class", 3200, 55),
+            ("Posture assessment", 4500, 40),
+            ("Three-class pack", 8800, 55),
         ),
         offres=(
             (Platform.INSTAGRAM, ContentFormat.POST, 1),
@@ -525,12 +525,12 @@ MARCHE: tuple[SalonDuMarche, ...] = (
         locale=Locale.ES,
         items=(
             (
-                "Visita guiada",
+                "Guided visit",
                 1500,
                 60,
-                "Una hora por la colección con alguien del equipo. Grupos de seis como máximo.",
+                "An hour through the collection with someone from the team. Groups of six at most.",
             ),
-            ("Entrada general", 900, None),
+            ("General admission", 900, None),
         ),
         offres=((Platform.INSTAGRAM, ContentFormat.POST, 0),),
         ouverture=("11:00:00", "19:00:00"),
@@ -622,16 +622,16 @@ MARCHE: tuple[SalonDuMarche, ...] = (
         couverture="20",
         locale=Locale.ES,
         items=(
-            ("Club de lectura", 1200, 90),
-            ("Recomendación personal", 0, 20),
-            ("Café y libro", 1500, None),
-            ("Firma de autor", 0, 60),
-            ("Taller de escritura", 5500, 120),
-            ("Envoltura de regalo", 600, 10),
+            ("Book club", 1200, 90),
+            ("Personal recommendation", 0, 20),
+            ("Coffee and a book", 1500, None),
+            ("Author signing", 0, 60),
+            ("Writing workshop", 5500, 120),
+            ("Gift wrapping", 600, 10),
         ),
-        # L'offre Instagram porte un item **réservable** : elle portait « Café
-        # y libro », qui n'a pas de durée, donc aucune place — le salon
-        # n'apparaissait dans aucune journée et le semis écartait sa
+        # L'offre Instagram porte un item **réservable** : elle portait
+        # « Coffee and a book », qui n'a pas de durée, donc aucune place — le
+        # salon n'apparaissait dans aucune journée et le semis écartait sa
         # réservation.
         offres=(
             (Platform.INSTAGRAM, ContentFormat.STORY, 0),
