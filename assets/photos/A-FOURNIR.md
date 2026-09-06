@@ -257,9 +257,9 @@ importance pour ce qu'elles servent à montrer.
 | `commerces/bayside-play-loft/prestations/day-pass.jpg` | indoor playground children | cc0 1.0 | [voir](https://www.rawpixel.com/image/9190581/png-person-cartoon) |
 | `commerces/brickell-highball/prestations/signature-cocktail.jpg` | cocktail | pdm 1.0 | [voir](https://www.flickr.com/photos/123529748@N03/19566733358) |
 | `commerces/brickell-highball/prestations/tasting-flight.jpg` | whiskey tasting glasses | cc0 1.0 | [voir](https://www.rawpixel.com/image/432603/free-photo-image-whiskey-gin-vodka-background) |
-| `commerces/calle-ocho-barber-co/prestations/afeitado.jpg` | barber shave razor | cc0 1.0 | [voir](https://stocksnap.io/photo/barber-razor-06HGN8LMUX) |
-| `commerces/calle-ocho-barber-co/prestations/corte-clasico.jpg` | barber haircut | pdm 1.0 | [voir](https://www.flickr.com/photos/27865228@N06/6219904579) |
-| `commerces/calle-ocho-barber-co/prestations/corte-y-barba.jpg` | beard trim barber | cc0 1.0 | [voir](https://stocksnap.io/photo/barber-cutting-O6KYUCUFY4) |
+| `commerces/calle-ocho-barber-co/prestations/straight-razor-shave.jpg` | barber shave razor | cc0 1.0 | [voir](https://stocksnap.io/photo/barber-razor-06HGN8LMUX) |
+| `commerces/calle-ocho-barber-co/prestations/classic-cut.jpg` | barber haircut | pdm 1.0 | [voir](https://www.flickr.com/photos/27865228@N06/6219904579) |
+| `commerces/calle-ocho-barber-co/prestations/cut-and-beard.jpg` | beard trim barber | cc0 1.0 | [voir](https://stocksnap.io/photo/barber-cutting-O6KYUCUFY4) |
 | `commerces/clay-co-studio/prestations/hand-building-class.jpg` | clay hands | cc0 1.0 | [voir](https://commons.wikimedia.org/w/index.php?curid=10862243) |
 | `commerces/clay-co-studio/prestations/open-studio-hour.jpg` | pottery studio | cc0 1.0 | [voir](https://www.rawpixel.com/image/9740935/musician-cowan-pottery-studio-and-alexander-blazys) |
 | `commerces/clay-co-studio/prestations/wheel-throwing.jpg` | potter wheel throwing | cc0 1.0 | [voir](https://commons.wikimedia.org/w/index.php?curid=174919507) |
@@ -271,20 +271,20 @@ importance pour ce qu'elles servent à montrer.
 | `commerces/edgewater-coffee-house/prestations/latte-art-class.jpg` | latte art | cc0 1.0 | [voir](https://stocksnap.io/photo/latte-art-ERHOTDPNMV) |
 | `commerces/fleur-de-biscayne/prestations/arrangement-workshop.jpg` | florist | pdm 1.0 | [voir](https://www.flickr.com/photos/97123293@N07/15039189067) |
 | `commerces/fleur-de-biscayne/prestations/seasonal-bouquet.jpg` | flower bouquet | cc0 1.0 | [voir](https://www.flickr.com/photos/71401718@N00/6010806486) |
-| `commerces/gables-pilates-room/prestations/bono-de-tres-clases.jpg` | pilates studio | cc0 1.0 | [voir](https://commons.wikimedia.org/w/index.php?curid=101679419) |
-| `commerces/gables-pilates-room/prestations/clase-en-grupo.jpg` | fitness class | cc0 1.0 | [voir](https://www.flickr.com/photos/37996646802@N01/3098651263) |
-| `commerces/gables-pilates-room/prestations/evaluacion-postural.jpg` | posture assessment | pdm 1.0 | [voir](https://www.flickr.com/photos/61270229@N05/49898229486) |
-| `commerces/gables-pilates-room/prestations/reformer-privado.jpg` | pilates | cc0 1.0 | [voir](https://www.flickr.com/photos/39699193@N03/14857361148) |
-| `commerces/galeria-sur/prestations/entrada-general.jpg` | art gallery | cc0 1.0 | [voir](https://commons.wikimedia.org/w/index.php?curid=89067793) |
-| `commerces/galeria-sur/prestations/visita-guiada.jpg` | gallery guided tour | cc0 1.0 | [voir](https://commons.wikimedia.org/w/index.php?curid=178393804) |
-| `commerces/la-mesa-larga/prestations/menu-del-dia.jpg` | restaurant dish plate | cc0 1.0 | [voir](https://www.flickr.com/photos/35034347371@N01/44514349) |
-| `commerces/la-mesa-larga/prestations/postre-del-dia.jpg` | dessert plate | cc0 1.0 | [voir](https://www.flickr.com/photos/200781279@N05/53879957953) |
-| `commerces/libreria-aurora/prestations/cafe-y-libro.jpg` | book and coffee | cc0 1.0 | [voir](https://wordpress.org/photos/photo/38164392a0/) |
-| `commerces/libreria-aurora/prestations/club-de-lectura.jpg` | book club reading | cc0 1.0 | [voir](https://www.flickr.com/photos/30484128@N03/52311743538) |
-| `commerces/libreria-aurora/prestations/envoltura-de-regalo.jpg` | gift wrapping paper | pdm 1.0 | [voir](https://www.flickr.com/photos/142795635@N08/28166452405) |
-| `commerces/libreria-aurora/prestations/firma-de-autor.jpg` | book signing | cc0 1.0 | [voir](https://commons.wikimedia.org/w/index.php?curid=100101047) |
-| `commerces/libreria-aurora/prestations/recomendacion-personal.jpg` | bookshop shelves | cc0 1.0 | [voir](https://wordpress.org/photos/photo/3716439482/) |
-| `commerces/libreria-aurora/prestations/taller-de-escritura.jpg` | notebook writing | pdm 1.0 | [voir](https://www.flickr.com/photos/91689877@N03/51701896539) |
+| `commerces/gables-pilates-room/prestations/three-class-pack.jpg` | pilates studio | cc0 1.0 | [voir](https://commons.wikimedia.org/w/index.php?curid=101679419) |
+| `commerces/gables-pilates-room/prestations/group-class.jpg` | fitness class | cc0 1.0 | [voir](https://www.flickr.com/photos/37996646802@N01/3098651263) |
+| `commerces/gables-pilates-room/prestations/posture-assessment.jpg` | posture assessment | pdm 1.0 | [voir](https://www.flickr.com/photos/61270229@N05/49898229486) |
+| `commerces/gables-pilates-room/prestations/private-reformer.jpg` | pilates | cc0 1.0 | [voir](https://www.flickr.com/photos/39699193@N03/14857361148) |
+| `commerces/galeria-sur/prestations/general-admission.jpg` | art gallery | cc0 1.0 | [voir](https://commons.wikimedia.org/w/index.php?curid=89067793) |
+| `commerces/galeria-sur/prestations/guided-visit.jpg` | gallery guided tour | cc0 1.0 | [voir](https://commons.wikimedia.org/w/index.php?curid=178393804) |
+| `commerces/la-mesa-larga/prestations/set-lunch.jpg` | restaurant dish plate | cc0 1.0 | [voir](https://www.flickr.com/photos/35034347371@N01/44514349) |
+| `commerces/la-mesa-larga/prestations/dessert-of-the-day.jpg` | dessert plate | cc0 1.0 | [voir](https://www.flickr.com/photos/200781279@N05/53879957953) |
+| `commerces/libreria-aurora/prestations/coffee-and-a-book.jpg` | book and coffee | cc0 1.0 | [voir](https://wordpress.org/photos/photo/38164392a0/) |
+| `commerces/libreria-aurora/prestations/book-club.jpg` | book club reading | cc0 1.0 | [voir](https://www.flickr.com/photos/30484128@N03/52311743538) |
+| `commerces/libreria-aurora/prestations/gift-wrapping.jpg` | gift wrapping paper | pdm 1.0 | [voir](https://www.flickr.com/photos/142795635@N08/28166452405) |
+| `commerces/libreria-aurora/prestations/author-signing.jpg` | book signing | cc0 1.0 | [voir](https://commons.wikimedia.org/w/index.php?curid=100101047) |
+| `commerces/libreria-aurora/prestations/personal-recommendation.jpg` | bookshop shelves | cc0 1.0 | [voir](https://wordpress.org/photos/photo/3716439482/) |
+| `commerces/libreria-aurora/prestations/writing-workshop.jpg` | notebook writing | pdm 1.0 | [voir](https://www.flickr.com/photos/91689877@N03/51701896539) |
 | `commerces/midtown-brunch-club/prestations/brunch-plate.jpg` | brunch plate | cc0 1.0 | [voir](https://wordpress.org/photos/photo/11967d5dea/) |
 | `commerces/midtown-brunch-club/prestations/fresh-juice.jpg` | fresh orange juice glass | pdm 1.0 | [voir](https://www.flickr.com/photos/8398907@N02/2473991201) |
 | `commerces/midtown-brunch-club/prestations/pancake-stack.jpg` | pancakes stack | cc0 1.0 | [voir](https://wordpress.org/photos/photo/3536a5583c/) |
@@ -294,8 +294,8 @@ importance pour ce qu'elles servent à montrer.
 | `commerces/objet-concept-store/prestations/scent-bar.jpg` | perfume bottles | cc0 1.0 | [voir](https://commons.wikimedia.org/w/index.php?curid=60416249) |
 | `commerces/objet-concept-store/prestations/styling-session.jpg` | fashion styling clothes | pdm 1.0 | [voir](https://www.flickr.com/photos/135504457@N06/26965889226) |
 | `commerces/panaderia-del-sol/prestations/cafe-con-leche.jpg` | latte coffee | cc0 1.0 | [voir](https://wordpress.org/photos/photo/9266a1648e/) |
-| `commerces/panaderia-del-sol/prestations/pastelito-de-guayaba.jpg` | guava pastry | cc0 1.0 | [voir](https://www.flickr.com/photos/43296902@N00/24869822936) |
-| `commerces/panaderia-del-sol/prestations/taller-de-pasteleria.jpg` | baking | pdm 1.0 | [voir](https://www.flickr.com/photos/59863270@N07/40910468072) |
+| `commerces/panaderia-del-sol/prestations/guava-pastry.jpg` | guava pastry | cc0 1.0 | [voir](https://www.flickr.com/photos/43296902@N00/24869822936) |
+| `commerces/panaderia-del-sol/prestations/pastry-workshop.jpg` | baking | pdm 1.0 | [voir](https://www.flickr.com/photos/59863270@N07/40910468072) |
 | `commerces/verre-skin-studio/prestations/deep-cleanse.jpg` | skincare | pdm 1.0 | [voir](https://www.flickr.com/photos/92854661@N07/21850218808) |
 | `commerces/verre-skin-studio/prestations/led-add-on.jpg` | face mask beauty | pdm 1.0 | [voir](https://www.flickr.com/photos/54563451@N08/32715911581) |
 | `commerces/verre-skin-studio/prestations/peel.jpg` | facial massage | cc0 1.0 | [voir](https://www.rawpixel.com/image/5948417/free-public-domain-cc0-photo) |
