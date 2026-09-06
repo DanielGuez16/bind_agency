@@ -12098,3 +12098,55 @@ erreurs de montage, à quelques heures d'écart : la première venait d'un `rm -
 .venv` lancé dans la même commande que `pytest`, la seconde d'une révision
 fantôme dans la base de développement partagée. Le compte identique a fait
 conclure à une répétition de la première, et relancer au lieu de lire.
+
+---
+
+## 2026-09-05 — Un champ écrivable que personne n'écrivait
+
+**Le défaut est le même que celui qu'on venait de corriger, et il ne se
+distingue pas à l'usage.** `required_mention` est devenu saisissable — route
+`PATCH`, écran de composition, journal de configuration, affichage légendé côté
+créatrice. Le semis, lui, ne le posait sur **aucune** des trente-quatre offres.
+Vu de l'écran de réservation en production, c'est identique à avant : aucune
+mention nulle part. Un champ qui passe de « impossible à écrire » à « personne
+ne l'a écrit » produit exactement le même écran.
+
+**Mesuré sur la base de démonstration réelle**, celle que sert
+`bind-agency-1.onrender.com`, avant correction :
+
+```
+mention attendue : 0 offre sur 34
+téléphone        : 4 salons sur 24
+pseudonyme       : 0 salon
+accord manuel    : 23 sur 24
+```
+
+**Les deux cas, jamais un seul.** Tout remplir serait le symétrique du défaut :
+« ce salon n'exige aucune citation » n'existerait dans aucune démonstration, et
+la ligne paraîtrait obligatoire. Une offre sur deux porte donc une mention, et
+`required_geotag` suit un rythme différent — les deux sont indépendants côté
+produit, et les voir toujours ensemble ferait croire le contraire.
+
+**Le téléphone n'existait que sur les quatre salons écrits à la main.** Les
+seize du marché n'en avaient aucun : un testeur qui ouvrait une fiche au hasard
+avait une chance sur six de voir la ligne, et son absence se lisait comme un
+manque du produit plutôt que du jeu de données. C'est le pendant exact de la
+mention — la fiche affiche le téléphone depuis peu, et il n'y avait rien à
+afficher.
+
+**Vingt-trois salons sur vingt-quatre en validation manuelle.** La fiche annonce
+depuis peu ce que l'appui déclenche — attendre une décision, ou être confirmé
+d'office. La distinction existait à l'écran et n'était visible sur **aucun**
+parcours. Cinq salons passent en confirmation d'office.
+
+**Ce qu'on a failli « corriger » à tort.** Cinq salons n'ont aucune règle de
+capacité, et j'avais d'abord annoncé qu'ils en manquaient sans raison. Vérifié
+ensuite : ils sont tous `draft` ou `onboarding` — les fiches préparées en mode
+terrain et le salon vierge — et **ils ne portent aucune offre**, donc ils ne
+sont jamais réservables. Leur donner des horaires contredirait « faits saisis,
+jamais d'engagements » et effacerait le cas de démonstration qu'ils portent.
+
+**Trois gardes, mutées dans les deux sens.** Le champ vide fait tomber la
+première, le champ partout aussi ; le téléphone retiré fait tomber la seconde.
+Une garde qui n'exige qu'une borne — « au moins une mention » — laisserait
+passer « toutes les offres en portent une », qui est l'autre moitié du défaut.

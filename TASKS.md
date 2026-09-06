@@ -1455,6 +1455,23 @@ Rien ici ne bloque le développement. Tout se simule en local. Seul le premier p
       bascule décorative — affichée, non lue par le verrou — passe tous les
       autres tests. Un seul cas distingue « on demande » de « on affiche ».*
 
+- [x] **Le semis remplit ce que C1 avait rendu écrivable**
+      *`required_mention` était saisissable et posé sur **zéro offre sur 34** :
+      vu de l'écran de réservation, exactement le même écran qu'avant C1. Mesuré
+      sur la base de démonstration réelle, pas déduit. Une offre sur deux en
+      porte une désormais — pas toutes, sans quoi le cas « rien à citer »
+      n'existerait nulle part.*
+
+      ***Le téléphone n'était que sur les quatre salons écrits à la main** : une
+      chance sur six de le voir en ouvrant une fiche au hasard. Les seize du
+      marché en ont un. Et cinq salons passent en confirmation d'office — la
+      distinction « l'appui dit ce qu'il déclenche » n'était démontrable sur
+      aucun parcours avec 23 salons sur 24 en validation manuelle.*
+
+      ***Ce qu'on n'a pas corrigé, après vérification** : les cinq salons sans
+      horaires sont `draft`/`onboarding` et ne portent aucune offre. Leur en
+      donner contredirait « faits saisis, jamais d'engagements ».*
+
 - [x] **La suite en parallèle** — 651 s à 300 s, mesuré
       *`pytest-xdist` avec `--dist loadgroup`. Les deux tests de concurrence
       partagent `xdist_group("concurrence")` : même worker, sériels entre eux, et
