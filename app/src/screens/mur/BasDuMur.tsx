@@ -15,92 +15,47 @@
  */
 import { View } from 'react-native';
 
-import type { Fil } from '../../api';
 import { Texte } from '../../components';
-import { formatNumber } from '../../format';
 import { useI18n } from '../../i18n';
 import { useColors } from '../../theme';
 
 /**
- * Le bas du fil : les sorties, et rien d'autre.
+ * Le bas du fil : le retour en haut, et rien d'autre.
  *
  * **« You have seen everything » est supprimé**, et avec lui le bilan sombre
  * qu'il coiffait. La fin d'une liste se voit ; la dire est du bruit, et le dire
- * sur un aplat d'encre en faisait un événement. Ce qui reste n'annonce rien :
- * ce sont les deux ou trois chemins qui restent quand on est arrivé en bas.
+ * sur un aplat d'encre en faisait un événement.
  *
  * **La ligne du prochain palier est partie vers Audience.** Elle était ici
  * parce que le fil était le seul écran qu'on ouvrait ; les abonnés, le score et
  * les paliers vivent maintenant ensemble, ce qui est le même sujet au même
  * endroit.
  *
- * **Les sorties, elles, restent.** Rien de la revue ne les vise, et les
- * retirer laisserait un créateur au fond d'un rayon trop étroit sans moyen de
- * l'élargir — une régression sur les chips que la planche v2 avait déjà
- * remplacées.
+ * **Et les deux sorties de rayon partent à leur tour.** Elles ont été gardées
+ * tant qu'élargir sans elles aurait laissé un créateur au fond d'un rayon trop
+ * étroit ; la note qui les portait le disait elle-même — « provisoire, la place
+ * définitive est ailleurs, le rayon appartient à la feuille de filtres, qui
+ * n'existe pas encore ». Elle existe : c'est le curseur de rayon, en tête du
+ * mur et sur l'état vide, qui va du kilomètre à cinquante.
+ *
+ * Les garder à côté ferait **deux commandes pour un même réglage**, dont une
+ * qui ne connaît que deux marches — et deux façons de changer la même valeur
+ * finissent par diverger, ou par se contredire à l'écran.
+ *
+ * Ce qui reste, parce que le curseur ne le remplace pas : remonter en haut
+ * d'une liste qu'on vient de parcourir.
  */
 export function BasDuMur({
-  fil,
-  rayonKm,
-  onElargir,
-  resserrer,
   onRemonter,
 }: {
-  fil: Fil;
-  rayonKm: number;
-  onElargir?: (rayonKm: number) => void;
-  /**
-   * Revenir au rayon de départ, et lequel. Absent quand on y est déjà.
-   *
-   * **C'est une annulation, pas une issue chiffrée.** Les deux autres sorties
-   * portent leur nombre parce qu'elles promettent un gain qu'on ne peut pas
-   * deviner ; celle-ci ramène à l'état d'où l'on vient, qu'on a vu. Lui coller
-   * un compte demanderait une requête pour dire ce qu'on savait déjà.
-   *
-   * **Provisoire, et la place définitive est ailleurs.** Le rayon appartient à
-   * la feuille de filtres, qui n'existe pas encore. En attendant, `rayons` ne
-   * rend jamais un rayon plus étroit que celui en vigueur : sans ce chemin,
-   * élargir serait sans retour, ce qui est une régression sur les chips que la
-   * planche a remplacées.
-   */
-  resserrer?: { versKm: number; onPress: () => void };
   onRemonter?: () => void;
 }) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const c = useColors();
-
-  const plusLarge = fil.rayons.find((rayon) => rayon.commerces > 0);
 
   return (
     <View testID="bas-du-mur" style={{ paddingHorizontal: 18, paddingVertical: 18, gap: 8 }}>
       <View style={{ gap: 8, alignItems: 'flex-start' }}>
-        {plusLarge && onElargir ? (
-          <Texte
-            variante="type.body"
-            couleur="brand.700"
-            testID="sortie-elargir"
-            onPress={() => onElargir(Math.round(plusLarge.rayon_metres / 1000))}
-          >
-            {t('parcours.filElargirCompte', {
-              rayon: formatNumber(Math.round(plusLarge.rayon_metres / 1000), locale),
-              count: formatNumber(plusLarge.commerces, locale),
-            })}
-          </Texte>
-        ) : null}
-        {/* **Un seul objet porte le geste et sa cible.** Deux props — un
-            rappel et un nombre — se seraient dédoublées, et il aurait fallu
-            garder contre le cas où l'une arrive sans l'autre : une garde de
-            plus pour une seule chose. */}
-        {resserrer ? (
-          <Texte
-            variante="type.body"
-            couleur="brand.700"
-            testID="sortie-resserrer"
-            onPress={resserrer.onPress}
-          >
-            {t('parcours.murResserrer', { rayon: formatNumber(resserrer.versKm, locale) })}
-          </Texte>
-        ) : null}
         {onRemonter ? (
           <Texte
             variante="type.body"
@@ -118,7 +73,6 @@ export function BasDuMur({
           </Texte>
         ) : null}
       </View>
-
     </View>
   );
 }

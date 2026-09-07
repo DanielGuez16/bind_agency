@@ -441,20 +441,7 @@ export function FilScreen({
               pied: (
                 <>
                   {mur.pied}
-                  <BasDuMur
-                    fil={filPret!}
-                    rayonKm={rayonKm}
-                    onElargir={setRayonKm}
-                    resserrer={
-                      rayonKm > RAYON_DE_DEPART_KM
-                        ? {
-                            versKm: RAYON_DE_DEPART_KM,
-                            onPress: () => setRayonKm(RAYON_DE_DEPART_KM),
-                          }
-                        : undefined
-                    }
-                    onRemonter={onRemonterEnHaut}
-                  />
+                  <BasDuMur onRemonter={onRemonterEnHaut} />
                 </>
               ),
             })
@@ -534,17 +521,7 @@ export function FilScreen({
             onOuvrir={onOuvrirLeCommerce}
           />
 
-          <BasDuMur
-            fil={fil}
-            rayonKm={rayonKm}
-            onElargir={setRayonKm}
-            resserrer={
-              rayonKm > RAYON_DE_DEPART_KM
-                ? { versKm: RAYON_DE_DEPART_KM, onPress: () => setRayonKm(RAYON_DE_DEPART_KM) }
-                : undefined
-            }
-            onRemonter={onRemonterEnHaut}
-          />
+          <BasDuMur onRemonter={onRemonterEnHaut} />
         </View>
       )}
     </Ecran>

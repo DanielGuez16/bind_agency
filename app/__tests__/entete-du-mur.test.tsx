@@ -252,33 +252,6 @@ describe('ce que l’en-tête dit', () => {
   });
 });
 
-describe('le rayon se règle dans les deux sens', () => {
-  it('élargir puis revenir : le retour existe, et il ramène', async () => {
-    // **C'était une régression.** Les chips de rayon sont parties avec leur
-    // ligne quand les catégories ont pris leur place, et `rayons` ne rend
-    // jamais un rayon plus étroit que celui en vigueur : on partait à 30 km
-    // pour la session entière. Provisoire — le rayon appartient à la feuille de
-    // filtres, qui n'existe pas encore.
-    const { appels } = await monter(
-      fil({ rayons: [{ rayon_metres: 30_000, commerces: 9, prestations: 12 }] as Fil['rayons'] }),
-    );
-    await waitFor(() => expect(screen.getByTestId('sortie-elargir')).toBeTruthy());
-
-    // Au rayon de départ, il n'y a rien à annuler.
-    expect(screen.queryByTestId('sortie-resserrer')).toBeNull();
-
-    await fireEvent.press(screen.getByTestId('sortie-elargir'));
-    await waitFor(() => expect(appels[appels.length - 1]).toContain('rayon_metres=30000'));
-
-    await waitFor(() => expect(screen.getByTestId('sortie-resserrer')).toBeTruthy());
-    await fireEvent.press(screen.getByTestId('sortie-resserrer'));
-    await waitFor(() => expect(appels[appels.length - 1]).toContain('rayon_metres=15000'));
-
-    // Et le retour disparaît une fois revenu : il n'annulerait plus rien.
-    await waitFor(() => expect(screen.queryByTestId('sortie-resserrer')).toBeNull());
-  });
-});
-
 describe('ce que l’en-tête fait', () => {
   it('passe la catégorie choisie au serveur', async () => {
     const { appels } = await monter();
