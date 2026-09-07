@@ -70,7 +70,7 @@ async function monter(donnees: Fil, props: Record<string, unknown> = {}) {
     <I18nProvider initialLocale="en">
       <ThemeProvider role="creator">
         <ApiProvider client={api}>
-          <BasDuMur fil={donnees} rayonKm={15} {...props} />
+          <BasDuMur {...props} />
         </ApiProvider>
       </ThemeProvider>
     </I18nProvider>,
@@ -91,57 +91,32 @@ async function monter(donnees: Fil, props: Record<string, unknown> = {}) {
  * **La ligne du prochain palier est partie vers Audience**, et son test avec
  * elle : voir `paliers-depuis-audience`.
  */
-describe('les deux sorties portent leur nombre', () => {
-  it('l’élargissement dit ce qu’il ouvrirait', async () => {
-    await monter(
-      fil({ rayons: [{ rayon_metres: 30000, commerces: 14, prestations: 20 }] as Fil['rayons'] }),
-      { onElargir: jest.fn() },
-    );
-    await waitFor(() => expect(screen.getByTestId('sortie-elargir')).toBeTruthy());
+describe('le pied ne porte plus que le retour en haut', () => {
+  /**
+   * **Les trois tests de rayon partent avec les sorties qu'ils éprouvaient.**
+   * « Élargir à 30 km, 14 salons » et « revenir à 15 km » étaient la seule
+   * façon de changer de rayon quand ils ont été écrits ; le curseur les
+   * remplace, du kilomètre à cinquante, en tête du mur et sur l'état vide. Les
+   * tordre pour qu'ils passent aurait fait croire que ces deux marches tiennent
+   * encore quelque part.
+   *
+   * Ce que le curseur ne remplace pas — remonter en haut d'une liste qu'on
+   * vient de parcourir — reste, et son test avec.
+   */
+  it('rend le retour en haut quand on lui donne le chemin', async () => {
+    const remonter = jest.fn();
+    await monter(fil(), { onRemonter: remonter });
+    await waitFor(() => expect(screen.getByTestId('sortie-remonter')).toBeTruthy());
 
-    const sortie = screen.getByTestId('sortie-elargir');
-    expect(sortie).toHaveTextContent(/\b30\b/);
-    expect(sortie).toHaveTextContent(/\b14\b/);
+    await fireEvent.press(screen.getByTestId('sortie-remonter'));
+    expect(remonter).toHaveBeenCalledTimes(1);
   });
 
-  it('et un élargissement qui n’ouvrirait rien ne se propose pas', async () => {
-    // **Une issue à zéro est un cul-de-sac chiffré**, ce qui est pire qu'une
-    // issue absente : elle promet un geste dont on revient bredouille.
-    await monter(
-      fil({ rayons: [{ rayon_metres: 30000, commerces: 0, prestations: 0 }] as Fil['rayons'] }),
-      { onElargir: jest.fn() },
-    );
+  it('et se tait quand aucun chemin n’est fourni', async () => {
+    await monter(fil());
     await waitFor(() => expect(screen.getByTestId('bas-du-mur')).toBeTruthy());
 
-    expect(screen.queryByTestId('sortie-elargir')).toBeNull();
-  });
-
-  it('et resserrer est une annulation, sans nombre', async () => {
-    // **Les deux autres sorties portent leur nombre parce qu'elles promettent
-    // un gain qu'on ne peut pas deviner.** Celle-ci ramène à l'état d'où l'on
-    // vient, qu'on a vu : lui coller un compte demanderait une requête pour
-    // dire ce qu'on savait déjà. Ce qu'elle doit dire est où elle ramène.
-    const revenir = jest.fn();
-    await monter(fil(), { rayonKm: 30, resserrer: { versKm: 15, onPress: revenir } });
-    await waitFor(() => expect(screen.getByTestId('sortie-resserrer')).toBeTruthy());
-
-    const sortie = screen.getByTestId('sortie-resserrer');
-    expect(sortie).toHaveTextContent(/\b15\b/);
-    expect(sortie).not.toHaveTextContent(/\b30\b/);
-
-    await fireEvent.press(sortie);
-    expect(revenir).toHaveBeenCalledTimes(1);
-  });
-
-  it('sans chemin fourni, la sortie ne s’affiche pas', async () => {
-    await monter(
-      fil({ rayons: [{ rayon_metres: 30000, commerces: 14, prestations: 20 }] as Fil['rayons'] }),
-    );
-    await waitFor(() => expect(screen.getByTestId('bas-du-mur')).toBeTruthy());
-
-    expect(screen.queryByTestId('sortie-elargir')).toBeNull();
     expect(screen.queryByTestId('sortie-remonter')).toBeNull();
-    expect(screen.queryByTestId('sortie-resserrer')).toBeNull();
   });
 });
 
