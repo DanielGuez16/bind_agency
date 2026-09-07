@@ -205,8 +205,19 @@ services:
       # Une nuit suffit depuis que le jeu de données éloigne lui-même l'échéance
       # de ses dossiers d'arbitrage : la file ne se vide plus douze heures après
       # le semis, elle tient jusqu'au suivant.
-      - key: DEMO_RESEED_HOUR
-        value: 4
+      # **Retiré le 2026-09-07, et le retirer d'ici est la seule façon.** Le
+      # semis nocturne effaçait la base de démonstration à quatre heures, puis
+      # la repeuplait depuis le conteneur — qui ne porte aucune photo, `assets/`
+      # étant ignoré par git et copié par rien. Il remplaçait donc les
+      # quatre-vingt-une images par des dégradés, chaque nuit, sans erreur et
+      # avec un code de sortie zéro.
+      #
+      # Le retirer au tableau de bord ne suffisait pas : cette variable portait
+      # une valeur littérale, donc le blueprint fait autorité, et
+      # `autoDeployTrigger: commit` la réécrivait à la fusion suivante.
+      #
+      # Vide, le semis nocturne est inerte — c'est le défaut prévu par le code.
+      # Le remettre demande d'abord que le conteneur ait les photos.
 
       # La base que le semis accepte de détruire. Voir plus haut : elle rend
       # possible un refus utile, elle ne déclenche rien.
