@@ -2005,23 +2005,130 @@ async def poser_les_fiches_de_terrain(session: AsyncSession) -> int:
         print("  aucun administrateur : pas de fiche de terrain")
         return 0
 
+    # **Les fiches préparées portent de vrais commerces de Miami, les autres
+    # non, et la ligne passe exactement là.** Une fiche *préparée* dit « on a
+    # relevé les coordonnées publiques de cette boutique, on n'y est pas encore
+    # allé » : elle n'affirme rien sur le commerce, et son nom, son adresse et
+    # sa position sont des faits publics. Les trois stades suivants en affirment
+    # un, et c'est pour ça qu'ils gardent des noms inventés :
+    #
+    #   — *ouverte* dit que quelqu'un chez le commerce a ouvert le lien ;
+    #   — *bloquée* dit qu'il a refusé, ce qui est pire à écrire faussement sur
+    #     un nom réel qu'une affirmation flatteuse ;
+    #   — *activée* appelle `prendre_en_main` : le commerce crée un compte et
+    #     **accepte les conditions**. C'est l'affirmation la plus forte du jeu
+    #     de données, plus forte encore qu'un abonnement.
+    #
+    # Les adresses et les coordonnées des fiches réelles sont géocodées, pas
+    # approximées. Ce qui n'a pas été vérifié — horaires, téléphone, pseudonyme
+    # — reste absent : une valeur plausible sur un nom réel est un fait faux.
+    #
+    # Les adresses de remise restent en `.example`, qui est réservé et ne route
+    # nulle part : le semis ne doit pouvoir écrire à personne.
     fiches = (
-        ("Sunset Nails Bar", HandoverChannel.QR, "preparee", None),
-        ("Little Havana Barbers", HandoverChannel.EMAIL, "ouverte", "hola@havana.example"),
-        ("Coral Way Massage", HandoverChannel.EMAIL, "bloquee", "info@coralway.example"),
-        ("Design District Spa", HandoverChannel.QR, "activee", None),
+        (
+            "The Pink Room Beauty Spa",
+            BusinessCategory.BEAUTY,
+            "2043 NW 1st Pl, Miami, FL 33127",
+            (-80.19839, 25.79602),
+            HandoverChannel.QR,
+            "preparee",
+            None,
+        ),
+        (
+            "Nail Culture Wynwood",
+            BusinessCategory.BEAUTY,
+            "2400 NE 2nd Ave, Miami, FL 33137",
+            (-80.19118, 25.80020),
+            HandoverChannel.QR,
+            "preparee",
+            None,
+        ),
+        (
+            "1331 Hair Shop",
+            BusinessCategory.BEAUTY,
+            "3202 NE 2nd Ave, Miami, FL 33137",
+            (-80.19125, 25.80717),
+            HandoverChannel.QR,
+            "preparee",
+            None,
+        ),
+        (
+            "The Spot Barbershop",
+            BusinessCategory.BEAUTY,
+            "3111 NE 1st Ave, Miami, FL 33137",
+            (-80.19326, 25.80612),
+            HandoverChannel.QR,
+            "preparee",
+            None,
+        ),
+        (
+            "Threefold Cafe",
+            BusinessCategory.RESTAURANT,
+            "141 Giralda Ave, Coral Gables, FL 33134",
+            (-80.25763, 25.75142),
+            HandoverChannel.QR,
+            "preparee",
+            None,
+        ),
+        (
+            "Green Monkey Yoga",
+            BusinessCategory.FITNESS,
+            "1200 Brickell Ave, Miami, FL 33131",
+            (-80.19231, 25.76211),
+            HandoverChannel.QR,
+            "preparee",
+            None,
+        ),
+        # À partir d'ici, des noms inventés : ces trois stades affirment
+        # quelque chose du commerce. Voir le commentaire ci-dessus.
+        (
+            "Little Havana Barbers",
+            BusinessCategory.BEAUTY,
+            "711 Coral Way, Miami FL",
+            (-80.23, 25.75),
+            HandoverChannel.EMAIL,
+            "ouverte",
+            "hola@havana.example",
+        ),
+        (
+            "Coral Way Massage",
+            BusinessCategory.BEAUTY,
+            "722 Coral Way, Miami FL",
+            (-80.22, 25.75),
+            HandoverChannel.EMAIL,
+            "bloquee",
+            "info@coralway.example",
+        ),
+        (
+            "Design District Spa",
+            BusinessCategory.BEAUTY,
+            "733 Coral Way, Miami FL",
+            (-80.21, 25.75),
+            HandoverChannel.QR,
+            "activee",
+            None,
+        ),
     )
 
     posees = 0
-    for rang, (nom, canal, stade, destination) in enumerate(fiches):
+    for rang, (
+        nom,
+        categorie,
+        adresse,
+        (longitude, latitude),
+        canal,
+        stade,
+        destination,
+    ) in enumerate(fiches):
         fiche = await handover_service.preparer_la_fiche(
             session,
             payload=BusinessCreate(
                 name=nom,
-                category=BusinessCategory.BEAUTY,
+                category=categorie,
                 currency="USD",
-                address=f"{700 + rang * 11} Coral Way, Miami FL",
-                coordinates=CoordinatesPayload(longitude=-80.24 + rang / 100, latitude=25.75),
+                address=adresse,
+                coordinates=CoordinatesPayload(longitude=longitude, latitude=latitude),
                 timezone="America/New_York",
             ),
             prepare_par=admin,
