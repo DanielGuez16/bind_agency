@@ -405,3 +405,91 @@ async def test_le_type_du_contenu_part_avec_l_ecriture() -> None:
 
     await magasin.deposer(b"\xff\xd8\xff\xe0 des octets", prefixe="photos/item")
     assert faux.dernier_type == "image/jpeg"
+
+
+# --------------------------------------------------------------------------
+# trop lent n'est pas refusé
+# --------------------------------------------------------------------------
+
+
+class _DepotQuiEchoue:
+    """Un dépôt dont le seul rôle est d'échouer avec un statut choisi."""
+
+    def __init__(self, statut: int) -> None:
+        self.statut = statut
+
+    async def deposer(self, contenu: bytes, *, prefixe: str) -> str:
+        raise object_store.ObjectStoreError(
+            f"dépôt S3 refusé : PutObject sur bind-public/{prefixe}/x, "
+            f"http={self.statut}, code={self.statut}, message=, {len(contenu)} octets"
+        )
+
+    async def supprimer(self, cle: str) -> None:  # pragma: no cover - jamais atteint
+        raise AssertionError("rien n'a été déposé, il n'y a rien à retirer")
+
+
+async def _plafond(statut: int) -> str:
+    with pytest.raises(ObjectStoreUnavailable) as refus:
+        await object_store._verifier_le_plafond(  # noqa: SLF001
+            _DepotQuiEchoue(statut), prefixe="photos/temoin", compartiment=PUBLIC
+        )
+    return str(refus.value)
+
+
+@pytest.mark.anyio
+async def test_un_delai_depasse_ne_se_lit_pas_comme_un_refus_de_taille() -> None:
+    """**Le message envoyait chercher une limite qui n'existe pas.**
+
+    Le contrôle dépose la plus grosse charge que le produit stockera — une
+    preuve vidéo — avant la table rase. Sur une liaison montante lente, elle
+    frôle le délai du mandataire placé devant le dépôt, et Cloudflare répond
+    524. Le message annonçait alors « le compartiment refuse une charge de
+    15 Mo », ce qui est faux : mesuré, le compartiment l'accepte en 88
+    secondes. Quelqu'un relève « File size limit », ne voit rien changer, et
+    cherche ailleurs pendant ce temps.
+
+    **Les deux messages doivent diverger, et c'est tout l'objet du test.** Un
+    test qui se contenterait de vérifier qu'une `ObjectStoreUnavailable` sort
+    passerait aussi sur la version qui confond les deux causes — c'est
+    exactement ce qu'elle faisait.
+    """
+    lent = await _plafond(524)
+    refuse = await _plafond(413)
+
+    assert "délai dépassé" in lent
+    assert "pas un refus de taille" in lent
+    assert "524" in lent
+    # **Le mot qui trompait.** Sans cette ligne, il suffirait d'ajouter une
+    # phrase au message générique pour rendre le test vert sans rien corriger.
+    assert "refuse une charge" not in lent
+
+    assert "refuse une charge" in refuse
+    assert "File size limit" in refuse
+    assert lent != refuse
+
+
+@pytest.mark.anyio
+async def test_les_quatre_statuts_de_delai_sont_reconnus() -> None:
+    """408 et 504 sont les formes HTTP, 522 et 524 celles de Cloudflare.
+
+    **Écrire l'exemple qui a motivé la garde ne suffit pas.** Seul 524 a été
+    observé ; les trois autres disent la même chose et arriveraient du même
+    mandataire. N'en reconnaître qu'un laisserait le message trompeur sur les
+    autres, et c'est le même défaut une fois de plus.
+    """
+    for statut in (408, 504, 522, 524):
+        assert "délai dépassé" in await _plafond(statut), statut
+
+
+@pytest.mark.anyio
+async def test_un_statut_inconnu_reste_dans_le_message_general() -> None:
+    """Ni refus de taille, ni délai : on ne prétend pas savoir.
+
+    Le sens inverse, et il compte : une garde qui rangerait tout dans l'une des
+    deux cases nommerait une cause qu'elle n'a pas établie.
+    """
+    autre = await _plafond(500)
+
+    assert "délai dépassé" not in autre
+    assert "File size limit" not in autre
+    assert "http=500" in autre

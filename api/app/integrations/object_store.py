@@ -31,6 +31,7 @@ politique de rétention écrivable plus tard sans relire les lignes.
 """
 
 import hashlib
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol, runtime_checkable
@@ -51,6 +52,24 @@ def _statut_http(error: Exception) -> int | None:
     """
     reponse = getattr(error, "response", None) or {}
     return reponse.get("ResponseMetadata", {}).get("HTTPStatusCode")
+
+
+#: Les statuts qui disent « personne n'a répondu à temps », et non « non ».
+#: 408 et 504 sont les formes HTTP ; 522 et 524 celles que Cloudflare place
+#: devant Supabase. Les confondre avec un refus envoie chercher une limite de
+#: taille qui n'existe pas.
+TROP_LENT = frozenset({408, 504, 522, 524})
+
+
+def _statut_dans(message: str) -> int | None:
+    """Le statut que `_details_s3` a écrit dans le message, s'il y en a un.
+
+    Lu dans le texte parce que c'est là qu'il se trouve une fois l'erreur
+    `botocore` traduite en `ObjectStoreError` : l'exception d'origine, elle,
+    est déjà derrière un `raise … from`.
+    """
+    trouve = re.search(r"http=(\d{3})\b", message)
+    return int(trouve.group(1)) if trouve else None
 
 
 def _details_s3(error: Exception, *, operation: str, compartiment: str, cle: str) -> str:
@@ -475,18 +494,42 @@ async def _verifier_le_plafond(depot, *, prefixe: str, compartiment: str) -> Non
     try:
         cle = await depot.deposer(charge, prefixe=gabarit)
     except ObjectStoreError as error:
-        if "http=413" in str(error):
+        mo = plafond // 1024 // 1024
+        statut = _statut_dans(str(error))
+
+        if statut == 413:
             raise ObjectStoreUnavailable(
                 f"le compartiment {compartiment} refuse une charge de "
-                f"{plafond // 1024 // 1024} Mo (413) : sa limite de taille par "
+                f"{mo} Mo (413) : sa limite de taille par "
                 "fichier est inférieure à ce que le produit dépose. Relever "
                 "« File size limit » sur le compartiment, ou abaisser "
                 "PROOF_FETCH_MAX_BYTES — mais alors le produit refusera des "
                 "preuves qu'il accepte aujourd'hui"
             ) from error
+
+        # **Un délai dépassé n'est pas un refus, et le dire compte.** Le
+        # message générique annonçait « le compartiment refuse une charge de
+        # 15 Mo » sur un 524 : quelqu'un va relever la limite de taille du
+        # compartiment, ne rien voir changer, et chercher longtemps.
+        #
+        # Ces statuts disent tous « personne n'a répondu à temps » : 408 et 504
+        # sont les formes HTTP, 522 et 524 celles que Cloudflare place devant
+        # Supabase. La charge d'épreuve est la plus grosse que le produit
+        # dépose ; sur une liaison montante lente elle frôle la limite du
+        # mandataire, et le contrôle passe ou casse selon l'heure.
+        if statut in TROP_LENT:
+            raise ObjectStoreUnavailable(
+                f"le compartiment {compartiment} n'a pas répondu à temps sur "
+                f"une charge de {mo} Mo ({statut}) : c'est un délai dépassé, "
+                "pas un refus de taille. Le compartiment accepte peut-être "
+                "cette taille — la liaison montante n'a pas fini avant le "
+                "délai du mandataire. Réessayer, ou déposer depuis une "
+                "liaison plus rapide ; relever « File size limit » n'y "
+                "changera rien"
+            ) from error
+
         raise ObjectStoreUnavailable(
-            f"le compartiment {compartiment} refuse une charge de "
-            f"{plafond // 1024 // 1024} Mo : {error}"
+            f"le compartiment {compartiment} a rejeté une charge de {mo} Mo : {error}"
         ) from error
 
     await depot.supprimer(cle)
